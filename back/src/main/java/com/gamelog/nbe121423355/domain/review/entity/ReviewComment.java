@@ -1,5 +1,6 @@
 package com.gamelog.nbe121423355.domain.review.entity;
 
+import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.global.jpa.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;

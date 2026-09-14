@@ -1,5 +1,6 @@
 package com.gamelog.nbe121423355.domain.user.entity;
 
+import com.gamelog.nbe121423355.domain.game.entity.Game;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

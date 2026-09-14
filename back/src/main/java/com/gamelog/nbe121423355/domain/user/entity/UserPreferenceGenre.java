@@ -1,5 +1,6 @@
 package com.gamelog.nbe121423355.domain.user.entity;
 
+import com.gamelog.nbe121423355.domain.game.entity.Genre;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -1,7 +1,7 @@
 package com.gamelog.nbe121423355.domain.user.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
+import com.gamelog.nbe121423355.global.jpa.entity.BaseEntity;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,7 +10,11 @@ import lombok.NoArgsConstructor;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class User {
+public class User extends BaseEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column(unique = true, nullable = false)
     private String email;

@@ -1,11 +1,9 @@
 package com.gamelog.nbe121423355.domain.game.entity;
 
-import com.gamelog.nbe121423355.domain.game.entity.id.GamePlatformId;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.graalvm.nativeimage.Platform;
 
 import java.util.Objects;
 

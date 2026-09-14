@@ -1,5 +1,6 @@
 package com.gamelog.nbe121423355.domain.game.entity;
 
+import com.gamelog.nbe121423355.global.jpa.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -12,8 +13,7 @@ import java.time.LocalDate;
 @Table(name = "games")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-//TODO, extends BaseTimeEntity
-public class Game {
+public class Game extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

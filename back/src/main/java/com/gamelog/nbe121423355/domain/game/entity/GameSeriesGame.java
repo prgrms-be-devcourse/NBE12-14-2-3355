@@ -1,6 +1,5 @@
 package com.gamelog.nbe121423355.domain.game.entity;
 
-import com.gamelog.nbe121423355.domain.game.entity.id.GameSeriesGameId;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

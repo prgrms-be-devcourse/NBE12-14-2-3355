@@ -1,12 +1,13 @@
 package com.gamelog.nbe121423355.domain.usergame.entity;
 
-import com.gamelog.nbe121423355.domain.game.entity.GamePlatform;
-import com.gamelog.nbe121423355.global.entity.BaseEntity;
+import com.gamelog.nbe121423355.domain.game.entity.Game;
+import com.gamelog.nbe121423355.domain.game.entity.Platform;
+import com.gamelog.nbe121423355.domain.user.entity.User;
+import com.gamelog.nbe121423355.global.jpa.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.graalvm.nativeimage.Platform;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -19,6 +20,9 @@ import java.util.Objects;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserGame extends BaseEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
