@@ -1,0 +1,33 @@
+name: Backend CI
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Backend build and test
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: back
+
+    env:
+      SPRING_PROFILES_ACTIVE: test
+
+    steps:
+      - name: 코드 가져오기
+        uses: actions/checkout@v6
+
+      - name: Java 25 설정
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: 빌드 및 테스트
+        run: bash ./gradlew build --no-daemon
