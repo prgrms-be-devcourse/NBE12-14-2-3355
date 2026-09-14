@@ -1,0 +1,65 @@
+spring:
+  application:
+    name: gamelog
+  profiles:
+    active: local
+
+---
+# ===== 로컬 개발 (Docker MySQL) =====
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:mysql://localhost:3306/gamelog?serverTimezone=UTC&characterEncoding=UTF-8
+    username: ${DB_USERNAME:gamelog}
+    password: ${DB_PASSWORD:gamelog1234}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  sql:
+    init:
+      mode: always   # data.sql 항상 실행 (중복 방지 필요하면 always -> never로 바꾸고 수동 실행)
+
+---
+# ===== 테스트 (H2 인메모리) =====
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+  sql:
+    init:
+      mode: never   # 엔티티로 스키마 생성하고, 데이터는 각 테스트에서 직접 넣기
+
+---
+# ===== 배포 (Railway) =====
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate   # 운영에서는 절대 update/create 쓰지 말 것
+    show-sql: false
+  sql:
+    init:
+      mode: never
