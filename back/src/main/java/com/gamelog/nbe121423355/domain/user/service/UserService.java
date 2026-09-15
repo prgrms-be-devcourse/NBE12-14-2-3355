@@ -19,6 +19,9 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
+    // 로그인 결과를 Controller에 전달하기 위한 내부 운반용 record
+    public record LoginResult(UserDto user, String accessToken, String refreshToken) {}
+
     // 회원가입 메소드
     public UserDto signUp(SignupRequestDto signUpDto) {
         if (userRepository.existsByEmail(signUpDto.email())) {
@@ -35,7 +38,7 @@ public class UserService {
     }
 
     // 로그인 메소드
-    public LoginResponseDto login(LoginRequestDto loginRequestDto) {
+    public LoginResult login(LoginRequestDto loginRequestDto) {
         Optional<User> userOptional = userRepository.findByEmail(loginRequestDto.email());
         if(userOptional.isEmpty()) {
             throw new ServiceException("401-1", "이메일 또는 비밀번호가 일치하지 않습니다.");
@@ -46,7 +49,7 @@ public class UserService {
         }
         String accessToken = jwtProvider.generateAccessToken(user.getId(), user.getEmail(), user.getRole());
         String refreshToken = jwtProvider.generateRefreshToken(user.getId());
-        return new LoginResponseDto(new UserDto(user), accessToken);
+        return new LoginResult(new UserDto(user), accessToken, refreshToken);
     }
 
     // 토큰 갱신 메소드
