@@ -15,10 +15,18 @@ public class Platform {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "igdb_platforms_id")
+    // Platform
+    @Column(name = "igdb_platforms_id", unique = true)
     private Long igdbPlatformsId;
 
-    @Column(nullable = false, unique = true, length = 50)
+    // Platform의 name
+    @Column(nullable = false, unique = true, length = 255)
     private String name;
-    
+
+    public static Platform createFromIgdb(Long igdbId, String name) {
+        Platform platform = new Platform();
+        platform.igdbPlatformsId = igdbId;
+        platform.name = name;
+        return platform;
+    }
 }

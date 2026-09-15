@@ -15,10 +15,16 @@ public class GameSeries {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "igdb_id")
+    @Column(name = "igdb_id", unique = true)
     private Long igdbId;
 
-    @Column(nullable = false, unique = true, length = 255)
+    @Column(nullable = false, length = 255)
     private String name;
 
+    public static GameSeries createFromIgdb(Long igdbId, String name) {
+        GameSeries series = new GameSeries();
+        series.igdbId = igdbId;
+        series.name = name;
+        return series;
+    }
 }
