@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 // 회원가입 요청 dto
-public record SignupRequest (
+public record SignupRequestDto(
         @NotBlank
         String nickname,
         @NotBlank

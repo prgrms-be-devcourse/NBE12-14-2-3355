@@ -17,6 +17,7 @@ public class JwtProvider {
     private final JwtProperties jwtProperties;
     private final SecretKey secretKey;
 
+    // 토큰 제공 클래스
     public JwtProvider(JwtProperties jwtProperties) {
         this.jwtProperties = jwtProperties;
         byte[] KeyBytes = Decoders.BASE64.decode(jwtProperties.secret());
