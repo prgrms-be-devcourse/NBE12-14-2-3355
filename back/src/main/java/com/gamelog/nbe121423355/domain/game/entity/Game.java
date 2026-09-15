@@ -12,6 +12,7 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "games")
@@ -32,7 +33,7 @@ public class Game extends BaseEntity {
     @Column(name = "cover_image_url", length = 500)
     private String coverImageUrl;
 
-    @Column(length = 255)
+    @Column(columnDefinition = "TEXT")
     private String developer;
 
     @Column(name = "release_date")
@@ -116,5 +117,17 @@ public class Game extends BaseEntity {
         this.igdbRating = response.rating() == null
                 ? null
                 : response.rating().setScale(2, RoundingMode.HALF_UP);
+
+        String developers = response.involved_companies() == null
+                ? ""
+                : response.involved_companies().stream()
+                .filter(item -> Boolean.TRUE.equals(item.developer()))
+                .filter(item -> item.company() != null)
+                .map(item -> item.company().name())
+                .filter(name -> name != null && !name.isBlank())
+                .distinct()
+                .collect(Collectors.joining(", "));
+
+        this.developer = developers.isBlank() ? null : developers;
     }
 }
