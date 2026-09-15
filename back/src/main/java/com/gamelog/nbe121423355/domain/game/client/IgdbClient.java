@@ -72,11 +72,13 @@ public class IgdbClient {
         String token = getAccessToken();
 
         String query = """
-                fields name, summary, cover.url, first_release_date, rating;
-                sort id asc;
-                limit 500;
-                offset 0;
-                """;
+        fields name, summary, cover.url, first_release_date, rating,
+               involved_companies.developer,
+               involved_companies.company.name;
+        sort id asc;
+        limit 500;
+        offset 0;
+        """;
 
         List<IgdbGameResponse> games = restClient.post()
                 .uri("https://api.igdb.com/v4/games")
