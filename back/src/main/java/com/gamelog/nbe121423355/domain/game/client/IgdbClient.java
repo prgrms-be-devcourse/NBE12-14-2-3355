@@ -74,7 +74,8 @@ public class IgdbClient {
         String query = """
         fields name, summary, cover.url, first_release_date, rating,
                involved_companies.developer,
-               involved_companies.company.name;
+               involved_companies.company.name,
+               genres.name, platforms.name, collections.name;
         sort id asc;
         limit 500;
         offset 0;

@@ -10,12 +10,12 @@ public record IgdbGameResponse(
         Cover cover,
         Long first_release_date,
         BigDecimal rating,
-        List<InvolvedCompany> involved_companies
+        List<InvolvedCompany> involved_companies,
+        List<NamedResource> genres,
+        List<NamedResource> platforms,
+        List<NamedResource> collections
 ) {
-    public record Cover(
-            Long id,
-            String url
-    ) {}
+    public record Cover(Long id, String url) {}
 
     public record InvolvedCompany(
             Long id,
@@ -23,8 +23,7 @@ public record IgdbGameResponse(
             Company company
     ) {}
 
-    public record Company(
-            Long id,
-            String name
-    ) {}
+    public record Company(Long id, String name) {}
+
+    public record NamedResource(Long id, String name) {}
 }
