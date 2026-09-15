@@ -36,6 +36,12 @@ spring:
 
 ---
 # ===== 테스트 (H2 인메모리) =====
+igdb:
+  client-id: test-client-id
+  client-secret: test-client-secret
+  import:
+    enabled: false
+
 spring:
   config:
     activate:
