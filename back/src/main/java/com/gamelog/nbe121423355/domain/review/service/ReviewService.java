@@ -1,7 +1,6 @@
 package com.gamelog.nbe121423355.domain.review.service;
 
-import com.gamelog.nbe121423355.domain.review.dto.request.ReviewCreateRequest;
-import com.gamelog.nbe121423355.domain.review.dto.request.ReviewUpdateRequest;
+import com.gamelog.nbe121423355.domain.review.dto.request.ReviewSaveRequest;
 import com.gamelog.nbe121423355.domain.review.dto.response.ReviewPageResponse;
 import com.gamelog.nbe121423355.domain.review.dto.response.ReviewResponse;
 import com.gamelog.nbe121423355.domain.review.entity.Review;
@@ -25,23 +24,26 @@ public class ReviewService {
     private final UserGameRepository userGameRepository;
 
     @Transactional
-    public ReviewResponse createReview(Long userId, Long userGameId, ReviewCreateRequest request) {
+    public ReviewResponse saveReview(Long userId, Long userGameId, ReviewSaveRequest request) {
         UserGame userGame = getUserGame(userGameId);
         validateOwner(userId, userGame);
 
-        // 한 사용자가 같은 게임에 리뷰를 하나만 작성하게.
-        if (reviewRepository.existsByUserGame_Id(userGameId)) {
-            throw new ServiceException("409-1", "이미 작성한 리뷰가 있습니다.");
+        // 리뷰가 있으면 수정하고 없으면 새로 작성.
+        Review review = reviewRepository.findByUserGame_Id(userGameId).orElse(null);
+
+        if (review != null) {
+            review.edit(request.rating(), request.content(), request.spoiler());
+            return ReviewResponse.from(review);
         }
 
-        Review review = new Review(
+        Review newReview = new Review(
                 userGame,
                 request.rating(),
                 request.content(),
                 request.spoiler()
         );
 
-        return ReviewResponse.from(reviewRepository.save(review));
+        return ReviewResponse.from(reviewRepository.save(newReview));
     }
 
     public ReviewResponse getReview(Long reviewId) {
@@ -61,7 +63,7 @@ public class ReviewService {
     }
 
     @Transactional
-    public ReviewResponse updateReview(Long userId, Long reviewId, ReviewUpdateRequest request) {
+    public ReviewResponse updateReview(Long userId, Long reviewId, ReviewSaveRequest request) {
         Review review = getReviewEntity(reviewId);
         validateOwner(userId, review.getUserGame());
 

@@ -1,7 +1,6 @@
 package com.gamelog.nbe121423355.domain.review.controller;
 
-import com.gamelog.nbe121423355.domain.review.dto.request.ReviewCreateRequest;
-import com.gamelog.nbe121423355.domain.review.dto.request.ReviewUpdateRequest;
+import com.gamelog.nbe121423355.domain.review.dto.request.ReviewSaveRequest;
 import com.gamelog.nbe121423355.domain.review.dto.response.ReviewPageResponse;
 import com.gamelog.nbe121423355.domain.review.dto.response.ReviewResponse;
 import com.gamelog.nbe121423355.domain.review.service.ReviewService;
@@ -13,7 +12,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -30,14 +28,14 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     // JWT 연동 전까지 X-User-Id 헤더 사용. (후에 바꿀 예정)
-    @PostMapping("/user-games/{userGameId}/reviews")
-    public RsData<ReviewResponse> createReview(
+    @PutMapping("/user-games/{userGameId}/reviews")
+    public RsData<ReviewResponse> saveReview(
             @RequestHeader("X-User-Id") Long userId,
             @PathVariable Long userGameId,
-            @Valid @RequestBody ReviewCreateRequest request
+            @Valid @RequestBody ReviewSaveRequest request
     ) {
-        ReviewResponse response = reviewService.createReview(userId, userGameId, request);
-        return new RsData<>("201-1", "리뷰가 작성되었습니다.", response);
+        ReviewResponse response = reviewService.saveReview(userId, userGameId, request);
+        return new RsData<>("200-6", "리뷰가 저장되었습니다.", response);
     }
 
     @GetMapping("/reviews/{reviewId}")
@@ -68,7 +66,7 @@ public class ReviewController {
     public RsData<ReviewResponse> updateReview(
             @RequestHeader("X-User-Id") Long userId,
             @PathVariable Long reviewId,
-            @Valid @RequestBody ReviewUpdateRequest request
+            @Valid @RequestBody ReviewSaveRequest request
     ) {
         ReviewResponse response = reviewService.updateReview(userId, reviewId, request);
         return new RsData<>("200-4", "리뷰가 수정되었습니다.", response);
