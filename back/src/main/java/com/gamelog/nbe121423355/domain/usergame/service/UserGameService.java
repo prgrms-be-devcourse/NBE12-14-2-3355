@@ -2,8 +2,9 @@ package com.gamelog.nbe121423355.domain.usergame.service;
 
 import com.gamelog.nbe121423355.domain.game.entity.Game;
 import com.gamelog.nbe121423355.domain.game.entity.Platform;
+import com.gamelog.nbe121423355.domain.game.repository.GameRepository;
+import com.gamelog.nbe121423355.domain.game.repository.PlatformRepository;
 import com.gamelog.nbe121423355.domain.user.entity.User;
-import com.gamelog.nbe121423355.domain.usergame.controller.UserGameController;
 import com.gamelog.nbe121423355.domain.usergame.dto.UserGameReqBody;
 import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
 import com.gamelog.nbe121423355.domain.usergame.repository.UserGameRepository;
@@ -17,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserGameService {
 
     private final UserGameRepository userGameRepository;
-    private final UserRepository userRepository;
+//    private final UserRepository userRepository;
     private final GameRepository gameRepository;
     private final PlatformRepository platformRepository;
 
@@ -33,7 +34,6 @@ public class UserGameService {
         return userGameRepository.findByUser_IdAndGame_Id(userId, gameId)
                 .map(userGame -> {
                     applyPlayRecord(userGame, reqBody, platform);
-                    userGame.activateLibrary();
 
                     return userGame;
                 })
@@ -50,7 +50,6 @@ public class UserGameService {
         Platform platform = findPlatform(reqBody.platformId());
 
         applyPlayRecord(userGame, reqBody, platform);
-        userGame.activateLibrary();
 
         return userGame;
     }
@@ -81,8 +80,6 @@ public class UserGameService {
                 reqBody.lastPlayedAt()
         );
 
-        userGame.activateLibrary();
-
         return userGameRepository.save(userGame);
     }
 
@@ -108,10 +105,12 @@ public class UserGameService {
     }
 
     private User findUser(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new ServiceException("404-1", "사용자를 찾을 수 없습니다.")
-                );
+//        return userRepository.findById(userId)
+//                .orElseThrow(() ->
+//                        new ServiceException("404-1", "사용자를 찾을 수 없습니다.")
+//                );
+
+        return null;
     }
 
     private Game findGame(Long gameId) {

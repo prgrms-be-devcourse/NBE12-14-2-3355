@@ -137,6 +137,24 @@ public class UserGame extends BaseEntity {
         this.startedAt = startedAt;
         this.completedAt = completedAt;
         this.lastPlayedAt = lastPlayedAt;
+
+        updateLibraryStatus();
+    }
+
+    private void updateLibraryStatus() {
+        this.inLibrary =
+                playStatus != null
+                        || playing
+                        || backlog
+                        || wishlist
+                        || platform != null
+                        || playTimeHours != null
+                        || finishTimeHours != null
+                        || masterTimeHours != null
+                        || startedAt != null
+                        || completedAt != null
+                        || lastPlayedAt != null;
+        //liked 제외
     }
 
     public void changePlayStatus(PlayStatus playStatus) {
@@ -161,13 +179,5 @@ public class UserGame extends BaseEntity {
 
     public void changeLiked(boolean liked) {
         this.liked = liked;
-    }
-
-    public void activateLibrary() {
-        this.inLibrary = true;
-    }
-
-    public void deactivateLibrary() {
-        this.inLibrary = false;
     }
 }

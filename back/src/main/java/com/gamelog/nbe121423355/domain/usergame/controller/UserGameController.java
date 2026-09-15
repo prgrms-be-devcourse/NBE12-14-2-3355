@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "UserGameController", description = "유저 게임 라이브러리 API")
 public class UserGameController {
 
-    private UserGameService userGameService;
+    private final UserGameService userGameService;
 
     @PostMapping("/{gameId}")
     public RsData<UserGameDto> addGameToLibrary(
