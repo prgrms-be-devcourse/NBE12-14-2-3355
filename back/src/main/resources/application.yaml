@@ -4,6 +4,14 @@ spring:
   profiles:
     active: local
 
+
+
+# === igdb ===
+
+igdb:
+  client-id: ${IGDB_CLIENT_ID}
+  client-secret: ${IGDB_CLIENT_SECRET}
+
 ---
 # ===== 로컬 개발 (Docker MySQL) =====
 spring:
