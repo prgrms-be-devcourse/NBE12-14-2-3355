@@ -15,10 +15,17 @@ public class Genre {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "igdb_genre_id")
+    // Genre
+    @Column(name = "igdb_genre_id", unique = true)
     private Long igdbGenreId;
 
     @Column(nullable = false, unique = true, length = 50)
     private String name;
 
+    public static Genre createFromIgdb(Long igdbId, String name) {
+        Genre genre = new Genre();
+        genre.igdbGenreId = igdbId;
+        genre.name = name;
+        return genre;
+    }
 }
