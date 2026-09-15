@@ -71,8 +71,103 @@ public class UserGame extends BaseEntity {
     @Column(name = "last_played_at")
     private LocalDateTime lastPlayedAt;
 
-    public UserGame(User user, Game game) {
-        this.user = Objects.requireNonNull(user, "user");
-        this.game = Objects.requireNonNull(game, "game");
+    @Column(nullable = false)
+    private boolean inLibrary=true;
+
+//    public UserGame(User user, Game game) {
+//        this.user = Objects.requireNonNull(user, "user");
+//        this.game = Objects.requireNonNull(game, "game");
+//    }
+
+    public UserGame(
+            User user,
+            Game game,
+            PlayStatus playStatus,
+            boolean playing,
+            boolean backlog,
+            boolean wishlist,
+            boolean liked,
+            Platform platform,
+            BigDecimal playTimeHours,
+            BigDecimal finishTimeHours,
+            BigDecimal masterTimeHours,
+            LocalDate startedAt,
+            LocalDate completedAt,
+            LocalDateTime lastPlayedAt
+    ) {
+        this.user = Objects.requireNonNull(user);
+        this.game = Objects.requireNonNull(game);
+        this.playStatus = playStatus;
+        this.playing = playing;
+        this.backlog = backlog;
+        this.wishlist = wishlist;
+        this.liked = liked;
+        this.platform = platform;
+        this.playTimeHours = playTimeHours;
+        this.finishTimeHours = finishTimeHours;
+        this.masterTimeHours = masterTimeHours;
+        this.startedAt = startedAt;
+        this.completedAt = completedAt;
+        this.lastPlayedAt = lastPlayedAt;
+    }
+
+    public void updatePlayRecord(
+            PlayStatus playStatus,
+            boolean playing,
+            boolean backlog,
+            boolean wishlist,
+            boolean liked,
+            Platform platform,
+            BigDecimal playTimeHours,
+            BigDecimal finishTimeHours,
+            BigDecimal masterTimeHours,
+            LocalDate startedAt,
+            LocalDate completedAt,
+            LocalDateTime lastPlayedAt
+    ) {
+        this.playStatus = playStatus;
+        this.playing = playing;
+        this.backlog = backlog;
+        this.wishlist = wishlist;
+        this.liked = liked;
+        this.platform = platform;
+        this.playTimeHours = playTimeHours;
+        this.finishTimeHours = finishTimeHours;
+        this.masterTimeHours = masterTimeHours;
+        this.startedAt = startedAt;
+        this.completedAt = completedAt;
+        this.lastPlayedAt = lastPlayedAt;
+    }
+
+    public void changePlayStatus(PlayStatus playStatus) {
+        this.playStatus = playStatus;
+    }
+
+    public void clearPlayStatus() {
+        this.playStatus = null;
+    }
+
+    public void changePlaying(boolean playing) {
+        this.playing = playing;
+    }
+
+    public void changeBacklog(boolean backlog) {
+        this.backlog = backlog;
+    }
+
+    public void changeWishlist(boolean wishlist) {
+        this.wishlist = wishlist;
+    }
+
+    public void changeLiked(boolean liked) {
+        this.liked = liked;
+    }
+
+    public void activateLibrary() {
+        this.inLibrary = true;
+    }
+
+    public void deactivateLibrary() {
+        this.inLibrary = false;
     }
 }
