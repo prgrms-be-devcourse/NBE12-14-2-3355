@@ -5,6 +5,8 @@ import com.gamelog.nbe121423355.domain.game.dto.GameListResponse;
 import com.gamelog.nbe121423355.domain.game.dto.IgdbGameResponse;
 import com.gamelog.nbe121423355.domain.game.repository.GameRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,5 +35,12 @@ public class GameService {
                 .stream()
                 .map(game->new GameListResponse(game))
                 .toList();
+    }
+
+    // 페이징 목록 조회
+    @Transactional(readOnly = true)
+    public Page<GameListResponse> getGamesPage(Pageable pageable) {
+        return gameRepository.findAll(pageable)
+                .map(GameListResponse::new);
     }
 }
