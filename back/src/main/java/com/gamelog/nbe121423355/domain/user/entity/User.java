@@ -29,7 +29,7 @@ public class User extends BaseEntity {
     private String bio;
 
     @Column(nullable = false)
-    private Boolean onboardingCompleted=false;
+    private boolean onboardingCompleted=false;
     private String role;
 
     public void completeOnboarding() {
