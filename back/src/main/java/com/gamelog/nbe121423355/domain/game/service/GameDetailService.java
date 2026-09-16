@@ -1,6 +1,8 @@
 package com.gamelog.nbe121423355.domain.game.service;
 
 import com.gamelog.nbe121423355.domain.game.dto.GameDetailResponse;
+import com.gamelog.nbe121423355.domain.game.dto.GameRatingDistributionResponse;
+import com.gamelog.nbe121423355.domain.game.dto.GameRatingStatisticsResponse;
 import com.gamelog.nbe121423355.domain.game.dto.GameStatisticsResponse;
 import com.gamelog.nbe121423355.domain.game.entity.Game;
 import com.gamelog.nbe121423355.domain.game.repository.*;
@@ -9,7 +11,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -93,4 +99,39 @@ public class GameDetailService {
         );
     }
 
+    // 평균 평점, 리뷰 수와 모든 0.5점 단위의 평점 분포를 구성
+    private GameRatingStatisticsResponse getRatingStatistics(Long gameId) {
+        GameRatingStatisticsProjection ratingStatistics = gameStatisticsRepository
+                .findRatingStatisticsByGameId(gameId);
+
+        Map<Integer, Long> countsByRating = gameStatisticsRepository
+                .findRatingDistributionByGameId(gameId)
+                .stream()
+                .collect(Collectors.toMap(
+                        item -> item.getRating()
+                                .multiply(BigDecimal.valueOf(2))
+                                .intValueExact(),
+                        GameRatingDistributionProjection::getCount
+                ));
+
+        List<GameRatingDistributionResponse> distribution = IntStream.rangeClosed(1, 10)
+                .mapToObj(ratingStep -> new GameRatingDistributionResponse(
+                        BigDecimal.valueOf(ratingStep * 5L, 1),
+                        countsByRating.getOrDefault(ratingStep, 0L)
+                ))
+                .toList();
+
+        return new GameRatingStatisticsResponse(
+                BigDecimal.valueOf(ratingStatistics.getAverageRating()),
+                ratingStatistics.getReviewCount(),
+                distribution
+        );
+    }
+
+    // 게임에 좋아요를 누른 사용자 수 조회
+    private long getLikeCount(Long gameId) {
+        return gameStatisticsRepository.countLikesByGameId(gameId);
+    }
+
 }
+
