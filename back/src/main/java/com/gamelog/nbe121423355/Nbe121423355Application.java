@@ -2,8 +2,10 @@ package com.gamelog.nbe121423355;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 @SpringBootApplication
+@ConfigurationPropertiesScan
 public class Nbe121423355Application {
 
     public static void main(String[] args) {
