@@ -33,6 +33,7 @@ public class ReviewService {
 
         if (review != null) {
             review.edit(request.rating(), request.content(), request.spoiler());
+            reviewRepository.flush();
             return ReviewResponse.from(review);
         }
 
@@ -69,6 +70,7 @@ public class ReviewService {
 
         // 변경된 리뷰를 자동으로 반영.
         review.edit(request.rating(), request.content(), request.spoiler());
+        reviewRepository.flush();
 
         return ReviewResponse.from(review);
     }
