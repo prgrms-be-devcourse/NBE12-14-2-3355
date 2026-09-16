@@ -2,6 +2,7 @@ package com.gamelog.nbe121423355.domain.usergame.controller;
 
 import com.gamelog.nbe121423355.domain.usergame.dto.UserGameDto;
 import com.gamelog.nbe121423355.domain.usergame.dto.UserGameReqBody;
+import com.gamelog.nbe121423355.domain.usergame.dto.UserGameSaveResult;
 import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
 import com.gamelog.nbe121423355.domain.usergame.service.UserGameService;
 import com.gamelog.nbe121423355.global.dto.RsData;
@@ -18,6 +19,7 @@ public class UserGameController {
 
     private final UserGameService userGameService;
 
+    //등록 및 수정
     @PostMapping("/{gameId}")
     public RsData<UserGameDto> addGameToLibrary(
             @PathVariable Long gameId,
@@ -26,15 +28,24 @@ public class UserGameController {
 
         Long userId=1L;
 
-        UserGame usergame = userGameService.addOrUpdateGameToLibrary(userId,gameId,reqBody);
+        UserGameSaveResult result = userGameService.addOrUpdateGameToLibrary(userId,gameId,reqBody);
+
+        String message = result.created()
+                ? "라이브러리에 게임을 등록했습니다."
+                : "게임 기록을 수정했습니다.";
+
+        String code = result.created()
+                ? "201-1"
+                : "200-1";
 
         return new RsData<>(
-                "201-1",
-                "라이브러리에 게임을 등록했습니다.",
-                new UserGameDto(usergame)
+                code,
+                message,
+                new UserGameDto(result.userGame())
         );
     }
 
+    //수정만
     @PatchMapping("/{gameId}")
     public RsData<UserGameDto> updatePlayRecord(
             @PathVariable Long gameId,

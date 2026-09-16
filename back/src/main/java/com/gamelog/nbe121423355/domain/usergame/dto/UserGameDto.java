@@ -1,8 +1,5 @@
 package com.gamelog.nbe121423355.domain.usergame.dto;
 
-import com.gamelog.nbe121423355.domain.game.entity.Game;
-import com.gamelog.nbe121423355.domain.game.entity.Platform;
-import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.domain.usergame.entity.PlayStatus;
 import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
 
@@ -11,9 +8,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public record UserGameDto(
-        User user,
-        Game game,
-        Platform platform,
+        Long id,
+        Long userId,
+        Long gameId,
+        Long platformId,
         PlayStatus playStatus,
         boolean playing,
         boolean backlog,
@@ -24,13 +22,15 @@ public record UserGameDto(
         BigDecimal masterTimeHours,
         LocalDate startedAt,
         LocalDate completedAt,
-        LocalDateTime lastPlayedAt
+        LocalDateTime lastPlayedAt,
+        boolean inLibrary
 ) {
     public UserGameDto(UserGame userGame){
         this(
-                userGame.getUser(),
-                userGame.getGame(),
-                userGame.getPlatform(),
+                userGame.getId(),
+                userGame.getUser().getId(),
+                userGame.getGame().getId(),
+                userGame.getPlatform().getId(),
                 userGame.getPlayStatus(),
                 userGame.isPlaying(),
                 userGame.isBacklog(),
@@ -41,7 +41,8 @@ public record UserGameDto(
                 userGame.getMasterTimeHours(),
                 userGame.getStartedAt(),
                 userGame.getCompletedAt(),
-                userGame.getLastPlayedAt()
+                userGame.getLastPlayedAt(),
+                userGame.isInLibrary()
         );
     }
 }

@@ -27,8 +27,14 @@ public class User extends BaseEntity {
     private String bio;
 
     @Column(nullable = false)
-    private Boolean onboardingCompleted=false;
+    private boolean onboardingCompleted=false;
     private String role;
+
+    public User(String email, String password, String nickname){
+        this.email=email;
+        this.password=password;
+        this.nickname=nickname;
+    }
 
     public void completeOnboarding() {
         this.onboardingCompleted = true;

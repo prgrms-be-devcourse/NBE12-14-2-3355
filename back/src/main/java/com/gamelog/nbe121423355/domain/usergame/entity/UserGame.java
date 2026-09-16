@@ -71,7 +71,7 @@ public class UserGame extends BaseEntity {
     @Column(name = "last_played_at")
     private LocalDateTime lastPlayedAt;
 
-    @Column(nullable = false)
+    @Column(name = "is_in_library", nullable = false)
     private boolean inLibrary=true;
 
 //    public UserGame(User user, Game game) {
