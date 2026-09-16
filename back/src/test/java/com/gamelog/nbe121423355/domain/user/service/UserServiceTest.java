@@ -80,7 +80,7 @@ class UserServiceTest {
 
         given(userRepository.findByEmail("test@test.com")).willReturn(Optional.of(user));
         given(passwordEncoder.matches("password123", "encodedPassword")).willReturn(true);
-        given(jwtProvider.generateAccessToken(1L, "test@test.com", "USER")).willReturn("access-token");
+        given(jwtProvider.generateAccessToken(1L, "test@test.com", "nickname", "USER")).willReturn("access-token");
         given(jwtProvider.generateRefreshToken(1L)).willReturn("refresh-token");
 
         UserService.LoginResult result = userService.login(loginRequestDto);
@@ -122,7 +122,7 @@ class UserServiceTest {
         given(jwtProvider.validateToken("valid-refresh-token")).willReturn(true);
         given(jwtProvider.getUserId("valid-refresh-token")).willReturn(1L);
         given(userRepository.findById(1L)).willReturn(Optional.of(user));
-        given(jwtProvider.generateAccessToken(1L, "test@test.com", "USER")).willReturn("new-access-token");
+        given(jwtProvider.generateAccessToken(1L, "test@test.com", "nickname", "USER")).willReturn("new-access-token");
 
         TokenResponseDto tokenResponseDto = userService.refresh("valid-refresh-token");
 

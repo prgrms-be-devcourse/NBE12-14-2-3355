@@ -47,7 +47,7 @@ public class UserService {
         if(!passwordEncoder.matches(loginRequestDto.password(), user.getPassword())){
             throw new ServiceException("401-1", "이메일 또는 비밀번호가 일치하지 않습니다.");
         }
-        String accessToken = jwtProvider.generateAccessToken(user.getId(), user.getEmail(), user.getRole());
+        String accessToken = jwtProvider.generateAccessToken(user.getId(), user.getEmail(), user.getNickname(), user.getRole());
         String refreshToken = jwtProvider.generateRefreshToken(user.getId());
         return new LoginResult(new UserDto(user), accessToken, refreshToken);
     }
@@ -61,7 +61,7 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ServiceException("401-2", "유효하지 않은 토큰입니다."));
 
-        String newAccessToken = jwtProvider.generateAccessToken(userId, user.getEmail(), user.getRole());
+        String newAccessToken = jwtProvider.generateAccessToken(userId, user.getEmail(), user.getNickname(), user.getRole());
         return new TokenResponseDto(newAccessToken);
     }
 }

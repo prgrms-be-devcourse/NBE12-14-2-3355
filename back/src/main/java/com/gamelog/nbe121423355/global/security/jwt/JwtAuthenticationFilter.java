@@ -1,11 +1,15 @@
 package com.gamelog.nbe121423355.global.security.jwt;
 
+import com.gamelog.nbe121423355.global.security.SecurityUser;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -30,9 +34,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = resolveToken(servletRequest);
 
         if(token != null && jwtProvider.validateToken(token)) {
-            Long userId = jwtProvider.getUserId(token);
+            Claims claims = jwtProvider.parseClaims(token);
 
-            Authentication authentication = new UsernamePasswordAuthenticationToken(userId, null, List.of());
+            Long userId = Long.parseLong(claims.getSubject());
+            String email = claims.get("email", String.class);
+            String nickname = claims.get("nickname", String.class);
+            String role = claims.get("role", String.class);
+
+            List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+            SecurityUser securityUser = new SecurityUser(userId, email, nickname, authorities);
+
+            Authentication authentication = new UsernamePasswordAuthenticationToken(securityUser, null, authorities);
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
         filterChain.doFilter(servletRequest, serveletResponse);
