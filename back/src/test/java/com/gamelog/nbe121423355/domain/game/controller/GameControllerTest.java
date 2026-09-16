@@ -104,7 +104,9 @@ class GameControllerTest {
             "size, 0",
             "size, 101",
             "page, abc",
-            "size, abc"
+            "size, abc",
+            "sort, RATING",
+            "sort, unknown"
     })
     @DisplayName("잘못된 페이지 파라미터는 400 응답을 반환한다")
     void pageRejectsInvalidParameters(
@@ -117,7 +119,68 @@ class GameControllerTest {
                 .andExpect(jsonPath("$.resultCode").value("400-1"));
     }
 
+    @Test
+    @DisplayName("keyword 쿼리 파라미터로 제목을 검색하고 결과만 페이징한다")
+    void pageSearchesByKeyword() throws Exception {
+        assertThat(gameRepository.count()).isZero();
+        gameRepository.save(createGame(1001L, "Super Mario"));
+        gameRepository.save(createGame(1002L, "The Legend of Zelda"));
+        gameRepository.save(createGame(1003L, "ZELDA Adventure"));
+
+        mockMvc.perform(get("/api/v1/games/page")
+                        .param("keyword", " zelda ")
+                        .param("page", "1")
+                        .param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content.length()").value(1))
+                .andExpect(jsonPath("$.data.content[0].title").value("ZELDA Adventure"))
+                .andExpect(jsonPath("$.data.number").value(1))
+                .andExpect(jsonPath("$.data.totalElements").value(2))
+                .andExpect(jsonPath("$.data.totalPages").value(2));
+    }
+
     private Game createGame(Long igdbId, String title) {
+        return createGame(igdbId, title, 1704067200L);
+    }
+
+    @Test
+    @DisplayName("제목순 정렬은 검색 결과에 적용되며 동일 제목은 ID순으로 페이징한다")
+    void sortsByTitle() throws Exception {
+        gameRepository.save(createGame(8001L, "Zelda Z"));
+        Game first = gameRepository.save(createGame(8002L, "Zelda A"));
+        Game second = gameRepository.save(createGame(8003L, "Zelda A"));
+        gameRepository.save(createGame(8004L, "Mario"));
+
+        mockMvc.perform(get("/api/v1/games/page")
+                        .param("keyword", "zelda").param("sort", "TITLE")
+                        .param("page", "0").param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].id").value(first.getId().intValue()))
+                .andExpect(jsonPath("$.data.totalElements").value(3));
+        mockMvc.perform(get("/api/v1/games/page")
+                        .param("keyword", "zelda").param("sort", "TITLE")
+                        .param("page", "1").param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].id").value(second.getId().intValue()));
+    }
+
+    @Test
+    @DisplayName("최신 출시일순으로 조회하고 같은 출시일은 ID순으로 정렬한다")
+    void sortsByLatestRelease() throws Exception {
+        gameRepository.save(createGame(8101L, "Old", 1577836800L));
+        gameRepository.save(createGame(8102L, "New B", 1704067200L));
+        gameRepository.save(createGame(8103L, "New A", 1704067200L));
+        gameRepository.save(createGame(8104L, "Unknown", null));
+
+        mockMvc.perform(get("/api/v1/games/page").param("sort", "LATEST"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].title").value("New B"))
+                .andExpect(jsonPath("$.data.content[1].title").value("New A"))
+                .andExpect(jsonPath("$.data.content[2].title").value("Old"))
+                .andExpect(jsonPath("$.data.content[3].title").value("Unknown"));
+    }
+
+    private Game createGame(Long igdbId, String title, Long releaseTimestamp) {
         IgdbGameResponse response = new IgdbGameResponse(
                 igdbId,
                 title,
@@ -126,7 +189,7 @@ class GameControllerTest {
                         1L,
                         "//images.igdb.com/test.jpg"
                 ),
-                1704067200L,
+                releaseTimestamp,
                 new BigDecimal("90.50"),
                 List.of(),
                 List.of(),

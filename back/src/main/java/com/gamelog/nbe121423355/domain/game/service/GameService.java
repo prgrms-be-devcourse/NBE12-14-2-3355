@@ -37,10 +37,73 @@ public class GameService {
                 .toList();
     }
 
-    // 페이징 목록 조회
+    // 기존 페이징 호출 유지
     @Transactional(readOnly = true)
     public Page<GameListResponse> getGamesPage(Pageable pageable) {
-        return gameRepository.findAll(pageable)
+        return getGamesPage(null, null, null, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<GameListResponse> getGamesPage(
+            String keyword,
+            Pageable pageable
+    ) {
+        return getGamesPage(keyword, null, null, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<GameListResponse> getGamesPage(
+            String keyword,
+            List<Long> genreIds,
+            Pageable pageable
+    ) {
+        return getGamesPage(keyword, genreIds, null, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<GameListResponse> getGamesPage(
+            String keyword,
+            List<Long> genreIds,
+            List<Long> platformIds,
+            Pageable pageable
+    ) {
+        String keywordPattern =
+                keyword == null || keyword.isBlank()
+                        ? null
+                        : toContainsPattern(keyword.strip());
+
+        boolean filterGenres =
+                genreIds != null && !genreIds.isEmpty();
+
+        boolean filterPlatforms =
+                platformIds != null && !platformIds.isEmpty();
+
+        // 필터 미선택 시에도 IN 절에는 비어 있지 않은 목록을 전달합니다.
+        // 해당 조건은 filterGenres/filterPlatforms가 false이면 무시됩니다.
+        List<Long> queryGenreIds =
+                filterGenres ? genreIds : List.of(0L);
+
+        List<Long> queryPlatformIds =
+                filterPlatforms ? platformIds : List.of(0L);
+
+        return gameRepository.findByFilters(
+                        keywordPattern,
+                        filterGenres,
+                        queryGenreIds,
+                        filterPlatforms,
+                        queryPlatformIds,
+                        pageable
+                )
                 .map(GameListResponse::new);
     }
+
+    private String toContainsPattern(String keyword) {
+        String escaped = keyword
+                .replace("!", "!!")
+                .replace("%", "!%")
+                .replace("_", "!_");
+
+        return "%" + escaped + "%";
+    }
+
 }
