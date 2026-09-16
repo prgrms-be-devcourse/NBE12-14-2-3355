@@ -62,4 +62,14 @@ public class GlobalExceptionHandler {
                 e.getMsg()
         );
     }
+
+    // 위에서 처리하지 못한 나머지 모든 예외 (500)
+    @ExceptionHandler(Exception.class)
+    @ResponseBody
+    public RsData<Void> handleException(Exception e) {
+        return new RsData<Void>(
+                "500-1",
+                "서버 내부 오류가 발생했습니다."
+        );
+    }
 }
