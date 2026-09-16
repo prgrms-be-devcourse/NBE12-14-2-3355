@@ -62,4 +62,15 @@ public interface GameStatisticsRepository extends Repository<UserGame, Long> {
             @Param("gameId") Long gameId
     );
 
+    // 게임 ID를 기준으로 좋아요를 누른 사용자 수를 집계
+    @Query("""
+            SELECT COUNT(userGame.id)
+            FROM UserGame userGame
+            WHERE userGame.game.id = :gameId
+                AND userGame.liked = true
+            """)
+    long countLikesByGameId(
+            @Param("gameId") Long gameId
+    );
+
 }
