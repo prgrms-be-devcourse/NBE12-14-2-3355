@@ -5,16 +5,17 @@ import com.gamelog.nbe121423355.domain.review.dto.response.ReviewPageResponse;
 import com.gamelog.nbe121423355.domain.review.dto.response.ReviewResponse;
 import com.gamelog.nbe121423355.domain.review.service.ReviewService;
 import com.gamelog.nbe121423355.global.dto.RsData;
+import com.gamelog.nbe121423355.global.security.SecurityUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,14 +28,13 @@ public class ReviewController {
 
     private final ReviewService reviewService;
 
-    // JWT 연동 전까지 X-User-Id 헤더 사용. (후에 바꿀 예정)
     @PutMapping("/user-games/{userGameId}/reviews")
     public RsData<ReviewResponse> saveReview(
-            @RequestHeader("X-User-Id") Long userId,
+            @AuthenticationPrincipal SecurityUser securityUser,
             @PathVariable Long userGameId,
             @Valid @RequestBody ReviewSaveRequest request
     ) {
-        ReviewResponse response = reviewService.saveReview(userId, userGameId, request);
+        ReviewResponse response = reviewService.saveReview(securityUser.getId(), userGameId, request);
         return new RsData<>("200-6", "리뷰가 저장되었습니다.", response);
     }
 
@@ -64,20 +64,20 @@ public class ReviewController {
 
     @PutMapping("/reviews/{reviewId}")
     public RsData<ReviewResponse> updateReview(
-            @RequestHeader("X-User-Id") Long userId,
+            @AuthenticationPrincipal SecurityUser securityUser,
             @PathVariable Long reviewId,
             @Valid @RequestBody ReviewSaveRequest request
     ) {
-        ReviewResponse response = reviewService.updateReview(userId, reviewId, request);
+        ReviewResponse response = reviewService.updateReview(securityUser.getId(), reviewId, request);
         return new RsData<>("200-4", "리뷰가 수정되었습니다.", response);
     }
 
     @DeleteMapping("/reviews/{reviewId}")
     public RsData<Void> deleteReview(
-            @RequestHeader("X-User-Id") Long userId,
+            @AuthenticationPrincipal SecurityUser securityUser,
             @PathVariable Long reviewId
     ) {
-        reviewService.deleteReview(userId, reviewId);
+        reviewService.deleteReview(securityUser.getId(), reviewId);
         return new RsData<>("200-5", "리뷰가 삭제되었습니다.");
     }
 }

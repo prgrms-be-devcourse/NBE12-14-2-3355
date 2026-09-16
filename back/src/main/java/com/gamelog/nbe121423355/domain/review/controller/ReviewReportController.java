@@ -7,16 +7,17 @@ import com.gamelog.nbe121423355.domain.review.dto.response.ReviewReportResponse;
 import com.gamelog.nbe121423355.domain.review.entity.ReportStatus;
 import com.gamelog.nbe121423355.domain.review.service.ReviewReportService;
 import com.gamelog.nbe121423355.global.dto.RsData;
+import com.gamelog.nbe121423355.global.security.SecurityUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,15 +31,14 @@ public class ReviewReportController {
 
     private final ReviewReportService reviewReportService;
 
-    // JWT 연동 전까지 X-User-Id 헤더 사용.
     @PostMapping("/reviews/{reviewId}/reports")
     public RsData<ReviewReportResponse> createReport(
-            @RequestHeader("X-User-Id") Long reporterId,
+            @AuthenticationPrincipal SecurityUser securityUser,
             @PathVariable Long reviewId,
             @Valid @RequestBody ReviewReportCreateRequest request
     ) {
         ReviewReportResponse response = reviewReportService.createReport(
-                reporterId,
+                securityUser.getId(),
                 reviewId,
                 request
         );
