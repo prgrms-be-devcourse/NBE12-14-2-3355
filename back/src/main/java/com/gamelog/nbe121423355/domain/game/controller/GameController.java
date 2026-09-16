@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -37,10 +38,24 @@ public class GameController {
     // 페이징 목록 조회
     @GetMapping("/page")
     public RsData<Page<GameListResponse>> page(
-            @Valid @ModelAttribute PageRequest request
+            @Valid @ModelAttribute PageRequest request,
+
+            @RequestParam(name = "keyword", required = false)
+            String keyword,
+
+            @RequestParam(name = "genreIds", required = false)
+            List<Long> genreIds,
+
+            @RequestParam(name = "platformIds", required = false)
+            List<Long> platformIds
     ) {
         Page<GameListResponse> responsePage =
-                gameService.getGamesPage(request.toPageable());
+                gameService.getGamesPage(
+                        keyword,
+                        genreIds,
+                        platformIds,
+                        request.toPageable()
+                );
 
         return new RsData<>(
                 "200-1",

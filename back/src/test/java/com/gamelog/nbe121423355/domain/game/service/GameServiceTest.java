@@ -171,6 +171,61 @@ class GameServiceTest {
         assertThat(responses.hasNext()).isFalse();
     }
 
+    @Test
+    @DisplayName("제목 검색은 대소문자와 앞뒤 공백을 무시하고 검색 결과를 페이징한다")
+    void searchGamesReturnsMatchingPage() {
+        assertThat(gameRepository.count()).isZero();
+        gameRepository.save(createGame(1001L, "The Legend of Zelda"));
+        gameRepository.save(createGame(1002L, "ZELDA Adventure"));
+        gameRepository.save(createGame(1003L, "Super Mario"));
+
+        Page<GameListResponse> firstPage = gameService.getGamesPage(
+                " zelda ", PageRequest.of(0, 1, Sort.by("id"))
+        );
+        Page<GameListResponse> secondPage = gameService.getGamesPage(
+                " zelda ", PageRequest.of(1, 1, Sort.by("id"))
+        );
+
+        assertThat(firstPage.getContent()).extracting(GameListResponse::title)
+                .containsExactly("The Legend of Zelda");
+        assertThat(secondPage.getContent()).extracting(GameListResponse::title)
+                .containsExactly("ZELDA Adventure");
+        assertThat(firstPage.getTotalElements()).isEqualTo(2);
+        assertThat(firstPage.getTotalPages()).isEqualTo(2);
+        assertThat(secondPage.hasNext()).isFalse();
+    }
+
+    @Test
+    @DisplayName("공백 검색어는 전체 게임을 반환한다")
+    void searchGamesWithBlankKeywordReturnsAllGames() {
+        assertThat(gameRepository.count()).isZero();
+        gameRepository.save(createGame(1001L, "Zelda"));
+        gameRepository.save(createGame(1002L, "Super Mario"));
+
+        Page<GameListResponse> result = gameService.getGamesPage(
+                "   ", PageRequest.of(0, 20, Sort.by("id"))
+        );
+
+        assertThat(result.getContent()).extracting(GameListResponse::title)
+                .containsExactly("Zelda", "Super Mario");
+        assertThat(result.getTotalElements()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("검색 결과가 없으면 빈 페이지를 반환한다")
+    void searchGamesWithNoMatchReturnsEmptyPage() {
+        assertThat(gameRepository.count()).isZero();
+        gameRepository.save(createGame(1001L, "Super Mario"));
+
+        Page<GameListResponse> result = gameService.getGamesPage(
+                "zelda", PageRequest.of(0, 20, Sort.by("id"))
+        );
+
+        assertThat(result.getContent()).isEmpty();
+        assertThat(result.getTotalElements()).isZero();
+        assertThat(result.getTotalPages()).isZero();
+    }
+
     private Game createGame(Long igdbId, String title) {
         IgdbGameResponse response = new IgdbGameResponse(
                 igdbId,

@@ -1,10 +1,83 @@
 package com.gamelog.nbe121423355.domain.game.repository;
 
 import com.gamelog.nbe121423355.domain.game.entity.Game;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface GameRepository extends JpaRepository<Game,Long> {
     Optional<Game> findByIgdbId(Long igdbId);
+
+    Page<Game> findByTitleContainingIgnoreCase(
+            String keyword,
+            Pageable pageable
+    );
+
+    @Query(
+            value = """
+                SELECT g
+                FROM Game g
+                WHERE (
+                    :keyword IS NULL
+                    OR LOWER(g.title) LIKE LOWER(:keyword) ESCAPE '!'
+                )
+                AND (
+                    :filterGenres = false
+                    OR EXISTS (
+                        SELECT gg
+                        FROM GameGenre gg
+                        WHERE gg.game = g
+                          AND gg.genre.id IN :genreIds
+                    )
+                )
+                AND (
+                    :filterPlatforms = false
+                    OR EXISTS (
+                        SELECT gp
+                        FROM GamePlatform gp
+                        WHERE gp.game = g
+                          AND gp.platform.id IN :platformIds
+                    )
+                )
+                """,
+            countQuery = """
+                SELECT COUNT(g)
+                FROM Game g
+                WHERE (
+                    :keyword IS NULL
+                    OR LOWER(g.title) LIKE LOWER(:keyword) ESCAPE '!'
+                )
+                AND (
+                    :filterGenres = false
+                    OR EXISTS (
+                        SELECT gg
+                        FROM GameGenre gg
+                        WHERE gg.game = g
+                          AND gg.genre.id IN :genreIds
+                    )
+                )
+                AND (
+                    :filterPlatforms = false
+                    OR EXISTS (
+                        SELECT gp
+                        FROM GamePlatform gp
+                        WHERE gp.game = g
+                          AND gp.platform.id IN :platformIds
+                    )
+                )
+                """
+    )
+    Page<Game> findByFilters(
+            @Param("keyword") String keyword,
+            @Param("filterGenres") boolean filterGenres,
+            @Param("genreIds") List<Long> genreIds,
+            @Param("filterPlatforms") boolean filterPlatforms,
+            @Param("platformIds") List<Long> platformIds,
+            Pageable pageable
+    );
 }
