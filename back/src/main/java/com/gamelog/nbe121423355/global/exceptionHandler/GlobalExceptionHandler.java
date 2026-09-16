@@ -2,6 +2,7 @@ package com.gamelog.nbe121423355.global.exceptionHandler;
 
 import com.gamelog.nbe121423355.global.dto.RsData;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,6 +14,7 @@ import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
+@Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -67,6 +69,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseBody
     public RsData<Void> handleException(Exception e) {
+        log.error("처리되지 않은 예외 발생", e);
         return new RsData<Void>(
                 "500-1",
                 "서버 내부 오류가 발생했습니다."
