@@ -152,4 +152,27 @@ class UserServiceTest {
                 .isInstanceOf(ServiceException.class)
                 .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("401-2"));
     }
+
+    @Test
+    @DisplayName("유저 정보 호출 - 성공")
+    void getMe_success() {
+        User user = new User(1L, "test@test.com", "encodedPassword", "nickname", null, null, false, "USER");
+        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+
+        UserDto userDto = userService.getMe(1L);
+
+        assertThat(userDto.id()).isEqualTo(1L);
+        assertThat(userDto.email()).isEqualTo("test@test.com");
+        assertThat(userDto.nickname()).isEqualTo("nickname");
+    }
+
+    @Test
+    @DisplayName("유저 정보 호출 - 실패 (존재하지 않는 유저)")
+    void getMe_fail_userNotFound() {
+        given(userRepository.findById(999L)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.getMe(999L))
+                .isInstanceOf(ServiceException.class)
+                .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("404-1"));
+    }
 }

@@ -29,7 +29,7 @@ public class UserFavoriteGame {
     @Column(nullable=false)
     private int displayOrder;
 
-    private UserFavoriteGame(User user, Game game, Integer displayOrder) {
+    public UserFavoriteGame(User user, Game game, Integer displayOrder) {
         validateDisplayOrder(displayOrder);
 
         this.id = new UserFavoriteGameId(user.getId(), game.getId());
@@ -43,7 +43,7 @@ public class UserFavoriteGame {
         this.displayOrder = displayOrder;
     }
 
-    private void validateDisplayOrder(Integer displayOrder) {
+    public void validateDisplayOrder(Integer displayOrder) {
         if (displayOrder == null || displayOrder < 1 || displayOrder > 5) {
             //1~5만 가능
         }
