@@ -1,7 +1,6 @@
 package com.gamelog.nbe121423355.domain.game.service;
 
 import com.gamelog.nbe121423355.domain.game.dto.GameDetailResponse;
-import com.gamelog.nbe121423355.domain.game.dto.GameStatisticsResponse;
 import com.gamelog.nbe121423355.domain.game.dto.IgdbGameResponse;
 import com.gamelog.nbe121423355.domain.game.entity.*;
 import com.gamelog.nbe121423355.domain.game.repository.*;
@@ -152,13 +151,10 @@ class GameDetailServiceTest {
                 .extracting(GameDetailResponse.SeriesResponse::name)
                 .containsExactly("The Witcher");
 
-        assertThat(response.statistics())
-                .isEqualTo(new GameStatisticsResponse(
-                        0L,
-                        0L,
-                        0L,
-                        0L
-                ));
+        assertThat(response.statistics().playedCount()).isZero();
+        assertThat(response.statistics().playingCount()).isZero();
+        assertThat(response.statistics().backlogCount()).isZero();
+        assertThat(response.statistics().wishlistCount()).isZero();
     }
 
     @DisplayName("게임의 상태별 사용자 수를 조회한다")
@@ -199,13 +195,10 @@ class GameDetailServiceTest {
                 gameDetailService.getGameDetail(gameId);
 
         // then: Played, Playing, Backlog, Wishlist 인원수가 상태별로 집계된다
-        assertThat(response.statistics())
-                .isEqualTo(new GameStatisticsResponse(
-                        2L,
-                        1L,
-                        1L,
-                        1L
-                ));
+        assertThat(response.statistics().playedCount()).isEqualTo(2L);
+        assertThat(response.statistics().playingCount()).isEqualTo(1L);
+        assertThat(response.statistics().backlogCount()).isEqualTo(1L);
+        assertThat(response.statistics().wishlistCount()).isEqualTo(1L);
     }
 
     @DisplayName("존재하지 않는 게임 ID를 조회하면 예외가 발생한다")
