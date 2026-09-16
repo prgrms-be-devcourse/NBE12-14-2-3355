@@ -3,6 +3,11 @@ spring:
     name: gamelog
   profiles:
     active: local
+# ===== jwt 토큰 =====
+jwt:
+  secret: 2yFvv+amd1bJKWDQ/picSaxbhQ+VKrMIjFqIqbBqib8=
+  access-token-validity: 3600000 #1시간
+  refresh-token-validity: 1209600000 #14일
 
 
 
