@@ -6,9 +6,11 @@ import com.gamelog.nbe121423355.domain.usergame.dto.UserGameSaveResult;
 import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
 import com.gamelog.nbe121423355.domain.usergame.service.UserGameService;
 import com.gamelog.nbe121423355.global.dto.RsData;
+import com.gamelog.nbe121423355.global.security.SecurityUser;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,11 +25,13 @@ public class UserGameController {
     @PostMapping("/{gameId}")
     public RsData<UserGameDto> addGameToLibrary(
             @PathVariable Long gameId,
-            @Valid @RequestBody UserGameReqBody reqBody
+            @Valid @RequestBody UserGameReqBody reqBody,
+            @AuthenticationPrincipal SecurityUser user
             ){
 
-        Long userId=1L;
+        System.out.println("user = " + user);
 
+        Long userId = user.getId();
         UserGameSaveResult result = userGameService.addOrUpdateGameToLibrary(userId,gameId,reqBody);
 
         String message = result.created()
@@ -49,10 +53,11 @@ public class UserGameController {
     @PatchMapping("/{gameId}")
     public RsData<UserGameDto> updatePlayRecord(
             @PathVariable Long gameId,
-            @Valid @RequestBody UserGameReqBody reqBody
+            @Valid @RequestBody UserGameReqBody reqBody,
+            @AuthenticationPrincipal SecurityUser user
     ){
-        Long userId=1L;
 
+        Long userId = user.getId();
         UserGame userGame=userGameService.updatePlayRecord(
                 userId, gameId, reqBody
         );
