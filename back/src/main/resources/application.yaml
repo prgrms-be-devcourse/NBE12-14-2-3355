@@ -27,7 +27,6 @@ spring:
     url: jdbc:mysql://localhost:3306/gamelog?serverTimezone=UTC&characterEncoding=UTF-8
     username: ${DB_USERNAME:gamelog}
     password: ${DB_PASSWORD:gamelog1234}
-    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: update
