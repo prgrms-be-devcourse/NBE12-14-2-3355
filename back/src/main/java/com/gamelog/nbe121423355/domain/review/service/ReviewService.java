@@ -1,12 +1,17 @@
 package com.gamelog.nbe121423355.domain.review.service;
 
+import com.gamelog.nbe121423355.domain.review.dto.request.DetailedReviewSaveRequest;
 import com.gamelog.nbe121423355.domain.review.dto.request.ReviewSaveRequest;
+import com.gamelog.nbe121423355.domain.review.dto.response.DetailedReviewResponse;
 import com.gamelog.nbe121423355.domain.review.dto.response.ReviewPageResponse;
 import com.gamelog.nbe121423355.domain.review.dto.response.ReviewResponse;
 import com.gamelog.nbe121423355.domain.review.entity.Review;
 import com.gamelog.nbe121423355.domain.review.repository.ReviewRepository;
 import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
+import com.gamelog.nbe121423355.domain.usergame.dto.UserGameDto;
+import com.gamelog.nbe121423355.domain.usergame.dto.UserGameSaveResult;
 import com.gamelog.nbe121423355.domain.usergame.repository.UserGameRepository;
+import com.gamelog.nbe121423355.domain.usergame.service.UserGameService;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +27,32 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final UserGameRepository userGameRepository;
+    private final UserGameService userGameService;
+
+    @Transactional
+    public DetailedReviewResponse saveDetailedReview(
+            Long userId,
+            Long gameId,
+            DetailedReviewSaveRequest request
+    ) {
+        // 게임 기록을 먼저 저장한 뒤 같은 기록에 리뷰를 저장.
+        UserGameSaveResult userGameResult = userGameService.addOrUpdateGameToLibrary(
+                userId,
+                gameId,
+                request.userGame()
+        );
+
+        ReviewResponse review = saveReview(
+                userId,
+                userGameResult.userGame().getId(),
+                request.review()
+        );
+
+        return new DetailedReviewResponse(
+                new UserGameDto(userGameResult.userGame()),
+                review
+        );
+    }
 
     @Transactional
     public ReviewResponse saveReview(Long userId, Long userGameId, ReviewSaveRequest request) {

@@ -1,6 +1,8 @@
 package com.gamelog.nbe121423355.domain.review.controller;
 
+import com.gamelog.nbe121423355.domain.review.dto.request.DetailedReviewSaveRequest;
 import com.gamelog.nbe121423355.domain.review.dto.request.ReviewSaveRequest;
+import com.gamelog.nbe121423355.domain.review.dto.response.DetailedReviewResponse;
 import com.gamelog.nbe121423355.domain.review.dto.response.ReviewPageResponse;
 import com.gamelog.nbe121423355.domain.review.dto.response.ReviewResponse;
 import com.gamelog.nbe121423355.domain.review.service.ReviewService;
@@ -27,6 +29,20 @@ import static org.springframework.data.domain.Sort.Direction.DESC;
 public class ReviewController {
 
     private final ReviewService reviewService;
+
+    @PutMapping("/games/{gameId}/reviews")
+    public RsData<DetailedReviewResponse> saveDetailedReview(
+            @AuthenticationPrincipal SecurityUser securityUser,
+            @PathVariable Long gameId,
+            @Valid @RequestBody DetailedReviewSaveRequest request
+    ) {
+        DetailedReviewResponse response = reviewService.saveDetailedReview(
+                securityUser.getId(),
+                gameId,
+                request
+        );
+        return new RsData<>("200-7", "상세 리뷰가 저장되었습니다.", response);
+    }
 
     @PutMapping("/user-games/{userGameId}/reviews")
     public RsData<ReviewResponse> saveReview(
