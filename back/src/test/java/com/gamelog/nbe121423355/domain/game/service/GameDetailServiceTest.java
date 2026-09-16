@@ -1,9 +1,11 @@
 package com.gamelog.nbe121423355.domain.game.service;
 
 import com.gamelog.nbe121423355.domain.game.dto.GameDetailResponse;
+import com.gamelog.nbe121423355.domain.game.dto.GameRatingDistributionResponse;
 import com.gamelog.nbe121423355.domain.game.dto.IgdbGameResponse;
 import com.gamelog.nbe121423355.domain.game.entity.*;
 import com.gamelog.nbe121423355.domain.game.repository.*;
+import com.gamelog.nbe121423355.domain.review.entity.Review;
 import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.domain.usergame.entity.PlayStatus;
 import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
@@ -155,6 +157,13 @@ class GameDetailServiceTest {
         assertThat(response.statistics().playingCount()).isZero();
         assertThat(response.statistics().backlogCount()).isZero();
         assertThat(response.statistics().wishlistCount()).isZero();
+        assertThat(response.statistics().likeCount()).isZero();
+        assertThat(response.statistics().averageRating())
+                .isEqualByComparingTo("0");
+        assertThat(response.statistics().reviewCount()).isZero();
+        assertThat(response.statistics().ratingDistribution())
+                .hasSize(10)
+                .allSatisfy(item -> assertThat(item.count()).isZero());
     }
 
     @DisplayName("게임의 상태별 사용자 수를 조회한다")
@@ -201,6 +210,69 @@ class GameDetailServiceTest {
         assertThat(response.statistics().wishlistCount()).isEqualTo(1L);
     }
 
+    @DisplayName("게임의 평점, 리뷰 수, 좋아요 수와 평점별 분포를 조회한다")
+    @Test
+    void getGameDetailReturnsRatingReviewAndLikeStatistics() {
+        // given: 평점과 좋아요 상태가 서로 다른 사용자들이 있을 때
+        UserGame halfRating = saveUserGame(
+                "rating1@test.com", "rating1",
+                null, false, false, false
+        );
+        ReflectionTestUtils.setField(halfRating, "liked", true);
+        entityManager.persist(new Review(
+                halfRating, new BigDecimal("0.5"), null, false
+        ));
+
+        UserGame fiveRatingWithoutLike = saveUserGame(
+                "rating2@test.com", "rating2",
+                null, false, false, false
+        );
+        entityManager.persist(new Review(
+                fiveRatingWithoutLike, new BigDecimal("5.0"), null, false
+        ));
+
+        UserGame fiveRatingWithLike = saveUserGame(
+                "rating3@test.com", "rating3",
+                null, false, false, false
+        );
+        ReflectionTestUtils.setField(fiveRatingWithLike, "liked", true);
+        entityManager.persist(new Review(
+                fiveRatingWithLike, new BigDecimal("5.0"), null, false
+        ));
+
+        UserGame likedWithoutReview = saveUserGame(
+                "rating4@test.com", "rating4",
+                null, false, false, false
+        );
+        ReflectionTestUtils.setField(likedWithoutReview, "liked", true);
+
+        entityManager.flush();
+
+        // when: 해당 게임의 상세 정보를 조회하면
+        GameDetailResponse response = gameDetailService.getGameDetail(gameId);
+
+        // then: 리뷰 3개와 좋아요 3개가 각각 집계되고 빈 평점 구간은 0명으로 반환된다
+        assertThat(response.statistics().averageRating())
+                .isEqualByComparingTo("3.5");
+        assertThat(response.statistics().reviewCount()).isEqualTo(3L);
+        assertThat(response.statistics().likeCount()).isEqualTo(3L);
+
+        List<GameRatingDistributionResponse> distribution =
+                response.statistics().ratingDistribution();
+
+        assertThat(distribution).hasSize(10);
+        assertThat(distribution.get(0).rating())
+                .isEqualByComparingTo("0.5");
+        assertThat(distribution.get(9).rating())
+                .isEqualByComparingTo("5.0");
+        assertThat(distribution)
+                .extracting(GameRatingDistributionResponse::count)
+                .containsExactly(
+                        1L, 0L, 0L, 0L, 0L,
+                        0L, 0L, 0L, 0L, 2L
+                );
+    }
+
     @DisplayName("존재하지 않는 게임 ID를 조회하면 예외가 발생한다")
     @Test
     void getGameDetailThrowsExceptionWhenGameDoesNotExist() {
@@ -218,7 +290,7 @@ class GameDetailServiceTest {
                 .hasMessage("존재하지 않는 게임입니다.");
     }
 
-    private void saveUserGame(
+    private UserGame saveUserGame(
             String email,
             String nickname,
             PlayStatus playStatus,
@@ -263,6 +335,7 @@ class GameDetailServiceTest {
         );
 
         entityManager.persist(userGame);
+        return userGame;
     }
 
 }
