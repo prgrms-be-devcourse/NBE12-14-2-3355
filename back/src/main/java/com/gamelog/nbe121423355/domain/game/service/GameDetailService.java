@@ -1,11 +1,9 @@
 package com.gamelog.nbe121423355.domain.game.service;
 
 import com.gamelog.nbe121423355.domain.game.dto.GameDetailResponse;
+import com.gamelog.nbe121423355.domain.game.dto.GameStatisticsResponse;
 import com.gamelog.nbe121423355.domain.game.entity.Game;
-import com.gamelog.nbe121423355.domain.game.repository.GameGenreRepository;
-import com.gamelog.nbe121423355.domain.game.repository.GamePlatformRepository;
-import com.gamelog.nbe121423355.domain.game.repository.GameRepository;
-import com.gamelog.nbe121423355.domain.game.repository.GameSeriesGameRepository;
+import com.gamelog.nbe121423355.domain.game.repository.*;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,8 +20,9 @@ public class GameDetailService {
     private final GameGenreRepository gameGenreRepository;
     private final GamePlatformRepository gamePlatformRepository;
     private final GameSeriesGameRepository gameSeriesGameRepository;
+    private final GameStatisticsRepository gameStatisticsRepository;
 
-    // 게임 기본 정보와 장르·플랫폼·시리즈를 조회해 상세 응답으로 반환
+    // 게임 기본 정보와 장르·플랫폼·시리즈·상태 통계를 조회해 상세 응답으로 반환
     public GameDetailResponse getGameDetail(Long gameId) {
         // GameLog DB ID로 게임 기본 정보 조회
         Game game = gameRepository.findById(gameId)
@@ -66,7 +65,10 @@ public class GameDetailService {
                         )
                 )
                 .toList();
-        
+
+        // 게임 ID를 기준으로 Played, Playing, Backlog, Wishlist 인원 수 조회
+        GameStatisticsResponse statistics = gameStatisticsRepository.findStatisticsByGameId(gameId);
+
         return new GameDetailResponse(
                 game.getId(),
                 game.getIgdbId(),
@@ -78,7 +80,8 @@ public class GameDetailService {
                 game.getIgdbRating(),
                 genres,
                 platforms,
-                series
+                series,
+                statistics
         );
     }
 

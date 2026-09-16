@@ -15,7 +15,8 @@ public record GameDetailResponse(
         BigDecimal igdbRating,
         List<GenreResponse> genres,
         List<PlatformResponse> platforms,
-        List<SeriesResponse> series
+        List<SeriesResponse> series,
+        GameStatisticsResponse statistics
 ) {
 
     public record GenreResponse(
@@ -35,5 +36,5 @@ public record GameDetailResponse(
             String name
     ) {
     }
-    
+
 }
