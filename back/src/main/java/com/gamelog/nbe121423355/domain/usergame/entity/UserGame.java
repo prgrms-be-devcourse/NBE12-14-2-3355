@@ -74,10 +74,10 @@ public class UserGame extends BaseEntity {
     @Column(name = "is_in_library", nullable = false)
     private boolean inLibrary=true;
 
-//    public UserGame(User user, Game game) {
-//        this.user = Objects.requireNonNull(user, "user");
-//        this.game = Objects.requireNonNull(game, "game");
-//    }
+    public UserGame(User user, Game game) {
+        this.user = Objects.requireNonNull(user, "user");
+        this.game = Objects.requireNonNull(game, "game");
+    }
 
     public UserGame(
             User user,
