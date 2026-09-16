@@ -66,8 +66,16 @@ public class GameDetailService {
                 )
                 .toList();
 
-        // 게임 ID를 기준으로 Played, Playing, Backlog, Wishlist 인원 수 조회
-        GameStatisticsResponse statistics = gameStatisticsRepository.findStatisticsByGameId(gameId);
+        // 게임 ID를 기준으로 Played, Playing, Backlog, Wishlist 인원수 조회
+        GameStatusStatisticsProjection statusStatistics = gameStatisticsRepository.findStatusStatisticsByGameId(gameId);
+
+        // 상태 통계 조회 결과를 최종 API 응답 DTO로 변환
+        GameStatisticsResponse statistics = new GameStatisticsResponse(
+                statusStatistics.getPlayedCount(),
+                statusStatistics.getPlayingCount(),
+                statusStatistics.getBacklogCount(),
+                statusStatistics.getWishlistCount()
+        );
 
         return new GameDetailResponse(
                 game.getId(),
