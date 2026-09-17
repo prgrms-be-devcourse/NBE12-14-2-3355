@@ -11,6 +11,8 @@ public record GameStatisticsResponse(
         long likeCount,
         BigDecimal averageRating,
         long reviewCount,
-        List<GameRatingDistributionResponse> ratingDistribution
+        List<GameRatingDistributionResponse> ratingDistribution,
+        BigDecimal averagePlayTimeHours,
+        long playTimeUserCount
 ) {
 }

@@ -1,16 +1,21 @@
 package com.gamelog.nbe121423355.domain.user.controller;
 
 import com.gamelog.nbe121423355.domain.user.dto.*;
+import com.gamelog.nbe121423355.domain.user.service.UserPreferenceGameService;
+import com.gamelog.nbe121423355.domain.user.service.UserPreferenceGenreService;
 import com.gamelog.nbe121423355.domain.user.service.UserService;
 import com.gamelog.nbe121423355.global.dto.RsData;
+import com.gamelog.nbe121423355.global.security.SecurityUser;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -18,6 +23,9 @@ import java.time.Duration;
 public class ApiV1UserController {
 
     private final UserService userService;
+    private final UserPreferenceGenreService userPreferenceGenreService;
+    private final UserPreferenceGameService userPreferenceGameService;
+
 
     @PostMapping ("/signup")
     public RsData<UserDto> signUp(
@@ -65,6 +73,97 @@ public class ApiV1UserController {
                 "200-2",
                 "토큰 재발급 성공",
                 tokenResponseDto
+        );
+    }
+
+    @GetMapping("/me")
+    public RsData<UserDto> getMe(
+            @AuthenticationPrincipal SecurityUser securityUser
+    ){
+        UserDto userDto = userService.getMe(securityUser.getId());
+        return new RsData<>(
+                "200-3",
+                "내 정보 조회 성공",
+                userDto
+        );
+    }
+
+    @PatchMapping("/me/onboarding")
+    public RsData<UserDto> onboarding(
+        @AuthenticationPrincipal SecurityUser securityUser
+    ){
+        UserDto userDto = userService.exitOnboarding(securityUser.getId());
+        return new RsData<>(
+                "200-4",
+                "온보딩 완료",
+                userDto
+        );
+    }
+
+
+    @PatchMapping("/me/onboarding/skip")
+    public RsData<UserDto> onboardingSkip(
+            @AuthenticationPrincipal SecurityUser securityUser
+    ){
+        UserDto userDto = userService.skipOnboarding(securityUser.getId());
+        return new RsData<>(
+                "200-5",
+                "온보딩 스킵",
+                userDto
+        );
+    }
+
+    @PutMapping("/me/preferred-genres")
+    public RsData<List<PreferredGenreResponseDto>> updatePreferredGenres(
+            @AuthenticationPrincipal SecurityUser securityUser,
+            @Valid @RequestBody PreferredGenreRequestDto requestDto
+    ) {
+        List<PreferredGenreResponseDto> result =
+                userPreferenceGenreService.updatePreferredGenres(securityUser.getId(), requestDto.genreIds());
+        return new RsData<>(
+                "200-6",
+                "선호 장르 저장 성공",
+                result
+        );
+    }
+
+    @GetMapping("/me/preferred-genres")
+    public RsData<List<PreferredGenreResponseDto>> getPreferredGenres(
+            @AuthenticationPrincipal SecurityUser securityUser
+    ) {
+        List<PreferredGenreResponseDto> result =
+                userPreferenceGenreService.getPreferredGenres(securityUser.getId());
+        return new RsData<>(
+                "200-7",
+                "선호 장르 조회 성공",
+                result
+        );
+    }
+
+    @PutMapping("/me/preferred-games")
+    public RsData<List<PreferredGameResponseDto>> updatePreferredGames(
+            @AuthenticationPrincipal SecurityUser securityUser,
+            @Valid @RequestBody PreferredGameRequestDto requestDto
+    ) {
+        List<PreferredGameResponseDto> result =
+                userPreferenceGameService.updatePreferredGames(securityUser.getId(), requestDto.gameIds());
+        return new RsData<>(
+                "200-8",
+                "선호 게임 저장 성공",
+                result
+        );
+    }
+
+    @GetMapping("/me/preferred-games")
+    public RsData<List<PreferredGameResponseDto>> getPreferredGames(
+            @AuthenticationPrincipal SecurityUser securityUser
+    ) {
+        List<PreferredGameResponseDto> result =
+                userPreferenceGameService.getPreferredGames(securityUser.getId());
+        return new RsData<>(
+                "200-9",
+                "선호 게임 조회 성공",
+                result
         );
     }
 }

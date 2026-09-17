@@ -74,4 +74,16 @@ public interface GameStatisticsRepository extends Repository<UserGame, Long> {
             @Param("gameId") Long gameId
     );
 
+    // 게임 ID를 기준으로 평균 플레이타임과 기록 사용자 수를 집계
+    @Query("""
+            SELECT
+                COALESCE(AVG(userGame.playTimeHours), 0.0) AS averagePlayTimeHours,
+                COUNT(userGame.playTimeHours) AS playTimeUserCount
+            FROM UserGame userGame
+            WHERE userGame.game.id = :gameId
+            """)
+    GamePlayTimeStatisticsProjection findPlayTimeStatisticsByGameId(
+            @Param("gameId") Long gameId
+    );
+
 }

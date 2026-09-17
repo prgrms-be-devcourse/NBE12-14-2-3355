@@ -24,7 +24,7 @@ public class UserPreferenceGenre {
     @JoinColumn(name = "genre_id", nullable = false)
     private Genre genre;
 
-    private UserPreferenceGenre(User user, Genre genre) {
+    public UserPreferenceGenre(User user, Genre genre) {
         this.id = new UserPreferenceGenreId(user.getId(), genre.getId());
         this.user = user;
         this.genre = genre;
