@@ -1,0 +1,55 @@
+# Gamelog - User Auth
+
+###
+# @name 1. 회원가입
+POST {{baseUrl}}/api/v1/users/signup
+Content-Type: application/json
+
+{
+  "nickname": "테스트유저",
+  "email": "test@test.com",
+  "password": "12345678"
+}
+
+###
+# @name 2. 로그인
+POST {{baseUrl}}/api/v1/users/login
+Content-Type: application/json
+
+{
+  "email": "test@test.com",
+  "password": "12345678"
+}
+
+> {%
+    // TODO: migrate to HTTP Client Response handler API
+    // if (pm.response.code === 200) {
+    //     const res = pm.response.json();
+    //     pm.collectionVariables.set("accessToken", res.data.accessToken);
+    //     console.log("accessToken 저장됨:", res.data.accessToken);
+    // } else {
+    //     console.log("로그인 실패:", pm.response.text());
+    // }
+%}
+
+###
+# @name 3. 토큰 재발급
+# refreshToken 쿠키가 자동으로 전송됩니다 (2번 로그인 요청을 먼저 실행해서 쿠키가 저장되어 있어야 함). Postman 쿠키 자동 전송 설정이 켜져 있어야 합니다.
+POST {{baseUrl}}/api/v1/users/refresh
+
+> {%
+    // TODO: migrate to HTTP Client Response handler API
+    // if (pm.response.code === 200) {
+    //     const res = pm.response.json();
+    //     pm.collectionVariables.set("accessToken", res.data.accessToken);
+    //     console.log("accessToken 갱신됨:", res.data.accessToken);
+    // } else {
+    //     console.log("재발급 실패:", pm.response.text());
+    // }
+%}
+
+###
+# @name 예시) 인증 필요한 API 호출 템플릿
+# 본인 도메인 API 테스트할 때 이 요청을 복제해서 URL만 바꾸면 됩니다. Authorization 탭이 이미 Bearer Token + {{accessToken}}으로 설정되어 있어요.
+GET {{baseUrl}}/api/v1/REPLACE_WITH_YOUR_ENDPOINT
+Authorization: Bearer {{accessToken}}

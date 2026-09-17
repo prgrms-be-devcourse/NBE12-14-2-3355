@@ -23,7 +23,7 @@ public class UserFollow {
     @JoinColumn(name = "following_id", nullable = false)
     private User followee;
 
-    private UserFollow(User follower, User following) {
+    public UserFollow(User follower, User following) {
         if (follower.getId().equals(followee.getId())) {
             //자기 자신 팔로우 불가
         }

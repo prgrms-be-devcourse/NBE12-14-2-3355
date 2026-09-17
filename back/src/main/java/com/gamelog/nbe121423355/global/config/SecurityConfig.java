@@ -35,7 +35,9 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/users/signup", "/api/v1/users/login", "/api/v1/users/refresh").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/games/*/reviews/me").authenticated()
                         .requestMatchers(HttpMethod.GET,  "/api/v1/games", "/api/v1/games/**").permitAll()
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN") // 관리자 권한용
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

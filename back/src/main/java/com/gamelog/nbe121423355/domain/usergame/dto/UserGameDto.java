@@ -30,7 +30,7 @@ public record UserGameDto(
                 userGame.getId(),
                 userGame.getUser().getId(),
                 userGame.getGame().getId(),
-                userGame.getPlatform().getId(),
+                userGame.getPlatform() == null ? null : userGame.getPlatform().getId(),
                 userGame.getPlayStatus(),
                 userGame.isPlaying(),
                 userGame.isBacklog(),

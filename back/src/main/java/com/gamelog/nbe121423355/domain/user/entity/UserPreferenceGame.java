@@ -25,7 +25,7 @@ public class UserPreferenceGame {
     @JoinColumn(name = "game_id", nullable = false)
     private Game game;
 
-    private UserPreferenceGame(User user, Game game) {
+    public UserPreferenceGame(User user, Game game) {
         this.id = new UserPreferenceGameId(user.getId(), game.getId());
         this.user = user;
         this.game = game;

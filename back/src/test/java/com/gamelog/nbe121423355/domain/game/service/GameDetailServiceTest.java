@@ -164,6 +164,9 @@ class GameDetailServiceTest {
         assertThat(response.statistics().ratingDistribution())
                 .hasSize(10)
                 .allSatisfy(item -> assertThat(item.count()).isZero());
+        assertThat(response.statistics().averagePlayTimeHours())
+                .isEqualByComparingTo("0");
+        assertThat(response.statistics().playTimeUserCount()).isZero();
     }
 
     @DisplayName("게임의 상태별 사용자 수를 조회한다")
@@ -208,6 +211,63 @@ class GameDetailServiceTest {
         assertThat(response.statistics().playingCount()).isEqualTo(1L);
         assertThat(response.statistics().backlogCount()).isEqualTo(1L);
         assertThat(response.statistics().wishlistCount()).isEqualTo(1L);
+    }
+
+    @DisplayName("플레이타임을 기록한 사용자만 평균과 인원수에 포함한다")
+    @Test
+    void getGameDetailReturnsPlayTimeStatistics() {
+        // given: 플레이 상태와 관계없이 2시간, 4시간, 0시간 및 미기록 사용자가 있을 때
+        UserGame twoHours = saveUserGame(
+                "playtime1@test.com", "playtime1",
+                PlayStatus.COMPLETED, false, false, false
+        );
+        ReflectionTestUtils.setField(twoHours, "playTimeHours", new BigDecimal("2.00"));
+
+        UserGame fourHours = saveUserGame(
+                "playtime2@test.com", "playtime2",
+                null, true, false, false
+        );
+        ReflectionTestUtils.setField(fourHours, "playTimeHours", new BigDecimal("4.00"));
+
+        UserGame zeroHours = saveUserGame(
+                "playtime3@test.com", "playtime3",
+                null, false, false, false
+        );
+        ReflectionTestUtils.setField(zeroHours, "playTimeHours", new BigDecimal("0.00"));
+
+        saveUserGame(
+                "playtime4@test.com", "playtime4",
+                PlayStatus.PLAYED, false, false, false
+        );
+
+        entityManager.flush();
+
+        // when: 해당 게임의 상세 정보를 조회하면
+        GameDetailResponse response = gameDetailService.getGameDetail(gameId);
+
+        // then: null은 제외하고 0시간은 포함해 평균 2시간, 기록 사용자 3명이 반환된다
+        assertThat(response.statistics().averagePlayTimeHours())
+                .isEqualByComparingTo("2");
+        assertThat(response.statistics().playTimeUserCount()).isEqualTo(3L);
+    }
+
+    @DisplayName("사용자는 있지만 플레이타임 기록이 없으면 0으로 반환한다")
+    @Test
+    void getGameDetailReturnsZeroPlayTimeStatisticsWhenAllPlayTimesAreNull() {
+        // given: 게임을 등록한 사용자의 플레이타임이 null일 때
+        saveUserGame(
+                "playtime-empty@test.com", "playtime-empty",
+                PlayStatus.COMPLETED, false, false, false
+        );
+        entityManager.flush();
+
+        // when: 해당 게임의 상세 정보를 조회하면
+        GameDetailResponse response = gameDetailService.getGameDetail(gameId);
+
+        // then: 평균 플레이타임과 기록 사용자 수가 모두 0으로 반환된다
+        assertThat(response.statistics().averagePlayTimeHours())
+                .isEqualByComparingTo("0");
+        assertThat(response.statistics().playTimeUserCount()).isZero();
     }
 
     @DisplayName("게임의 평점, 리뷰 수, 좋아요 수와 평점별 분포를 조회한다")

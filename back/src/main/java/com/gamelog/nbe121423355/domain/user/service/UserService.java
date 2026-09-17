@@ -5,6 +5,7 @@ import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import com.gamelog.nbe121423355.global.security.jwt.JwtProvider;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -51,7 +52,7 @@ public class UserService {
         if(!passwordEncoder.matches(loginRequestDto.password(), user.getPassword())){
             throw new ServiceException("401-1", "이메일 또는 비밀번호가 일치하지 않습니다.");
         }
-        String accessToken = jwtProvider.generateAccessToken(user.getId(), user.getEmail(), user.getNickname(), user.getRole());
+        String accessToken = jwtProvider.generateAccessToken(user.getId(), user.getRole());
         String refreshToken = jwtProvider.generateRefreshToken(user.getId());
         return new LoginResult(new UserDto(user), accessToken, refreshToken);
     }
@@ -65,7 +66,32 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ServiceException("401-2", "유효하지 않은 토큰입니다."));
 
-        String newAccessToken = jwtProvider.generateAccessToken(userId, user.getEmail(), user.getNickname(), user.getRole());
+        String newAccessToken = jwtProvider.generateAccessToken(userId, user.getRole());
         return new TokenResponseDto(newAccessToken);
+    }
+
+    // 내정보 가져오기 - 온보딩 확인 여부
+    public UserDto getMe(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ServiceException("404-1", "존재하지 않는 유저 입니다."));
+        return new UserDto(user);
+    }
+
+    // 온보딩 완료(선호 정보 저장 후 확정)
+    @Transactional
+    public UserDto exitOnboarding(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ServiceException("404-1", "존재하지 않는 유저 입니다."));
+        user.completeOnboarding();
+        return new UserDto(user);
+    }
+
+    // 온보딩 건너뛰기
+    @Transactional
+    public UserDto skipOnboarding(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ServiceException("404-1", "존재하지 않는 유저 입니다."));
+        user.completeOnboarding();
+        return new UserDto(user);
     }
 }

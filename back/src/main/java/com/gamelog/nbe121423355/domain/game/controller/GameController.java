@@ -35,6 +35,14 @@ public class GameController {
         return rsData;
     }
 
+    @GetMapping("/suggestions")
+    public RsData<List<GameListResponse>> suggestions(
+            @RequestParam(name = "keyword", required = false) String keyword
+    ) {
+        return new RsData<>("200-1", "게임 검색 후보를 조회했습니다.",
+                gameService.getSuggestions(keyword));
+    }
+
     // 페이징 목록 조회
     @GetMapping("/page")
     public RsData<Page<GameListResponse>> page(

@@ -11,6 +11,21 @@ import java.util.List;
 import java.util.Optional;
 
 public interface GameRepository extends JpaRepository<Game,Long> {
+    @Query("""
+        SELECT g FROM Game g
+        WHERE LOWER(g.title) LIKE LOWER(:containsPattern) ESCAPE '!'
+        ORDER BY CASE
+            WHEN LOWER(g.title) = LOWER(:keyword) THEN 0
+            WHEN LOWER(g.title) LIKE LOWER(:prefixPattern) ESCAPE '!' THEN 1
+            ELSE 2
+        END, LOWER(g.title), g.id
+        """)
+    List<Game> findSuggestions(
+            @Param("keyword") String keyword,
+            @Param("prefixPattern") String prefixPattern,
+            @Param("containsPattern") String containsPattern,
+            Pageable pageable);
+
     Optional<Game> findByIgdbId(Long igdbId);
 
     Page<Game> findByTitleContainingIgnoreCase(
