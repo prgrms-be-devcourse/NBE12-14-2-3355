@@ -12,6 +12,7 @@ import java.util.Objects;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(name = "users")
 public class User extends BaseEntity {
 
     @Id
@@ -29,7 +30,7 @@ public class User extends BaseEntity {
     private String bio;
 
     @Column(nullable = false)
-    private Boolean onboardingCompleted=false;
+    private boolean onboardingCompleted=false;
     private String role;
 
     public void completeOnboarding() {

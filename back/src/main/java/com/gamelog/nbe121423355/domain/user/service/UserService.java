@@ -29,12 +29,16 @@ public class UserService {
         if (userRepository.existsByEmail(signUpDto.email())) {
             throw new ServiceException("409-1", "이미 존재하는 이메일입니다.");
         }
+        if (userRepository.existsByNickname(signUpDto.nickname())) {
+            throw new ServiceException("409-2", "이미 존재하는 닉네임입니다.");
+        }
         String encodePassword = passwordEncoder.encode(signUpDto.password());
         User user = new User(
                 signUpDto.nickname(),
                 signUpDto.email(),
                 encodePassword
         );
+
         User saveUser = userRepository.save(user);
         return new UserDto(saveUser);
     }
