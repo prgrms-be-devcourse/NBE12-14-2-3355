@@ -2,7 +2,7 @@
 
 ###
 # @name 1. 회원가입
-POST http://localhost:8080/api/v1/users/signup
+POST {{baseUrl}}/api/v1/users/signup
 Content-Type: application/json
 
 {
@@ -132,6 +132,7 @@ Authorization: Bearer {{accessToken}}
 # @name 게임 정보
 GET {{baseUrl}}/api/v1/games/1
 
+### 라이브러리 api
 ###
 # @name 게임 기록 수정
 PATCH {{baseUrl}}/api/v1/library/games/1?
@@ -142,9 +143,9 @@ Content-Type: application/json
 {
   "playStatus": "PLAYED",
   "isPlaying": false,
-  "isBacklog": true,
-  "isWishlist": true,
-  "isLiked": true,
+  "isBacklog": false,
+  "isWishlist": false,
+  "isLiked": false,
   "platformId": 1,
   "playTimeHours": 42.5,
   "finishTimeHours": 35.0,
@@ -178,3 +179,35 @@ Content-Type: application/json
   "completedAt": "2026-08-20",
   "lastPlayedAt": "2026-08-20T21:30:00"
 }
+
+###
+# @name 플레이 상태 변경
+PUT http://localhost:8080/api/v1/library/games/1/play-status?status=PLAYED
+Authorization: Bearer {{accessToken}}
+Content-Type: application/x-www-form-urlencoded
+
+###
+# @name 플레이 중 변경
+PATCH http://localhost:8080/api/v1/library/games/1/playing?playing=true
+Authorization: Bearer {{accessToken}}
+Content-Type: application/x-www-form-urlencoded
+
+###
+# @name 위시리스트 변경
+PATCH http://localhost:8080/api/v1/library/games/1/wishlist?wishlist=false
+Authorization: Bearer {{accessToken}}
+Content-Type: application/x-www-form-urlencoded
+
+###
+# @name 백로그 변경
+PATCH http://localhost:8080/api/v1/library/games/1/backlog?backlog=true
+Authorization: Bearer {{accessToken}}
+Content-Type: application/x-www-form-urlencoded
+
+###
+# @name 좋아요 변경
+PATCH http://localhost:8080/api/v1/library/games/1/liked?liked=true
+Authorization: Bearer {{accessToken}}
+Content-Type: application/x-www-form-urlencoded
+
+###

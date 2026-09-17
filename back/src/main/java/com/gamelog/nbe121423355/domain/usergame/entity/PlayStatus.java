@@ -5,5 +5,5 @@ public enum PlayStatus {
     COMPLETED,
     RETIRED,
     SHELVED,
-    ABANDONED
+    DROPPED
 }
