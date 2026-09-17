@@ -8,6 +8,7 @@ import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import com.gamelog.nbe121423355.global.security.jwt.JwtProvider;
+import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,6 +90,21 @@ class UserServiceTest {
         assertThat(result.accessToken()).isNotBlank();
         assertThat(result.refreshToken()).isNotBlank();
         assertThat(result.user().email()).isEqualTo("test@test.com");
+    }
+
+    @Test
+    @DisplayName("로그인 성공 - accessToken 클레임에 userId/role만 있고 email/nickname은 없음")
+    void login_accessTokenClaims_excludeEmailAndNickname() {
+        saveUser("test@test.com", "nickname", "password123");
+        LoginRequestDto loginRequestDto = new LoginRequestDto("test@test.com", "password123");
+
+        UserService.LoginResult result = userService.login(loginRequestDto);
+        Claims claims = jwtProvider.parseClaims(result.accessToken());
+
+        assertThat(claims.get("email")).isNull();
+        assertThat(claims.get("nickname")).isNull();
+        assertThat(claims.get("role", String.class)).isEqualTo("USER");
+        assertThat(Long.parseLong(claims.getSubject())).isEqualTo(result.user().id());
     }
 
     @Test

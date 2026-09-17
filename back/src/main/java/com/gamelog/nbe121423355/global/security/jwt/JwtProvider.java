@@ -25,13 +25,12 @@ public class JwtProvider {
     }
 
     // accesstoken 생성 메소드
-    public String generateAccessToken(Long userId, String nickname, String role) {
+    public String generateAccessToken(Long userId, String role) {
         Date now = new Date();
         Date expiration = new Date(now.getTime() + jwtProperties.accessTokenValidity());
 
         return Jwts.builder()
                 .subject(String.valueOf(userId))
-                .claim("nickname", nickname)
                 .claim("role", role)
                 .issuedAt(now)
                 .expiration(expiration)
