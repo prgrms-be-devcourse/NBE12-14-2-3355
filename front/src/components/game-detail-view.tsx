@@ -78,7 +78,7 @@ function GameStats({ statistics }: { statistics: GameStatistics }) {
       <div className={styles.metricTiles}>
         <div className={styles.metricTile}><strong>{numberFormat.format(statistics.reviewCount)}</strong><span><StatIcon name="review" />리뷰</span></div>
         <div className={styles.metricTile}><strong>{numberFormat.format(statistics.likeCount)}</strong><span><StatIcon name="heart" />좋아요</span></div>
-        <div className={`${styles.metricTile} ${styles.timeTile}`}><strong>{statistics.playTimeUserCount === 0 ? "—" : `${statistics.averagePlayTimeHours.toFixed(1)}h`}</strong><span><StatIcon name="clock" />평균 플레이 시간</span><small>{statistics.playTimeUserCount === 0 ? "기록 없음" : `${numberFormat.format(statistics.playTimeUserCount)}명 기준`}</small></div>
+        <div className={`${styles.metricTile} ${styles.timeTile}`}><strong>{statistics.playTimeUserCount === 0 ? "—" : `${statistics.averagePlayTimeHours.toFixed(1)}h`}</strong><span><StatIcon name="clock" />평균 플레이 시간</span>{statistics.playTimeUserCount > 0 && <small>{numberFormat.format(statistics.playTimeUserCount)}명 기준</small>}</div>
       </div>
     </div>
   </section>;
