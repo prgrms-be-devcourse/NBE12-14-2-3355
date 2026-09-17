@@ -1,5 +1,24 @@
 export type Option = { id: number; name: string };
 export type Game = { id: number; title: string; coverImageUrl: string | null; releaseDate: string | null; igdbRating: number | null; genres?: Option[]; platforms?: Option[]; description?: string; developer?: string };
+export type GameStatistics = {
+  playedCount: number;
+  playingCount: number;
+  backlogCount: number;
+  wishlistCount: number;
+  likeCount: number;
+  averageRating: number;
+  reviewCount: number;
+  ratingDistribution: { rating: number; count: number }[];
+  averagePlayTimeHours: number;
+  playTimeUserCount: number;
+};
+export type GameDetail = Game & {
+  igdbId: number;
+  genres: Option[];
+  platforms: Option[];
+  series: Option[];
+  statistics: GameStatistics;
+};
 export type GamePage = { content: Game[]; totalElements: number; totalPages: number; number: number };
 export type Filters = { genres: number[]; platforms: number[] };
 export const emptyFilters: Filters = { genres: [], platforms: [] };

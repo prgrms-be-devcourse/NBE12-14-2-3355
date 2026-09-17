@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import GameSearch from "@/components/game-search";
 import { coverUrl, demoGames, demoOptions, emptyFilters, type Filters, type Game, type GamePage, type Option } from "@/lib/games";
@@ -26,35 +27,26 @@ function Cover({ game }: { game: Game }) {
     : <div className="cover-fallback"><Icon name="game" size={36}/><span>{game.title}</span><small>커버 준비 중</small></div>;
 }
 
-function Detail({ game, demo, onClose }: { game: Game; demo: boolean; onClose: () => void }) {
+function Detail({ game, onClose }: { game: Game; onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
-  const [detail, setDetail] = useState(game);
-  const [error, setError] = useState("");
   useEffect(() => {
     dialog.current?.showModal();
-    if (demo) return;
-    const abort = new AbortController();
-    fetch(`/api/games/${game.id}`, { signal: abort.signal }).then(async r => {
-      const body = await r.json();
-      if (!r.ok) throw new Error(body.msg);
-      setDetail(body.data);
-    }).catch(e => { if (e.name !== "AbortError") setError("상세 정보를 불러오지 못했어요."); });
-    return () => abort.abort();
-  }, [game.id, demo]);
+  }, []);
   return <dialog ref={dialog} className="detail" onCancel={onClose} onClick={e => { if (e.target === e.currentTarget) onClose(); }} aria-labelledby="detail-title">
     <button className="icon-button close-detail" onClick={onClose} aria-label="상세 정보 닫기"><Icon name="close"/></button>
-    <div className="detail-cover"><Cover game={detail}/></div>
-    <div className="detail-copy"><span className="eyebrow">GAME DETAILS</span><h2 id="detail-title">{detail.title}</h2>
-      <p>{detail.releaseDate || "출시일 미정"}{detail.developer ? ` · ${detail.developer}` : ""}</p>
-      <div className="chips">{detail.genres?.map(g => <span key={g.id}>{g.name}</span>)}</div>
-      {detail.platforms?.length ? <p className="platforms">{detail.platforms.map(p => p.name).join(" · ")}</p> : null}
-      <p className="description">{error || detail.description || "등록된 소개가 없습니다."}</p>
-      {detail.igdbRating != null && <p>IGDB 평점 <strong>{detail.igdbRating.toFixed(1)}</strong> / 100</p>}
+    <div className="detail-cover"><Cover game={game}/></div>
+    <div className="detail-copy"><span className="eyebrow">GAME DETAILS</span><h2 id="detail-title">{game.title}</h2>
+      <p>{game.releaseDate || "출시일 미정"}{game.developer ? ` · ${game.developer}` : ""}</p>
+      <div className="chips">{game.genres?.map(g => <span key={g.id}>{g.name}</span>)}</div>
+      {game.platforms?.length ? <p className="platforms">{game.platforms.map(p => p.name).join(" · ")}</p> : null}
+      <p className="description">{game.description || "등록된 소개가 없습니다."}</p>
+      {game.igdbRating != null && <p>IGDB 평점 <strong>{game.igdbRating.toFixed(1)}</strong> / 100</p>}
     </div>
   </dialog>;
 }
 
 export default function Discover() {
+  const router = useRouter();
   const [demo, setDemo] = useState(false);
   const [options, setOptions] = useState<{ genres: Option[]; platforms: Option[] }>({ genres: [], platforms: [] });
   const [optionsError, setOptionsError] = useState("");
@@ -123,6 +115,10 @@ export default function Discover() {
   }
   function reset() { setDraft(emptyFilters); setFilters(emptyFilters); setKeyword(""); setInput(""); setPage(0); }
   function switchMode() { setDemo(!demo); reset(); setResult(null); setLoading(true); }
+  function openGame(game: Game) {
+    if (demo) setSelected(game);
+    else router.push(`/games/${game.id}`);
+  }
   function removeFilter(type: keyof Filters, id: number) {
     const next = { ...filters, [type]: filters[type].filter(x => x !== id) };
     setFilters(next); setDraft(next); setPage(0);
@@ -135,7 +131,7 @@ export default function Discover() {
     <header className="header"><div className="header-inner">
       <Link className="logo" href="/" aria-label="GameLog 홈"><Icon name="game" size={29}/><span>GameLog<span className="lime">.</span></span></Link>
       <nav aria-label="주요 메뉴"><a className="nav-active" href="#discover" aria-current="page">게임 탐색</a><a href="#catalog">전체 게임</a></nav>
-      <GameSearch value={input} demo={demo} onChange={setInput} onSearch={submitSearch} onSelect={setSelected}/>
+      <GameSearch value={input} demo={demo} onChange={setInput} onSearch={submitSearch} onSelect={openGame}/>
       <span className="header-note">PLAY. RECORD. DISCOVER.</span>
     </div></header>
 
@@ -163,8 +159,8 @@ export default function Discover() {
           {demo && <div className="preview-notice"><span><span className="dot"/> 디자인 미리보기 · 샘플 게임 데이터</span><button onClick={switchMode}>실제 게임 불러오기 ↗</button></div>}
           <div aria-live="polite" aria-busy={loading}>
             {loading ? <div className="game-grid skeleton-grid" aria-label="게임을 불러오는 중">{Array.from({ length: 12 }, (_, i) => <div className="skeleton" key={i}/>)}</div> : error ? <div className="empty-state"><Icon name="game" size={44}/><h3>잠시 연결이 끊겼어요</h3><p>{error}</p><div><button className="apply-button" onClick={() => setRetry(x => x + 1)}>다시 시도</button><button className="outline-button" onClick={switchMode}>디자인 미리보기</button></div></div> : !result?.content.length ? <div className="empty-state"><Icon name="search" size={44}/><h3>검색 결과가 없어요</h3><p>다른 검색어를 입력하거나 필터를 조금 줄여보세요.</p><button className="outline-button" onClick={reset}>검색 조건 초기화</button></div> : <div className="game-grid">{result.content.map(game => <article className="game-card" key={game.id}>
-              <button className="cover-button" onClick={() => setSelected(game)} aria-label={`${game.title} 상세 보기`}><Cover game={game}/><span className="cover-overlay"><span>게임 살펴보기</span><Icon name="arrow"/></span></button>
-              <div className="card-caption"><button onClick={() => setSelected(game)}>{game.title}</button><span>{game.releaseDate?.slice(0, 4) || "출시일 미정"}</span></div>
+              <button className="cover-button" onClick={() => openGame(game)} aria-label={`${game.title} 상세 보기`}><Cover game={game}/><span className="cover-overlay"><span>게임 살펴보기</span><Icon name="arrow"/></span></button>
+              <div className="card-caption"><button onClick={() => openGame(game)}>{game.title}</button><span>{game.releaseDate?.slice(0, 4) || "출시일 미정"}</span></div>
               {game.platforms?.length ? <p className="card-platforms">{game.platforms.map(p => p.name).join(" · ")}</p> : null}
             </article>)}</div>}
           </div>
@@ -174,7 +170,6 @@ export default function Discover() {
       <section className="closing-note"><Icon name="game" size={28}/><div><h2>좋은 게임은, 또 다른 발견의 시작.</h2><p>당신의 다음 이야기가 이곳에서 시작됩니다.</p></div><span>KEEP EXPLORING ↗</span></section>
     </main>
     <footer><Link className="logo" href="/">GameLog<span className="lime">.</span></Link><span>© 2026 GameLog. 한 게임씩, 나만의 이야기.</span><button className="text-button" onClick={switchMode}>{demo ? "실제 데이터로 전환" : "디자인 미리보기"}</button></footer>
-    {selected && <Detail game={selected} demo={demo} onClose={() => setSelected(null)}/>}
+    {selected && <Detail game={selected} onClose={() => setSelected(null)}/>}
   </>;
 }
-
