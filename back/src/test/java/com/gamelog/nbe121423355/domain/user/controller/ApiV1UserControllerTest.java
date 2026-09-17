@@ -57,7 +57,7 @@ class ApiV1UserControllerTest {
     }
 
     private String accessTokenFor(User user) {
-        return jwtProvider.generateAccessToken(user.getId(), user.getEmail(), user.getNickname(), user.getRole());
+        return jwtProvider.generateAccessToken(user.getId(), user.getRole());
     }
 
     private Genre saveGenre(String name) {
