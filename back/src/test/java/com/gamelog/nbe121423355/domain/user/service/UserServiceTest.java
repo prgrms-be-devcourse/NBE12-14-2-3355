@@ -10,83 +10,84 @@ import com.gamelog.nbe121423355.global.exception.ServiceException;
 import com.gamelog.nbe121423355.global.security.jwt.JwtProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.util.Optional;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@ActiveProfiles("test")
+@Transactional
 class UserServiceTest {
 
-    @Mock
+    @Autowired
+    private UserService userService;
+
+    @Autowired
     private UserRepository userRepository;
 
-    @Mock
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @Mock
+    @Autowired
     private JwtProvider jwtProvider;
 
-    @InjectMocks
-    private UserService userService;
+    private User saveUser(String email, String nickname, String rawPassword) {
+        return userRepository.save(
+                new User(nickname, email, passwordEncoder.encode(rawPassword))
+        );
+    }
 
     @Test
     @DisplayName("회원가입 성공")
     void signUp_success() {
         SignupRequestDto signupRequestDto = new SignupRequestDto("nickname", "test@test.com", "password123");
-        given(userRepository.existsByEmail("test@test.com")).willReturn(false);
-        given(passwordEncoder.encode("password123")).willReturn("encodedPassword");
-        given(userRepository.save(any(User.class)))
-                .willReturn(new User(1L, "test@test.com", "encodedPassword", "nickname", null, null, false, "USER"));
 
         UserDto userDto = userService.signUp(signupRequestDto);
 
-        assertThat(userDto.id()).isEqualTo(1L);
         assertThat(userDto.email()).isEqualTo("test@test.com");
         assertThat(userDto.nickname()).isEqualTo("nickname");
-        verify(passwordEncoder).encode("password123");
-        verify(userRepository).save(any(User.class));
+        User saved = userRepository.findByEmail("test@test.com").orElseThrow();
+        assertThat(saved.getId()).isEqualTo(userDto.id());
+        assertThat(passwordEncoder.matches("password123", saved.getPassword())).isTrue();
     }
 
     @Test
     @DisplayName("회원가입 실패 - 이메일 중복")
     void signUp_fail_duplicateEmail() {
+        saveUser("test@test.com", "other", "password123");
         SignupRequestDto signupRequestDto = new SignupRequestDto("nickname", "test@test.com", "password123");
-        given(userRepository.existsByEmail("test@test.com")).willReturn(true);
 
         assertThatThrownBy(() -> userService.signUp(signupRequestDto))
                 .isInstanceOf(ServiceException.class)
                 .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("409-1"));
+    }
 
-        verify(userRepository, never()).save(any(User.class));
+    @Test
+    @DisplayName("회원가입 실패 - 닉네임 중복")
+    void signUp_fail_duplicateNickname() {
+        saveUser("other@test.com", "nickname", "password123");
+        SignupRequestDto signupRequestDto = new SignupRequestDto("nickname", "test@test.com", "password123");
+
+        assertThatThrownBy(() -> userService.signUp(signupRequestDto))
+                .isInstanceOf(ServiceException.class)
+                .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("409-2"));
     }
 
     @Test
     @DisplayName("로그인 성공")
     void login_success() {
-        User user = new User(1L, "test@test.com", "encodedPassword", "nickname", null, null, false, "USER");
+        saveUser("test@test.com", "nickname", "password123");
         LoginRequestDto loginRequestDto = new LoginRequestDto("test@test.com", "password123");
-
-        given(userRepository.findByEmail("test@test.com")).willReturn(Optional.of(user));
-        given(passwordEncoder.matches("password123", "encodedPassword")).willReturn(true);
-        given(jwtProvider.generateAccessToken(1L, "test@test.com", "nickname", "USER")).willReturn("access-token");
-        given(jwtProvider.generateRefreshToken(1L)).willReturn("refresh-token");
 
         UserService.LoginResult result = userService.login(loginRequestDto);
 
-        assertThat(result.accessToken()).isEqualTo("access-token");
-        assertThat(result.refreshToken()).isEqualTo("refresh-token");
+        assertThat(result.accessToken()).isNotBlank();
+        assertThat(result.refreshToken()).isNotBlank();
         assertThat(result.user().email()).isEqualTo("test@test.com");
     }
 
@@ -94,7 +95,6 @@ class UserServiceTest {
     @DisplayName("로그인 실패 - 존재하지 않는 이메일")
     void login_fail_emailNotFound() {
         LoginRequestDto loginRequestDto = new LoginRequestDto("unknown@test.com", "password123");
-        given(userRepository.findByEmail("unknown@test.com")).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> userService.login(loginRequestDto))
                 .isInstanceOf(ServiceException.class)
@@ -104,11 +104,8 @@ class UserServiceTest {
     @Test
     @DisplayName("로그인 실패 - 비밀번호 불일치")
     void login_fail_wrongPassword() {
-        User user = new User(1L, "test@test.com", "encodedPassword", "nickname", null, null, false, "USER");
+        saveUser("test@test.com", "nickname", "password123");
         LoginRequestDto loginRequestDto = new LoginRequestDto("test@test.com", "wrongPassword");
-
-        given(userRepository.findByEmail("test@test.com")).willReturn(Optional.of(user));
-        given(passwordEncoder.matches("wrongPassword", "encodedPassword")).willReturn(false);
 
         assertThatThrownBy(() -> userService.login(loginRequestDto))
                 .isInstanceOf(ServiceException.class)
@@ -118,38 +115,88 @@ class UserServiceTest {
     @Test
     @DisplayName("토큰 재발급 성공")
     void refresh_success() {
-        User user = new User(1L, "test@test.com", "encodedPassword", "nickname", null, null, false, "USER");
-        given(jwtProvider.validateToken("valid-refresh-token")).willReturn(true);
-        given(jwtProvider.getUserId("valid-refresh-token")).willReturn(1L);
-        given(userRepository.findById(1L)).willReturn(Optional.of(user));
-        given(jwtProvider.generateAccessToken(1L, "test@test.com", "nickname", "USER")).willReturn("new-access-token");
+        User user = saveUser("test@test.com", "nickname", "password123");
+        String refreshToken = jwtProvider.generateRefreshToken(user.getId());
 
-        TokenResponseDto tokenResponseDto = userService.refresh("valid-refresh-token");
+        TokenResponseDto tokenResponseDto = userService.refresh(refreshToken);
 
-        assertThat(tokenResponseDto.accessToken()).isEqualTo("new-access-token");
+        assertThat(tokenResponseDto.accessToken()).isNotBlank();
+        assertThat(jwtProvider.getUserId(tokenResponseDto.accessToken())).isEqualTo(user.getId());
     }
 
     @Test
     @DisplayName("토큰 재발급 실패 - 유효하지 않은 토큰")
     void refresh_fail_invalidToken() {
-        given(jwtProvider.validateToken("invalid-token")).willReturn(false);
-
         assertThatThrownBy(() -> userService.refresh("invalid-token"))
                 .isInstanceOf(ServiceException.class)
                 .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("401-2"));
-
-        verify(jwtProvider, never()).getUserId(anyString());
     }
 
     @Test
     @DisplayName("토큰 재발급 실패 - 토큰은 유효하나 존재하지 않는 유저")
     void refresh_fail_userNotFound() {
-        given(jwtProvider.validateToken("valid-refresh-token")).willReturn(true);
-        given(jwtProvider.getUserId("valid-refresh-token")).willReturn(999L);
-        given(userRepository.findById(999L)).willReturn(Optional.empty());
+        String refreshToken = jwtProvider.generateRefreshToken(999_999L);
 
-        assertThatThrownBy(() -> userService.refresh("valid-refresh-token"))
+        assertThatThrownBy(() -> userService.refresh(refreshToken))
                 .isInstanceOf(ServiceException.class)
                 .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("401-2"));
+    }
+
+    @Test
+    @DisplayName("유저 정보 호출 - 성공")
+    void getMe_success() {
+        User user = saveUser("test@test.com", "nickname", "password123");
+
+        UserDto userDto = userService.getMe(user.getId());
+
+        assertThat(userDto.id()).isEqualTo(user.getId());
+        assertThat(userDto.email()).isEqualTo("test@test.com");
+        assertThat(userDto.nickname()).isEqualTo("nickname");
+    }
+
+    @Test
+    @DisplayName("유저 정보 호출 - 실패 (존재하지 않는 유저)")
+    void getMe_fail_userNotFound() {
+        assertThatThrownBy(() -> userService.getMe(999_999L))
+                .isInstanceOf(ServiceException.class)
+                .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("404-1"));
+    }
+
+    @Test
+    @DisplayName("온보딩 완료 성공")
+    void exitOnboarding_success() {
+        User user = saveUser("test@test.com", "nickname", "password123");
+
+        UserDto userDto = userService.exitOnboarding(user.getId());
+
+        assertThat(userDto.id()).isEqualTo(user.getId());
+        assertThat(userRepository.findById(user.getId()).orElseThrow().isOnboardingCompleted()).isTrue();
+    }
+
+    @Test
+    @DisplayName("온보딩 완료 실패 - 존재하지 않는 유저")
+    void exitOnboarding_fail_userNotFound() {
+        assertThatThrownBy(() -> userService.exitOnboarding(999_999L))
+                .isInstanceOf(ServiceException.class)
+                .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("404-1"));
+    }
+
+    @Test
+    @DisplayName("온보딩 스킵 성공")
+    void skipOnboarding_success() {
+        User user = saveUser("test@test.com", "nickname", "password123");
+
+        UserDto userDto = userService.skipOnboarding(user.getId());
+
+        assertThat(userDto.id()).isEqualTo(user.getId());
+        assertThat(userRepository.findById(user.getId()).orElseThrow().isOnboardingCompleted()).isTrue();
+    }
+
+    @Test
+    @DisplayName("온보딩 스킵 실패 - 존재하지 않는 유저")
+    void skipOnboarding_fail_userNotFound() {
+        assertThatThrownBy(() -> userService.skipOnboarding(999_999L))
+                .isInstanceOf(ServiceException.class)
+                .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("404-1"));
     }
 }
