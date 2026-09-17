@@ -4,8 +4,10 @@ import com.gamelog.nbe121423355.domain.game.entity.Game;
 import com.gamelog.nbe121423355.domain.game.entity.Platform;
 import com.gamelog.nbe121423355.domain.game.repository.GameRepository;
 import com.gamelog.nbe121423355.domain.game.repository.PlatformRepository;
+import com.gamelog.nbe121423355.domain.review.repository.ReviewRepository;
 import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
+import com.gamelog.nbe121423355.domain.usergame.dto.ProfileStatsResponse;
 import com.gamelog.nbe121423355.domain.usergame.dto.UserGameReqBody;
 import com.gamelog.nbe121423355.domain.usergame.dto.UserGameSaveResult;
 import com.gamelog.nbe121423355.domain.usergame.entity.PlayStatus;
@@ -16,6 +18,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -26,6 +31,7 @@ public class UserGameService {
     private final UserRepository userRepository;
     private final GameRepository gameRepository;
     private final PlatformRepository platformRepository;
+    private final ReviewRepository reviewRepository;
 
     //생성 또는 수정
     @Transactional
@@ -262,5 +268,23 @@ public class UserGameService {
         userGame.changeLiked(liked);
 
         return liked;
+    }
+
+    @Transactional(readOnly = true)
+    public ProfileStatsResponse profileTab(Long userId){
+        List<UserGame> userGames =
+                userGameRepository.findPlayedGames(userId);
+
+        long playedGameCount = userGames.size();
+
+        double averageRating = reviewRepository.findAverageRating(userId);
+
+        long totalPlayTime = userGames.stream()
+                .map(UserGame::getPlayTimeHours)
+                .filter(Objects::nonNull)
+                .mapToLong(BigDecimal::longValue)
+                .sum();
+
+        return new ProfileStatsResponse(playedGameCount,averageRating,totalPlayTime);
     }
 }
