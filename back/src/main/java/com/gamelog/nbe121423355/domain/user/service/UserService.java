@@ -94,4 +94,23 @@ public class UserService {
         user.completeOnboarding();
         return new UserDto(user);
     }
+
+    public boolean checkEmailDuplicate(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    public boolean checkNicknameDuplicate(String nickname) {
+        return userRepository.existsByNickname(nickname);
+    }
+
+    @Transactional
+    public UserDto updateProfile(Long userId, UpdateProfileRequestDto updateProfileRequestDto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ServiceException("404-1", "존재하지 않는 유저 입니다."));
+        if(!user.getNickname().equals(updateProfileRequestDto.nickname()) && userRepository.existsByNickname(updateProfileRequestDto.nickname())) {
+            throw new ServiceException("409-2", "이미 존재하는 닉네임 입니다.");
+        }
+        user.updateProfile(updateProfileRequestDto.nickname(), updateProfileRequestDto.profileImageUrl(), updateProfileRequestDto.bio());
+        return new UserDto(user);
+    }
 }

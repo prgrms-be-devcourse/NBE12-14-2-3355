@@ -88,6 +88,19 @@ public class ApiV1UserController {
         );
     }
 
+    @PatchMapping("/me")
+    public RsData<UserDto> updateProfile(
+            @AuthenticationPrincipal SecurityUser securityUser,
+            @Valid @RequestBody UpdateProfileRequestDto updateProfileRequestDto
+    ) {
+        UserDto userDto = userService.updateProfile(securityUser.getId(), updateProfileRequestDto);
+        return new RsData<>(
+                "200-10",
+                "내 정보 수정 성공",
+                userDto
+        );
+    }
+
     @PatchMapping("/me/onboarding")
     public RsData<UserDto> onboarding(
         @AuthenticationPrincipal SecurityUser securityUser
@@ -162,6 +175,30 @@ public class ApiV1UserController {
                 userPreferenceGameService.getPreferredGames(securityUser.getId());
         return new RsData<>(
                 "200-9",
+                "선호 게임 조회 성공",
+                result
+        );
+    }
+
+    @GetMapping("/check-email")
+    public RsData<Boolean> checkEmailDuplicate(
+            @RequestParam String email
+    ) {
+        boolean result = userService.checkEmailDuplicate(email);
+        return new RsData<>(
+                "200-11",
+                "이메일 중복 확인 성공",
+                result
+        );
+    }
+
+    @GetMapping("/check-nickname")
+    public RsData<Boolean> chekNicknameDuplicate(
+            @RequestParam String nickname
+    ) {
+        boolean result = userService.checkNicknameDuplicate(nickname);
+        return new RsData<>(
+                "200-12",
                 "선호 게임 조회 성공",
                 result
         );

@@ -315,4 +315,83 @@ class ApiV1UserControllerTest {
                 .andExpect(jsonPath("$.resultCode").value("200-9"))
                 .andExpect(jsonPath("$.data[0].gameTitle").value("The Witcher 3"));
     }
+
+    @Test
+    @DisplayName("이메일 중복 확인 - 존재하는 이메일이면 true")
+    void checkEmailDuplicate_true() throws Exception {
+        saveUser("test@test.com", "nickname", "password123");
+
+        mockMvc.perform(get("/api/v1/users/check-email").param("email", "test@test.com"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(true));
+    }
+
+    @Test
+    @DisplayName("이메일 중복 확인 - 존재하지 않는 이메일이면 false")
+    void checkEmailDuplicate_false() throws Exception {
+        mockMvc.perform(get("/api/v1/users/check-email").param("email", "unknown@test.com"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(false));
+    }
+
+    @Test
+    @DisplayName("닉네임 중복 확인 - 존재하는 닉네임이면 true")
+    void checkNicknameDuplicate_true() throws Exception {
+        saveUser("test@test.com", "nickname", "password123");
+
+        mockMvc.perform(get("/api/v1/users/check-nickname").param("nickname", "nickname"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(true));
+    }
+
+    @Test
+    @DisplayName("닉네임 중복 확인 - 존재하지 않는 닉네임이면 false")
+    void checkNicknameDuplicate_false() throws Exception {
+        mockMvc.perform(get("/api/v1/users/check-nickname").param("nickname", "unknown"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(false));
+    }
+
+    @Test
+    @DisplayName("프로필 수정 성공")
+    void updateProfile_success() throws Exception {
+        User user = saveUser("test@test.com", "nickname", "password123");
+
+        mockMvc.perform(patch("/api/v1/users/me")
+                        .header("Authorization", "Bearer " + accessTokenFor(user))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"nickname": "newNickname", "profileImageUrl": "http://image.com/a.png", "bio": "안녕하세요"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resultCode").value("200-10"))
+                .andExpect(jsonPath("$.data.nickname").value("newNickname"));
+    }
+
+    @Test
+    @DisplayName("프로필 수정 실패 - 닉네임 중복")
+    void updateProfile_fail_duplicateNickname() throws Exception {
+        saveUser("other@test.com", "takenNickname", "password123");
+        User user = saveUser("test@test.com", "nickname", "password123");
+
+        mockMvc.perform(patch("/api/v1/users/me")
+                        .header("Authorization", "Bearer " + accessTokenFor(user))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"nickname": "takenNickname", "profileImageUrl": null, "bio": null}
+                                """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.resultCode").value("409-2"));
+    }
+
+    @Test
+    @DisplayName("프로필 수정 실패 - 인증 없이 호출하면 401")
+    void updateProfile_fail_unauthenticated() throws Exception {
+        mockMvc.perform(patch("/api/v1/users/me")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"nickname": "newNickname", "profileImageUrl": null, "bio": null}
+                                """))
+                .andExpect(status().isUnauthorized());
+    }
 }

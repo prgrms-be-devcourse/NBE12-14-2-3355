@@ -3,6 +3,7 @@ package com.gamelog.nbe121423355.domain.user.service;
 import com.gamelog.nbe121423355.domain.user.dto.LoginRequestDto;
 import com.gamelog.nbe121423355.domain.user.dto.SignupRequestDto;
 import com.gamelog.nbe121423355.domain.user.dto.TokenResponseDto;
+import com.gamelog.nbe121423355.domain.user.dto.UpdateProfileRequestDto;
 import com.gamelog.nbe121423355.domain.user.dto.UserDto;
 import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
@@ -212,6 +213,83 @@ class UserServiceTest {
     @DisplayName("온보딩 스킵 실패 - 존재하지 않는 유저")
     void skipOnboarding_fail_userNotFound() {
         assertThatThrownBy(() -> userService.skipOnboarding(999_999L))
+                .isInstanceOf(ServiceException.class)
+                .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("404-1"));
+    }
+
+    @Test
+    @DisplayName("이메일 중복 확인 - 존재하는 이메일이면 true")
+    void checkEmailDuplicate_true() {
+        saveUser("test@test.com", "nickname", "password123");
+
+        assertThat(userService.checkEmailDuplicate("test@test.com")).isTrue();
+    }
+
+    @Test
+    @DisplayName("이메일 중복 확인 - 존재하지 않는 이메일이면 false")
+    void checkEmailDuplicate_false() {
+        assertThat(userService.checkEmailDuplicate("unknown@test.com")).isFalse();
+    }
+
+    @Test
+    @DisplayName("닉네임 중복 확인 - 존재하는 닉네임이면 true")
+    void checkNicknameDuplicate_true() {
+        saveUser("test@test.com", "nickname", "password123");
+
+        assertThat(userService.checkNicknameDuplicate("nickname")).isTrue();
+    }
+
+    @Test
+    @DisplayName("닉네임 중복 확인 - 존재하지 않는 닉네임이면 false")
+    void checkNicknameDuplicate_false() {
+        assertThat(userService.checkNicknameDuplicate("unknown")).isFalse();
+    }
+
+    @Test
+    @DisplayName("프로필 수정 성공")
+    void updateProfile_success() {
+        User user = saveUser("test@test.com", "nickname", "password123");
+        UpdateProfileRequestDto requestDto = new UpdateProfileRequestDto("newNickname", "http://image.com/a.png", "안녕하세요");
+
+        UserDto userDto = userService.updateProfile(user.getId(), requestDto);
+
+        assertThat(userDto.nickname()).isEqualTo("newNickname");
+        User updated = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(updated.getNickname()).isEqualTo("newNickname");
+        assertThat(updated.getProfileImageUrl()).isEqualTo("http://image.com/a.png");
+        assertThat(updated.getBio()).isEqualTo("안녕하세요");
+    }
+
+    @Test
+    @DisplayName("프로필 수정 성공 - 닉네임을 그대로 유지해도 중복 에러 안 남")
+    void updateProfile_success_sameNickname() {
+        User user = saveUser("test@test.com", "nickname", "password123");
+        UpdateProfileRequestDto requestDto = new UpdateProfileRequestDto("nickname", null, "안녕하세요");
+
+        UserDto userDto = userService.updateProfile(user.getId(), requestDto);
+
+        assertThat(userDto.nickname()).isEqualTo("nickname");
+        assertThat(userRepository.findById(user.getId()).orElseThrow().getBio()).isEqualTo("안녕하세요");
+    }
+
+    @Test
+    @DisplayName("프로필 수정 실패 - 다른 유저의 닉네임과 중복")
+    void updateProfile_fail_duplicateNickname() {
+        saveUser("other@test.com", "takenNickname", "password123");
+        User user = saveUser("test@test.com", "nickname", "password123");
+        UpdateProfileRequestDto requestDto = new UpdateProfileRequestDto("takenNickname", null, null);
+
+        assertThatThrownBy(() -> userService.updateProfile(user.getId(), requestDto))
+                .isInstanceOf(ServiceException.class)
+                .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("409-2"));
+    }
+
+    @Test
+    @DisplayName("프로필 수정 실패 - 존재하지 않는 유저")
+    void updateProfile_fail_userNotFound() {
+        UpdateProfileRequestDto requestDto = new UpdateProfileRequestDto("nickname", null, null);
+
+        assertThatThrownBy(() -> userService.updateProfile(999_999L, requestDto))
                 .isInstanceOf(ServiceException.class)
                 .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("404-1"));
     }

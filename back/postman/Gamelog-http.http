@@ -51,6 +51,19 @@ POST {{baseUrl}}/api/v1/users/refresh
 GET {{baseUrl}}/api/v1/users/me
 Authorization: Bearer {{accessToken}}
 
+
+###
+# @name 4-1. 내 정보 업데이트
+PATCH {{baseUrl}}/api/v1/users/me
+    Authorization: Bearer {{accessToken}}
+    Content-Type: application/json
+
+  {
+    "nickname": "새닉네임",
+    "profileImageUrl": "https://example.com/profile.png",
+    "bio": "안녕하세요"
+  }
+
 ###
 # @name 5. 온보딩 완료
 PATCH {{baseUrl}}/api/v1/users/me/onboarding
@@ -127,6 +140,14 @@ Content-Type: application/json
 # @name 10. 선호 게임 조회
 GET {{baseUrl}}/api/v1/users/me/preferred-games
 Authorization: Bearer {{accessToken}}
+
+###
+# @name 11. 중복 이메일
+GET {{baseUrl}}/api/v1/users/check-email?email=test@test.com
+
+###
+# @name 12. 중복 닉네임
+GET {{baseUrl}}/api/v1/users/check-nickname?nickname=테스트
 
 ###
 # @name 게임 정보
