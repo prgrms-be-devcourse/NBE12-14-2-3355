@@ -30,14 +30,16 @@ export default function GameSearch({ value, demo, onChange, onSearch, onSelect }
       try {
         let matches: Game[];
         if (demo) {
-          matches = demoGames.filter(game => game.title.toLowerCase().includes(keyword.toLowerCase()))
-            .sort((a, b) => a.title.localeCompare(b.title) || a.id - b.id).slice(0, 6);
+          const term = keyword.toLowerCase();
+          const rank = (title: string) => title.toLowerCase() === term ? 0 : title.toLowerCase().startsWith(term) ? 1 : 2;
+          matches = demoGames.filter(game => game.title.toLowerCase().includes(term))
+            .sort((a, b) => rank(a.title) - rank(b.title) || a.title.toLowerCase().localeCompare(b.title.toLowerCase()) || a.id - b.id).slice(0, 6);
         } else {
-          const query = new URLSearchParams({ keyword, page: "0", size: "6", sort: "TITLE" });
-          const response = await fetch(`/api/games/page?${query}`, { signal: controller.signal });
+          const query = new URLSearchParams({ keyword });
+          const response = await fetch(`/api/games/suggestions?${query}`, { signal: controller.signal });
           if (!response.ok) throw new Error("검색 실패");
           const body = await response.json();
-          matches = body.data.content;
+          matches = body.data;
         }
         if (!controller.signal.aborted) setResult({ key: requestKey, games: matches, error: "" });
       } catch {
