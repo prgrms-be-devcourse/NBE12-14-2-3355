@@ -1,6 +1,7 @@
 package com.gamelog.nbe121423355.domain.user.controller;
 
 import com.gamelog.nbe121423355.domain.user.dto.*;
+import com.gamelog.nbe121423355.domain.user.service.UserPreferenceGameService;
 import com.gamelog.nbe121423355.domain.user.service.UserPreferenceGenreService;
 import com.gamelog.nbe121423355.domain.user.service.UserService;
 import com.gamelog.nbe121423355.global.dto.RsData;
@@ -23,6 +24,8 @@ public class ApiV1UserController {
 
     private final UserService userService;
     private final UserPreferenceGenreService userPreferenceGenreService;
+    private final UserPreferenceGameService userPreferenceGameService;
+
 
     @PostMapping ("/signup")
     public RsData<UserDto> signUp(
@@ -133,6 +136,33 @@ public class ApiV1UserController {
         return new RsData<>(
                 "200-7",
                 "선호 장르 조회 성공",
+                result
+        );
+    }
+
+    @PutMapping("/me/preferred-games")
+    public RsData<List<PreferredGameResponseDto>> updatePreferredGames(
+            @AuthenticationPrincipal SecurityUser securityUser,
+            @Valid @RequestBody PreferredGameRequestDto requestDto
+    ) {
+        List<PreferredGameResponseDto> result =
+                userPreferenceGameService.updatePreferredGames(securityUser.getId(), requestDto.gameIds());
+        return new RsData<>(
+                "200-8",
+                "선호 게임 저장 성공",
+                result
+        );
+    }
+
+    @GetMapping("/me/preferred-games")
+    public RsData<List<PreferredGameResponseDto>> getPreferredGames(
+            @AuthenticationPrincipal SecurityUser securityUser
+    ) {
+        List<PreferredGameResponseDto> result =
+                userPreferenceGameService.getPreferredGames(securityUser.getId());
+        return new RsData<>(
+                "200-9",
+                "선호 게임 조회 성공",
                 result
         );
     }
