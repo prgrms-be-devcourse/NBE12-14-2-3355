@@ -1,0 +1,98 @@
+# Gamelog - User Auth Copy
+
+###
+# @name 1. 회원가입
+POST {{baseUrl}}/api/v1/users/signup
+Content-Type: application/json
+
+{
+  "nickname": "테스트유저",
+  "email": "test2@test.com",
+  "password": "12345678"
+}
+
+###
+# @name 2. 로그인
+POST {{baseUrl}}/api/v1/users/login
+Content-Type: application/json
+
+{
+  "email": "test2@test.com",
+  "password": "12345678"
+}
+
+> {%
+    if (response.status === 200) {
+        const res = response.body;
+        client.global.set("accessToken", res.data.accessToken);
+        console.log("accessToken 저장됨:", res.data.accessToken);
+    } else {
+        console.log("로그인 실패:", response.body);
+    }
+%}
+
+###
+# @name 3. 토큰 재발급
+# refreshToken 쿠키가 자동으로 전송됩니다 (2번 로그인 요청을 먼저 실행해서 쿠키가 저장되어 있어야 함). Postman 쿠키 자동 전송 설정이 켜져 있어야 합니다.
+POST {{baseUrl}}/api/v1/users/refresh
+
+> {%
+    if (response.status === 200) {
+        const res = response.body;
+        client.global.set("accessToken", res.data.accessToken);
+        console.log("accessToken 갱신됨:", res.data.accessToken);
+    } else {
+        console.log("재발급 실패:", response.body);
+    }
+%}
+
+###
+# @name 게임 정보
+GET {{baseUrl}}/api/v1/games/1
+
+###
+# @name 게임 기록 수정
+PATCH {{baseUrl}}/api/v1/library/games/1?
+    userId=1
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "playStatus": "PLAYED",
+  "isPlaying": false,
+  "isBacklog": true,
+  "isWishlist": true,
+  "isLiked": true,
+  "platformId": 1,
+  "playTimeHours": 42.5,
+  "finishTimeHours": 35.0,
+  "masterTimeHours": 80.0,
+  "startedAt": "2026-08-01",
+  "completedAt": "2026-08-20",
+  "lastPlayedAt": "2026-08-20T21:30:00"
+}
+
+###
+# @name 라이브러리에 추가
+# 본인 도메인 API 테스트할 때 이 요청을 복제해서 URL만 바꾸면 됩니다. Authorization 탭이 이미 Bearer Token + {{accessToken}}으로 설정되어 있어요.
+//< {%
+    // TODO: you can add here Pre-request handler
+//%}
+POST {{baseUrl}}/api/v1/library/games/1
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "playStatus": "PLAYED",
+  "isPlaying": false,
+  "isBacklog": false,
+  "isWishlist": false,
+  "isLiked": true,
+  "platformId": 1,
+  "playTimeHours": 42.5,
+  "finishTimeHours": 35.0,
+  "masterTimeHours": 80.0,
+  "startedAt": "2026-08-01",
+  "completedAt": "2026-08-20",
+  "lastPlayedAt": "2026-08-20T21:30:00"
+}
