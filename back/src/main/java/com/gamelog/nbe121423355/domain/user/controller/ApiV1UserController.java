@@ -1,6 +1,7 @@
 package com.gamelog.nbe121423355.domain.user.controller;
 
 import com.gamelog.nbe121423355.domain.user.dto.*;
+import com.gamelog.nbe121423355.domain.user.service.UserPreferenceGenreService;
 import com.gamelog.nbe121423355.domain.user.service.UserService;
 import com.gamelog.nbe121423355.global.dto.RsData;
 import com.gamelog.nbe121423355.global.security.SecurityUser;
@@ -13,6 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,6 +22,7 @@ import java.time.Duration;
 public class ApiV1UserController {
 
     private final UserService userService;
+    private final UserPreferenceGenreService userPreferenceGenreService;
 
     @PostMapping ("/signup")
     public RsData<UserDto> signUp(
@@ -104,6 +107,33 @@ public class ApiV1UserController {
                 "200-5",
                 "온보딩 스킵",
                 userDto
+        );
+    }
+
+    @PutMapping("/me/preferred-genres")
+    public RsData<List<PreferredGenreResponseDto>> updatePreferredGenres(
+            @AuthenticationPrincipal SecurityUser securityUser,
+            @Valid @RequestBody PreferredGenreRequestDto requestDto
+    ) {
+        List<PreferredGenreResponseDto> result =
+                userPreferenceGenreService.updatePreferredGenres(securityUser.getId(), requestDto.genreIds());
+        return new RsData<>(
+                "200-6",
+                "선호 장르 저장 성공",
+                result
+        );
+    }
+
+    @GetMapping("/me/preferred-genres")
+    public RsData<List<PreferredGenreResponseDto>> getPreferredGenres(
+            @AuthenticationPrincipal SecurityUser securityUser
+    ) {
+        List<PreferredGenreResponseDto> result =
+                userPreferenceGenreService.getPreferredGenres(securityUser.getId());
+        return new RsData<>(
+                "200-7",
+                "선호 장르 조회 성공",
+                result
         );
     }
 }

@@ -1,8 +1,16 @@
 package com.gamelog.nbe121423355.domain.user.dto;
 
-// 선호 장르 응답 Dto
+import com.gamelog.nbe121423355.domain.user.entity.UserPreferenceGenre;
+
 public record PreferredGenreResponseDto(
         Long genreId,
         String genreName
 ) {
+    public PreferredGenreResponseDto(UserPreferenceGenre userPreferenceGenre) {
+        this(
+                userPreferenceGenre.getGenre().getId(),
+                userPreferenceGenre.getGenre().getName()
+        );
+    }
 }
+
