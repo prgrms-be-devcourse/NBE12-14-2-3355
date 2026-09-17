@@ -102,7 +102,7 @@ public class ApiV1UserController {
     public RsData<UserDto> onboardingSkip(
             @AuthenticationPrincipal SecurityUser securityUser
     ){
-        UserDto userDto = userService.exitOnboarding(securityUser.getId());
+        UserDto userDto = userService.skipOnboarding(securityUser.getId());
         return new RsData<>(
                 "200-5",
                 "온보딩 스킵",

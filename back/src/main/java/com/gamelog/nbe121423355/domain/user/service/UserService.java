@@ -84,6 +84,7 @@ public class UserService {
     }
 
     // 온보딩 건너뛰기
+    @Transactional
     public UserDto skipOnboarding(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ServiceException("404-1", "존재하지 않는 유저 입니다."));
