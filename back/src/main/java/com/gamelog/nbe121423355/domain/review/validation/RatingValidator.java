@@ -11,7 +11,7 @@ public class RatingValidator implements ConstraintValidator<ValidRating, BigDeci
 
     @Override
     public boolean isValid(BigDecimal rating, ConstraintValidatorContext context) {
-        // null은 @NotNull에서 검사.
+        // 별점은 선택값이므로 null은 유효하다.
         if (rating == null) {
             return true;
         }

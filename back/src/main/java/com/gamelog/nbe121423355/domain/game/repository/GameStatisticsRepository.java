@@ -55,6 +55,7 @@ public interface GameStatisticsRepository extends Repository<UserGame, Long> {
                 COUNT(review.id) AS count
             FROM Review review
             WHERE review.userGame.game.id = :gameId
+                AND review.rating IS NOT NULL
             GROUP BY review.rating
             ORDER BY review.rating
             """)
