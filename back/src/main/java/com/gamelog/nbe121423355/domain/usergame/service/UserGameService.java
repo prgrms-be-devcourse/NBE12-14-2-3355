@@ -6,6 +6,7 @@ import com.gamelog.nbe121423355.domain.game.repository.GameRepository;
 import com.gamelog.nbe121423355.domain.game.repository.PlatformRepository;
 import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
+import com.gamelog.nbe121423355.domain.usergame.dto.UserGameListResponse;
 import com.gamelog.nbe121423355.domain.usergame.dto.UserGameReqBody;
 import com.gamelog.nbe121423355.domain.usergame.dto.UserGameSaveResult;
 import com.gamelog.nbe121423355.domain.usergame.entity.PlayStatus;
@@ -16,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -26,6 +28,14 @@ public class UserGameService {
     private final UserRepository userRepository;
     private final GameRepository gameRepository;
     private final PlatformRepository platformRepository;
+
+    @Transactional(readOnly = true)
+    public List<UserGameListResponse> getUserGameList(Long userId){
+        return userGameRepository.findAllByUser_IdAndInLibraryTrue(userId)
+                .stream()
+                .map(UserGameListResponse::new)
+                .toList();
+    }
 
     //생성 또는 수정
     @Transactional

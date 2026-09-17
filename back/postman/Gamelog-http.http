@@ -134,6 +134,32 @@ GET {{baseUrl}}/api/v1/games/1
 
 ### 라이브러리 api
 ###
+# @name 게임 기록 목록
+GET http://localhost:8080/api/v1/library/games
+Authorization: Bearer {{accessToken}}
+
+###
+# @name 라이브러리에 추가
+POST {{baseUrl}}/api/v1/library/games/1
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "playStatus": "COMPLETED",
+  "isPlaying": true,
+  "isBacklog": false,
+  "isWishlist": true,
+  "isLiked": true,
+  "platformId": 1,
+  "playTimeHours": 12.5,
+  "finishTimeHours": 25.0,
+  "masterTimeHours": 50.0,
+  "startedAt": "2026-09-01",
+  "completedAt": "2026-09-15",
+  "lastPlayedAt": "2026-09-15T21:30:00"
+}
+
+###
 # @name 게임 기록 수정
 PATCH {{baseUrl}}/api/v1/library/games/1?
     userId=1
@@ -156,57 +182,32 @@ Content-Type: application/json
 }
 
 ###
-# @name 라이브러리에 추가
-# 본인 도메인 API 테스트할 때 이 요청을 복제해서 URL만 바꾸면 됩니다. Authorization 탭이 이미 Bearer Token + {{accessToken}}으로 설정되어 있어요.
-//< {%
-    // TODO: you can add here Pre-request handler
-//%}
-POST {{baseUrl}}/api/v1/library/games/1
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{
-  "playStatus": "PLAYED",
-  "isPlaying": false,
-  "isBacklog": false,
-  "isWishlist": false,
-  "isLiked": true,
-  "platformId": 1,
-  "playTimeHours": 42.5,
-  "finishTimeHours": 35.0,
-  "masterTimeHours": 80.0,
-  "startedAt": "2026-08-01",
-  "completedAt": "2026-08-20",
-  "lastPlayedAt": "2026-08-20T21:30:00"
-}
-
-###
 # @name 플레이 상태 변경
-PUT http://localhost:8080/api/v1/library/games/1/play-status?status=PLAYED
+PUT {{baseUrl}}/api/v1/library/games/1/play-status?status=PLAYED
 Authorization: Bearer {{accessToken}}
 Content-Type: application/x-www-form-urlencoded
 
 ###
 # @name 플레이 중 변경
-PATCH http://localhost:8080/api/v1/library/games/1/playing?playing=true
+PATCH {{baseUrl}}/api/v1/library/games/1/playing?playing=true
 Authorization: Bearer {{accessToken}}
 Content-Type: application/x-www-form-urlencoded
 
 ###
 # @name 위시리스트 변경
-PATCH http://localhost:8080/api/v1/library/games/1/wishlist?wishlist=false
+PATCH {{baseUrl}}/api/v1/library/games/1/wishlist?wishlist=false
 Authorization: Bearer {{accessToken}}
 Content-Type: application/x-www-form-urlencoded
 
 ###
 # @name 백로그 변경
-PATCH http://localhost:8080/api/v1/library/games/1/backlog?backlog=true
+PATCH {{baseUrl}}/api/v1/library/games/1/backlog?backlog=true
 Authorization: Bearer {{accessToken}}
 Content-Type: application/x-www-form-urlencoded
 
 ###
 # @name 좋아요 변경
-PATCH http://localhost:8080/api/v1/library/games/1/liked?liked=true
+PATCH {{baseUrl}}/api/v1/library/games/1/liked?liked=true
 Authorization: Bearer {{accessToken}}
 Content-Type: application/x-www-form-urlencoded
 

@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/library/games")
 @RequiredArgsConstructor
@@ -20,6 +22,23 @@ public class UserGameController {
 
     private final UserGameService userGameService;
 
+    @GetMapping("")
+    public RsData<List<UserGameListResponse>> getUserGameList(
+            @AuthenticationPrincipal SecurityUser user
+    ){
+        System.out.println("user = " + user);
+        Long userId = user.getId();
+
+        List<UserGameListResponse> games =
+                userGameService.getUserGameList(userId);
+
+        return new RsData<>(
+                "200-1",
+                "라이브러리 게임 목록을 조회했습니다.",
+                games
+        );
+    }
+
     //등록 및 수정
     @PostMapping("/{gameId}")
     public RsData<UserGameDto> addGameToLibrary(
@@ -27,8 +46,6 @@ public class UserGameController {
             @Valid @RequestBody UserGameReqBody reqBody,
             @AuthenticationPrincipal SecurityUser user
             ){
-
-        System.out.println("user = " + user);
 
         Long userId = user.getId();
         UserGameSaveResult result = userGameService.addOrUpdateGameToLibrary(userId,gameId,reqBody);

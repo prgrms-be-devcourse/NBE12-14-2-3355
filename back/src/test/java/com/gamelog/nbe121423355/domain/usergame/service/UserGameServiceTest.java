@@ -6,6 +6,7 @@ import com.gamelog.nbe121423355.domain.game.repository.GameRepository;
 import com.gamelog.nbe121423355.domain.game.repository.PlatformRepository;
 import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
+import com.gamelog.nbe121423355.domain.usergame.dto.UserGameListResponse;
 import com.gamelog.nbe121423355.domain.usergame.dto.UserGameReqBody;
 import com.gamelog.nbe121423355.domain.usergame.dto.UserGameSaveResult;
 import com.gamelog.nbe121423355.domain.usergame.entity.PlayStatus;
@@ -24,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -592,5 +594,67 @@ class UserGameServiceTest {
 
         verify(userGameRepository, never())
                 .save(any(UserGame.class));
+    }
+
+    @Test
+    @DisplayName("라이브러리_게임_목록을_조회")
+    void t19() {
+        Long userId = 1L;
+
+        User user = new User(
+                "테스트",
+                "test@test.com",
+                "password"
+        );
+
+        Game game1 = mock(Game.class);
+        Game game2 = mock(Game.class);
+
+        given(game1.getId()).willReturn(1L);
+        given(game1.getTitle()).willReturn("게임1");
+        given(game1.getCoverImageUrl()).willReturn("image1.jpg");
+
+        given(game2.getId()).willReturn(2L);
+        given(game2.getTitle()).willReturn("게임2");
+        given(game2.getCoverImageUrl()).willReturn("image2.jpg");
+
+        UserGame userGame1 = new UserGame(user, game1);
+        UserGame userGame2 = new UserGame(user, game2);
+
+        given(userGameRepository.findAllByUser_IdAndInLibraryTrue(userId))
+                .willReturn(List.of(userGame1, userGame2));
+
+        List<UserGameListResponse> result =
+                userGameService.getUserGameList(userId);
+
+        assertThat(result).hasSize(2);
+
+        assertThat(result.get(0).gameId()).isEqualTo(1L);
+        assertThat(result.get(0).title()).isEqualTo("게임1");
+        assertThat(result.get(0).coverImageUrl()).isEqualTo("image1.jpg");
+
+        assertThat(result.get(1).gameId()).isEqualTo(2L);
+        assertThat(result.get(1).title()).isEqualTo("게임2");
+        assertThat(result.get(1).coverImageUrl()).isEqualTo("image2.jpg");
+
+        verify(userGameRepository)
+                .findAllByUser_IdAndInLibraryTrue(userId);
+    }
+
+    @Test
+    @DisplayName("라이브러리에_게임이_없으면_빈_목록을_반환")
+    void t20() {
+        Long userId = 1L;
+
+        given(userGameRepository.findAllByUser_IdAndInLibraryTrue(userId))
+                .willReturn(List.of());
+
+        List<UserGameListResponse> result =
+                userGameService.getUserGameList(userId);
+
+        assertThat(result).isEmpty();
+
+        verify(userGameRepository)
+                .findAllByUser_IdAndInLibraryTrue(userId);
     }
 }
