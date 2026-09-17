@@ -40,3 +40,7 @@ out/
 .env
 .env.*
 !.env.*.example
+
+### Local AI instructions ###
+/AGENTS.md
+/docs/dev-merge-history.md

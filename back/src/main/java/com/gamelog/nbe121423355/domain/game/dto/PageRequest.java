@@ -11,16 +11,22 @@ public record PageRequest(
 
         @Min(1)
         @Max(100)
-        Integer size
+        Integer size,
+
+        GameSort sort
 ) {
-    public PageRequest(Integer page, Integer size) {
-        this.page = page == null ? 0 : page;
-        this.size = size == null ? 20 : size;
+    public PageRequest {
+        page = page == null ? 0 : page;
+        size = size == null ? 20 : size;
     }
 
     public Pageable toPageable() {
+        Sort order = sort == null ? Sort.by("id").ascending() : switch (sort) {
+            case LATEST -> Sort.by(Sort.Order.desc("releaseDate"), Sort.Order.asc("id"));
+            case TITLE -> Sort.by(Sort.Order.asc("title"), Sort.Order.asc("id"));
+        };
         return org.springframework.data.domain.PageRequest.of(
-                page, size, Sort.by("id").ascending()
+                page, size, order
         );
     }
 }

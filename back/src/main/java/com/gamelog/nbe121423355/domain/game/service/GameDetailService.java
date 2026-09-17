@@ -1,6 +1,8 @@
 package com.gamelog.nbe121423355.domain.game.service;
 
 import com.gamelog.nbe121423355.domain.game.dto.GameDetailResponse;
+import com.gamelog.nbe121423355.domain.game.dto.GameRatingDistributionResponse;
+import com.gamelog.nbe121423355.domain.game.dto.GameRatingStatisticsResponse;
 import com.gamelog.nbe121423355.domain.game.dto.GameStatisticsResponse;
 import com.gamelog.nbe121423355.domain.game.entity.Game;
 import com.gamelog.nbe121423355.domain.game.repository.*;
@@ -9,7 +11,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -22,7 +28,7 @@ public class GameDetailService {
     private final GameSeriesGameRepository gameSeriesGameRepository;
     private final GameStatisticsRepository gameStatisticsRepository;
 
-    // 게임 기본 정보와 장르·플랫폼·시리즈·상태 통계를 조회해 상세 응답으로 반환
+    // 게임 기본 정보와 연결 정보, 상태·평점·리뷰·좋아요 통계를 조회해 상세 응답으로 반환
     public GameDetailResponse getGameDetail(Long gameId) {
         // GameLog DB ID로 게임 기본 정보 조회
         Game game = gameRepository.findById(gameId)
@@ -66,8 +72,22 @@ public class GameDetailService {
                 )
                 .toList();
 
-        // 게임 ID를 기준으로 Played, Playing, Backlog, Wishlist 인원 수 조회
-        GameStatisticsResponse statistics = gameStatisticsRepository.findStatisticsByGameId(gameId);
+        // 게임 ID를 기준으로 상태·평점·리뷰·좋아요 통계 조회
+        GameStatusStatisticsProjection statusStatistics = gameStatisticsRepository.findStatusStatisticsByGameId(gameId);
+        GameRatingStatisticsResponse ratingStatistics = getRatingStatistics(gameId);
+        long likeCount = getLikeCount(gameId);
+
+        // 조회한 통계를 게임 상세 응답 DTO로 변환
+        GameStatisticsResponse statistics = new GameStatisticsResponse(
+                statusStatistics.getPlayedCount(),
+                statusStatistics.getPlayingCount(),
+                statusStatistics.getBacklogCount(),
+                statusStatistics.getWishlistCount(),
+                likeCount,
+                ratingStatistics.averageRating(),
+                ratingStatistics.reviewCount(),
+                ratingStatistics.ratingDistribution()
+        );
 
         return new GameDetailResponse(
                 game.getId(),
@@ -85,4 +105,39 @@ public class GameDetailService {
         );
     }
 
+    // 평균 평점, 리뷰 수와 모든 0.5점 단위의 평점 분포를 구성
+    private GameRatingStatisticsResponse getRatingStatistics(Long gameId) {
+        GameRatingStatisticsProjection ratingStatistics = gameStatisticsRepository
+                .findRatingStatisticsByGameId(gameId);
+
+        Map<Integer, Long> countsByRating = gameStatisticsRepository
+                .findRatingDistributionByGameId(gameId)
+                .stream()
+                .collect(Collectors.toMap(
+                        item -> item.getRating()
+                                .multiply(BigDecimal.valueOf(2))
+                                .intValueExact(),
+                        GameRatingDistributionProjection::getCount
+                ));
+
+        List<GameRatingDistributionResponse> distribution = IntStream.rangeClosed(1, 10)
+                .mapToObj(ratingStep -> new GameRatingDistributionResponse(
+                        BigDecimal.valueOf(ratingStep * 5L, 1),
+                        countsByRating.getOrDefault(ratingStep, 0L)
+                ))
+                .toList();
+
+        return new GameRatingStatisticsResponse(
+                BigDecimal.valueOf(ratingStatistics.getAverageRating()),
+                ratingStatistics.getReviewCount(),
+                distribution
+        );
+    }
+
+    // 게임에 좋아요를 누른 사용자 수 조회
+    private long getLikeCount(Long gameId) {
+        return gameStatisticsRepository.countLikesByGameId(gameId);
+    }
+
 }
+

@@ -12,6 +12,7 @@ import java.util.Objects;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(name = "users")
 public class User extends BaseEntity {
 
     @Id
