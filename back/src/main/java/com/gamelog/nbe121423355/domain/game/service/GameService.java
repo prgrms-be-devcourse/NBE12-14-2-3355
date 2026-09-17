@@ -97,13 +97,26 @@ public class GameService {
                 .map(GameListResponse::new);
     }
 
-    private String toContainsPattern(String keyword) {
-        String escaped = keyword
+    @Transactional(readOnly = true)
+    public List<GameListResponse> getSuggestions(String keyword) {
+        if (keyword == null || keyword.isBlank()) return List.of();
+        String normalized = keyword.strip();
+        String escaped = escapeLike(normalized);
+        return gameRepository.findSuggestions(normalized, escaped + "%", "%" + escaped + "%",
+                        org.springframework.data.domain.PageRequest.of(0, 6))
+                .stream().map(GameListResponse::new).toList();
+    }
+
+    private String escapeLike(String keyword) {
+        return keyword
                 .replace("!", "!!")
                 .replace("%", "!%")
                 .replace("_", "!_");
 
-        return "%" + escaped + "%";
+    }
+
+    private String toContainsPattern(String keyword) {
+        return "%" + escapeLike(keyword) + "%";
     }
 
 }
