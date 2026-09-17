@@ -44,6 +44,18 @@ public class ReviewController {
         return new RsData<>("200-7", "상세 리뷰가 저장되었습니다.", response);
     }
 
+    @GetMapping("/games/{gameId}/reviews/me")
+    public RsData<DetailedReviewResponse> getMyDetailedReview(
+            @AuthenticationPrincipal SecurityUser securityUser,
+            @PathVariable Long gameId
+    ) {
+        DetailedReviewResponse response = reviewService.getMyDetailedReview(
+                securityUser.getId(),
+                gameId
+        );
+        return new RsData<>("200-8", "내 상세 리뷰 조회에 성공했습니다.", response);
+    }
+
     @PutMapping("/user-games/{userGameId}/reviews")
     public RsData<ReviewResponse> saveReview(
             @AuthenticationPrincipal SecurityUser securityUser,

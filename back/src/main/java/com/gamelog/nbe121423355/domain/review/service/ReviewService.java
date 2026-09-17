@@ -29,6 +29,24 @@ public class ReviewService {
     private final UserGameRepository userGameRepository;
     private final UserGameService userGameService;
 
+    public DetailedReviewResponse getMyDetailedReview(Long userId, Long gameId) {
+        UserGame userGame = userGameRepository.findByUser_IdAndGame_Id(userId, gameId)
+                .orElse(null);
+
+        if (userGame == null) {
+            return new DetailedReviewResponse(null, null);
+        }
+
+        ReviewResponse review = reviewRepository.findByUserGame_Id(userGame.getId())
+                .map(ReviewResponse::from)
+                .orElse(null);
+
+        return new DetailedReviewResponse(
+                new UserGameDto(userGame),
+                review
+        );
+    }
+
     @Transactional
     public DetailedReviewResponse saveDetailedReview(
             Long userId,
