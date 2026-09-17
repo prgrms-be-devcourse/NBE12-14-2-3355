@@ -2,12 +2,12 @@
 
 ###
 # @name 1. 회원가입
-POST {{baseUrl}}/api/v1/users/signup
+POST http://localhost:8080/api/v1/users/signup
 Content-Type: application/json
 
 {
-  "nickname": "테스트유저",
-  "email": "test2@test.com",
+  "nickname": "테스트",
+  "email": "test3@test.com",
   "password": "12345678"
 }
 
@@ -17,7 +17,7 @@ POST {{baseUrl}}/api/v1/users/login
 Content-Type: application/json
 
 {
-  "email": "test2@test.com",
+  "email": "test@test.com",
   "password": "12345678"
 }
 

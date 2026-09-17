@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState } from "react";
+import GameSearch from "@/components/game-search";
 import { coverUrl, demoGames, demoOptions, emptyFilters, type Filters, type Game, type GamePage, type Option } from "@/lib/games";
 
 function Icon({ name, size = 20 }: { name: "search" | "game" | "filter" | "arrow" | "close"; size?: number }) {
@@ -116,7 +117,7 @@ export default function Discover() {
   }, [keyword, filters, sort, page, demo, retry]);
 
   const available = demo ? demoOptions : options;
-  function submitSearch(e: FormEvent) { e.preventDefault(); setKeyword(input.trim()); setPage(0); }
+  function submitSearch() { setKeyword(input.trim()); setPage(0); setRetry(x => x + 1); }
   function toggleFilter(type: keyof Filters, id: number) {
     setDraft(current => ({ ...current, [type]: current[type].includes(id) ? current[type].filter(x => x !== id) : [...current[type], id] }));
   }
@@ -134,7 +135,7 @@ export default function Discover() {
     <header className="header"><div className="header-inner">
       <Link className="logo" href="/" aria-label="GameLog 홈"><Icon name="game" size={29}/><span>GameLog<span className="lime">.</span></span></Link>
       <nav aria-label="주요 메뉴"><a className="nav-active" href="#discover" aria-current="page">게임 탐색</a><a href="#catalog">전체 게임</a></nav>
-      <form className="header-search" onSubmit={submitSearch}><Icon name="search" size={18}/><input aria-label="게임 제목 검색" placeholder="다음 게임을 찾아보세요" value={input} onChange={e => setInput(e.target.value)}/><button type="submit">검색 <span>↵</span></button></form>
+      <GameSearch value={input} demo={demo} onChange={setInput} onSearch={submitSearch} onSelect={setSelected}/>
       <span className="header-note">PLAY. RECORD. DISCOVER.</span>
     </div></header>
 
