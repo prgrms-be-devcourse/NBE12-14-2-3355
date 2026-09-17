@@ -26,7 +26,7 @@ public class User extends BaseEntity {
     @Column(unique = true)
     private String nickname;
 
-    private String profile_image_url;
+    private String profileImageUrl;
     private String bio;
 
     @Column(nullable = false)
@@ -46,5 +46,11 @@ public class User extends BaseEntity {
         this.password = Objects.requireNonNull(password, "password");
         this.role = "USER";
         this.onboardingCompleted = false;
+    }
+
+    public void updateProfile(String nickname, String profileImageUrl, String bio) {
+        this.nickname = Objects.requireNonNull(nickname, "nickname");
+        this.profileImageUrl = profileImageUrl;
+        this.bio = bio;
     }
 }
