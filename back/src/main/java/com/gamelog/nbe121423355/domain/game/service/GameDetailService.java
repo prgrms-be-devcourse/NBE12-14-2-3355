@@ -1,9 +1,6 @@
 package com.gamelog.nbe121423355.domain.game.service;
 
-import com.gamelog.nbe121423355.domain.game.dto.GameDetailResponse;
-import com.gamelog.nbe121423355.domain.game.dto.GameRatingDistributionResponse;
-import com.gamelog.nbe121423355.domain.game.dto.GameRatingStatisticsResponse;
-import com.gamelog.nbe121423355.domain.game.dto.GameStatisticsResponse;
+import com.gamelog.nbe121423355.domain.game.dto.*;
 import com.gamelog.nbe121423355.domain.game.entity.Game;
 import com.gamelog.nbe121423355.domain.game.repository.*;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
@@ -137,6 +134,17 @@ public class GameDetailService {
     // 게임에 좋아요를 누른 사용자 수 조회
     private long getLikeCount(Long gameId) {
         return gameStatisticsRepository.countLikesByGameId(gameId);
+    }
+
+    // 평균 플레이타임과 플레이타임 기록 사용자 수를 응답 DTO로 반환
+    private GamePlayTimeStatisticsResponse getPlayTimeStatistics(Long gameId) {
+        GamePlayTimeStatisticsProjection playTimeStatistics = gameStatisticsRepository
+                .findPlayTimeStatisticsByGameId(gameId);
+
+        return new GamePlayTimeStatisticsResponse(
+                BigDecimal.valueOf(playTimeStatistics.getAveragePlayTimeHours()),
+                playTimeStatistics.getPlayTimeUserCount()
+        );
     }
 
 }
