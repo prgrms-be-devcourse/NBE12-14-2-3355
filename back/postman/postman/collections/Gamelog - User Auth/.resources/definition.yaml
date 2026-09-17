@@ -1,0 +1,11 @@
+$kind: collection
+description: |-
+  회원가입/로그인/토큰 재발급 API 테스트용 컬렉션.
+
+  사용법:
+  1. "1. 회원가입" 실행 (최초 1회, 이미 계정 있으면 생략)
+  2. "2. 로그인" 실행 → accessToken이 자동으로 컬렉션 변수에 저장되고, refreshToken은 쿠키에 자동 저장됨
+  3. 본인 API 테스트 시 Authorization 탭에서 Type: Bearer Token, Token: {{accessToken}} 로 참조
+  4. accessToken 만료(1시간)되면 "3. 토큰 재발급" 실행 → accessToken 변수 자동 갱신
+variables:
+  baseUrl: http://localhost:8080
