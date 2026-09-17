@@ -73,6 +73,7 @@ public class GameDetailService {
         GameStatusStatisticsProjection statusStatistics = gameStatisticsRepository.findStatusStatisticsByGameId(gameId);
         GameRatingStatisticsResponse ratingStatistics = getRatingStatistics(gameId);
         long likeCount = getLikeCount(gameId);
+        GamePlayTimeStatisticsResponse playTimeStatistics = getPlayTimeStatistics(gameId);
 
         // 조회한 통계를 게임 상세 응답 DTO로 변환
         GameStatisticsResponse statistics = new GameStatisticsResponse(
@@ -83,7 +84,9 @@ public class GameDetailService {
                 likeCount,
                 ratingStatistics.averageRating(),
                 ratingStatistics.reviewCount(),
-                ratingStatistics.ratingDistribution()
+                ratingStatistics.ratingDistribution(),
+                playTimeStatistics.averagePlayTimeHours(),
+                playTimeStatistics.playTimeUserCount()
         );
 
         return new GameDetailResponse(
