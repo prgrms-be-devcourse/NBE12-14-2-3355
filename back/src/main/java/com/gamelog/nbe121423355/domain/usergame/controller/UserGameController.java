@@ -1,8 +1,7 @@
 package com.gamelog.nbe121423355.domain.usergame.controller;
 
-import com.gamelog.nbe121423355.domain.usergame.dto.UserGameDto;
-import com.gamelog.nbe121423355.domain.usergame.dto.UserGameReqBody;
-import com.gamelog.nbe121423355.domain.usergame.dto.UserGameSaveResult;
+import com.gamelog.nbe121423355.domain.usergame.dto.*;
+import com.gamelog.nbe121423355.domain.usergame.entity.PlayStatus;
 import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
 import com.gamelog.nbe121423355.domain.usergame.service.UserGameService;
 import com.gamelog.nbe121423355.global.dto.RsData;
@@ -68,5 +67,81 @@ public class UserGameController {
                 new UserGameDto(userGame)
         );
     }
+
+    @PutMapping("/{gameId}/play-status")
+    public RsData<UserGamePlayStatusResponse> changePlayStatus(
+            @PathVariable Long gameId,
+            @RequestParam(required = false) PlayStatus status,
+            @AuthenticationPrincipal SecurityUser user
+    ) {
+        PlayStatus playStatus = userGameService.changePlayed(user.getId(), gameId, status);
+
+        return new RsData<>(
+                "200-1",
+                "플레이 상태를 변경했습니다.",
+                new UserGamePlayStatusResponse(playStatus)
+        );
+    }
+
+    @PatchMapping("/{gameId}/playing")
+    public RsData<UserGameStatusResponse> changePlaying(
+            @PathVariable Long gameId,
+            @RequestParam boolean playing,
+            @AuthenticationPrincipal SecurityUser user
+    ) {
+        boolean playingStatus = userGameService.changePlaying(user.getId(), gameId, playing);
+
+        return new RsData<>(
+                "200-1",
+                "플레이 중 상태를 변경했습니다.",
+                new UserGameStatusResponse(playingStatus)
+        );
+    }
+
+    @PatchMapping("/{gameId}/wishlist")
+    public RsData<UserGameStatusResponse> changeWishlist(
+            @PathVariable Long gameId,
+            @RequestParam boolean wishlist,
+            @AuthenticationPrincipal SecurityUser user
+    ) {
+        boolean wishlistStatus = userGameService.changeWishlist(user.getId(), gameId,wishlist);
+
+        return new RsData<>(
+                "200-1",
+                "위시리스트 상태를 변경했습니다.",
+                new UserGameStatusResponse(wishlistStatus)
+        );
+    }
+
+    @PatchMapping("/{gameId}/backlog")
+    public RsData<UserGameStatusResponse> changeBacklog(
+            @PathVariable Long gameId,
+            @RequestParam boolean backlog,
+            @AuthenticationPrincipal SecurityUser user
+    ) {
+        boolean backlogStatus = userGameService.changeBacklog(user.getId(), gameId, backlog);
+
+        return new RsData<>(
+                "200-1",
+                "백로그 상태를 변경했습니다.",
+                new UserGameStatusResponse(backlogStatus)
+        );
+    }
+
+    @PatchMapping("/{gameId}/liked")
+    public RsData<UserGameStatusResponse> changeLiked(
+            @PathVariable Long gameId,
+            @RequestParam boolean liked,
+            @AuthenticationPrincipal SecurityUser user
+    ) {
+        boolean likedStatus = userGameService.changeLiked(user.getId(), gameId, liked);
+
+        return new RsData<>(
+                "200-1",
+                "좋아요 상태를 변경했습니다.",
+                new UserGameStatusResponse(likedStatus)
+        );
+    }
+
 
 }

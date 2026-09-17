@@ -16,6 +16,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -252,4 +253,344 @@ class UserGameServiceTest {
                 .hasMessage("라이브러리에 등록되지 않은 게임입니다.");
     }
 
+    @Test
+    @DisplayName("플레이_상태를_변경")
+    void t5() {
+        // given
+        Long userId = 1L;
+        Long gameId = 1L;
+
+        User user = new User("테스트", "test@test.com", "password");
+        Game game = mock(Game.class);
+
+        UserGame userGame = new UserGame(user, game);
+
+        given(userGameRepository.findByUser_IdAndGame_Id(userId, gameId))
+                .willReturn(Optional.of(userGame));
+
+        // when
+        PlayStatus result =
+                userGameService.changePlayed(
+                        userId,
+                        gameId,
+                        PlayStatus.DROPPED
+                );
+
+        // then
+        assertThat(result).isEqualTo(PlayStatus.DROPPED);
+        assertThat(userGame.getPlayStatus())
+                .isEqualTo(PlayStatus.DROPPED);
+
+        verify(userGameRepository, never()).save(any(UserGame.class));
+    }
+
+    @Test
+    @DisplayName("UserGame이_없으면_생성하고_플레이_상태를_변경")
+    void t6() {
+        // given
+        Long userId = 1L;
+        Long gameId = 1L;
+
+        User user = new User("테스트", "test@test.com", "password");
+        Game game = mock(Game.class);
+
+        given(userGameRepository.findByUser_IdAndGame_Id(userId, gameId))
+                .willReturn(Optional.empty());
+
+        given(userRepository.findById(userId))
+                .willReturn(Optional.of(user));
+
+        given(gameRepository.findById(gameId))
+                .willReturn(Optional.of(game));
+
+        given(userGameRepository.save(any(UserGame.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        PlayStatus result =
+                userGameService.changePlayed(
+                        userId,
+                        gameId,
+                        PlayStatus.COMPLETED
+                );
+
+        // then
+        assertThat(result).isEqualTo(PlayStatus.COMPLETED);
+
+        ArgumentCaptor<UserGame> captor =
+                ArgumentCaptor.forClass(UserGame.class);
+
+        verify(userGameRepository).save(captor.capture());
+
+        UserGame savedUserGame = captor.getValue();
+
+        assertThat(savedUserGame.getUser()).isEqualTo(user);
+        assertThat(savedUserGame.getGame()).isEqualTo(game);
+        assertThat(savedUserGame.getPlayStatus())
+                .isEqualTo(PlayStatus.COMPLETED);
+    }
+
+    @Test
+    @DisplayName("playing을_true로_변경")
+    void t7() {
+        // given
+        Long userId = 1L;
+        Long gameId = 1L;
+
+        User user = new User("테스트", "test@test.com", "password");
+        Game game = mock(Game.class);
+        UserGame userGame = new UserGame(user, game);
+
+        given(userGameRepository.findByUser_IdAndGame_Id(userId, gameId))
+                .willReturn(Optional.of(userGame));
+
+        // when
+        boolean result =
+                userGameService.changePlaying(userId, gameId, true);
+
+        // then
+        assertThat(result).isTrue();
+        assertThat(userGame.isPlaying()).isTrue();
+    }
+
+    @Test
+    @DisplayName("UserGame이_없을_때_playing_false면_예외가_발생한다")
+    void t8() {
+        Long userId = 1L;
+        Long gameId = 1L;
+
+        given(userGameRepository.findByUser_IdAndGame_Id(userId, gameId))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                userGameService.changePlaying(userId, gameId, false)
+        )
+                .isInstanceOf(ServiceException.class)
+                .hasMessage("라이브러리에 등록되지 않은 게임입니다.");
+
+        verify(userGameRepository, never())
+                .save(any(UserGame.class));
+
+        verify(userRepository, never())
+                .findById(anyLong());
+
+        verify(gameRepository, never())
+                .findById(anyLong());
+    }
+
+    @Test
+    @DisplayName("wishlist를_변경")
+    void t9() {
+        // given
+        Long userId = 1L;
+        Long gameId = 1L;
+
+        User user = new User("테스트", "test@test.com", "password");
+        Game game = mock(Game.class);
+        UserGame userGame = new UserGame(user, game);
+
+        given(userGameRepository.findByUser_IdAndGame_Id(userId, gameId))
+                .willReturn(Optional.of(userGame));
+
+        // when
+        boolean result =
+                userGameService.changeWishlist(userId, gameId, true);
+
+        // then
+        assertThat(result).isTrue();
+        assertThat(userGame.isWishlist()).isTrue();
+    }
+
+    @Test
+    @DisplayName("backlog를_변경")
+    void t10() {
+        // given
+        Long userId = 1L;
+        Long gameId = 1L;
+
+        User user = new User("테스트", "test@test.com", "password");
+        Game game = mock(Game.class);
+        UserGame userGame = new UserGame(user, game);
+
+        given(userGameRepository.findByUser_IdAndGame_Id(userId, gameId))
+                .willReturn(Optional.of(userGame));
+
+        // when
+        boolean result =
+                userGameService.changeBacklog(userId, gameId, true);
+
+        // then
+        assertThat(result).isTrue();
+        assertThat(userGame.isBacklog()).isTrue();
+    }
+
+    @Test
+    @DisplayName("liked를_변경")
+    void t11() {
+        // given
+        Long userId = 1L;
+        Long gameId = 1L;
+
+        User user = new User("테스트", "test@test.com", "password");
+        Game game = mock(Game.class);
+        UserGame userGame = new UserGame(user, game);
+
+        given(userGameRepository.findByUser_IdAndGame_Id(userId, gameId))
+                .willReturn(Optional.of(userGame));
+
+        // when
+        boolean result =
+                userGameService.changeLiked(userId, gameId, true);
+
+        // then
+        assertThat(result).isTrue();
+        assertThat(userGame.isLiked()).isTrue();
+    }
+
+    @Test
+    @DisplayName("같은_playing_상태를_반복해서_변경해도_상태가_유지된다")
+    void t12() {
+        // given
+        Long userId = 1L;
+        Long gameId = 1L;
+
+        User user = new User("테스트", "test@test.com", "password");
+        Game game = mock(Game.class);
+        UserGame userGame = new UserGame(user, game);
+
+        given(userGameRepository.findByUser_IdAndGame_Id(userId, gameId))
+                .willReturn(Optional.of(userGame));
+
+        // when
+        boolean firstResult =
+                userGameService.changePlaying(userId, gameId, true);
+
+        boolean secondResult =
+                userGameService.changePlaying(userId, gameId, true);
+
+        // then
+        assertThat(firstResult).isTrue();
+        assertThat(secondResult).isTrue();
+        assertThat(userGame.isPlaying()).isTrue();
+    }
+
+    @Test
+    @DisplayName("플레이_상태가_null이면_플레이_상태를_초기화")
+    void t13() {
+        // given
+        Long userId = 1L;
+        Long gameId = 1L;
+
+        User user = new User("테스트", "test@test.com", "password");
+        Game game = mock(Game.class);
+
+        UserGame userGame = new UserGame(user, game);
+        userGame.changePlayStatus(PlayStatus.PLAYED);
+
+        given(userGameRepository.findByUser_IdAndGame_Id(userId, gameId))
+                .willReturn(Optional.of(userGame));
+
+        // when
+        PlayStatus result =
+                userGameService.changePlayed(userId, gameId, null);
+
+        // then
+        assertThat(result).isNull();
+        assertThat(userGame.getPlayStatus()).isNull();
+    }
+
+    @Test
+    @DisplayName("UserGame이_없을_때_playing_false면_예외가_발생한다")
+    void t14() {
+        Long userId = 1L;
+        Long gameId = 1L;
+
+        given(userGameRepository.findByUser_IdAndGame_Id(userId, gameId))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                userGameService.changePlaying(userId, gameId, false)
+        )
+                .isInstanceOf(ServiceException.class)
+                .hasMessage("라이브러리에 등록되지 않은 게임입니다.");
+
+        verify(userGameRepository, never())
+                .save(any(UserGame.class));
+    }
+
+    @Test
+    @DisplayName("UserGame이_없을_때_wishlist_false면_예외가_발생한다")
+    void t15() {
+        Long userId = 1L;
+        Long gameId = 1L;
+
+        given(userGameRepository.findByUser_IdAndGame_Id(userId, gameId))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                userGameService.changeWishlist(userId, gameId, false)
+        )
+                .isInstanceOf(ServiceException.class)
+                .hasMessage("라이브러리에 등록되지 않은 게임입니다.");
+
+        verify(userGameRepository, never())
+                .save(any(UserGame.class));
+    }
+
+    @Test
+    @DisplayName("UserGame이_없을_때_backlog_false면_예외가_발생한다")
+    void t16() {
+        Long userId = 1L;
+        Long gameId = 1L;
+
+        given(userGameRepository.findByUser_IdAndGame_Id(userId, gameId))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                userGameService.changeBacklog(userId, gameId, false)
+        )
+                .isInstanceOf(ServiceException.class)
+                .hasMessage("라이브러리에 등록되지 않은 게임입니다.");
+
+        verify(userGameRepository, never())
+                .save(any(UserGame.class));
+    }
+
+    @Test
+    @DisplayName("UserGame이_없을_때_liked_false면_예외가_발생한다")
+    void t17() {
+        Long userId = 1L;
+        Long gameId = 1L;
+
+        given(userGameRepository.findByUser_IdAndGame_Id(userId, gameId))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                userGameService.changeLiked(userId, gameId, false)
+        )
+                .isInstanceOf(ServiceException.class)
+                .hasMessage("라이브러리에 등록되지 않은 게임입니다.");
+
+        verify(userGameRepository, never())
+                .save(any(UserGame.class));
+    }
+
+    @Test
+    @DisplayName("UserGame이_없을_때_playStatus_null이면_예외가_발생한다")
+    void t18() {
+        Long userId = 1L;
+        Long gameId = 1L;
+
+        given(userGameRepository.findByUser_IdAndGame_Id(userId, gameId))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                userGameService.changePlayed(userId, gameId, null)
+        )
+                .isInstanceOf(ServiceException.class)
+                .hasMessage("라이브러리에 등록되지 않은 게임입니다.");
+
+        verify(userGameRepository, never())
+                .save(any(UserGame.class));
+    }
 }

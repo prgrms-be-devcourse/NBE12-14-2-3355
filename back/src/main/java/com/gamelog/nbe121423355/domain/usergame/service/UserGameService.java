@@ -8,12 +8,15 @@ import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
 import com.gamelog.nbe121423355.domain.usergame.dto.UserGameReqBody;
 import com.gamelog.nbe121423355.domain.usergame.dto.UserGameSaveResult;
+import com.gamelog.nbe121423355.domain.usergame.entity.PlayStatus;
 import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
 import com.gamelog.nbe121423355.domain.usergame.repository.UserGameRepository;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -142,5 +145,122 @@ public class UserGameService {
                 );
     }
 
+    private UserGame createUserGame(Long userId, Long gameId) {
 
+        User user = findUser(userId);
+        Game game = findGame(gameId);
+
+        return new UserGame(
+                user,
+                game,
+                null,
+                false,
+                false,
+                false,
+                false,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
+    private UserGame getOrCreateUserGame(Long userId, Long gameId) {
+
+        return userGameRepository.findByUser_IdAndGame_Id(userId, gameId)
+                .orElseGet(() -> userGameRepository.save(
+                        createUserGame(userId, gameId)
+                ));
+    }
+
+    private UserGame findOrCreateUserGameForBoolean(
+            Long userId,
+            Long gameId,
+            boolean status
+    ) {
+        Optional<UserGame> userGame =
+                userGameRepository.findByUser_IdAndGame_Id(userId, gameId);
+
+        if (userGame.isPresent()) {
+            return userGame.get();
+        }
+
+        if (!status) {
+            throw new ServiceException(
+                    "404-3",
+                    "라이브러리에 등록되지 않은 게임입니다."
+            );
+        }
+
+        return userGameRepository.save(
+                createUserGame(userId, gameId)
+        );
+    }
+
+    @Transactional
+    public PlayStatus changePlayed(Long userId, Long gameId, PlayStatus playStatus) {
+
+        if (playStatus == null) {
+            UserGame userGame = findUserGame(userId, gameId);
+            userGame.clearPlayStatus();
+
+            return null;
+        }
+
+        UserGame userGame = getOrCreateUserGame(userId, gameId);
+        userGame.changePlayStatus(playStatus);
+
+        return playStatus;
+    }
+
+    @Transactional
+    public boolean changePlaying(Long userId, Long gameId, boolean playing) {
+
+        UserGame userGame = findOrCreateUserGameForBoolean(
+                userId, gameId, playing
+        );
+
+        userGame.changePlaying(playing);
+
+        return playing;
+    }
+
+    @Transactional
+    public boolean changeWishlist(Long userId, Long gameId, boolean wishlist) {
+
+        UserGame userGame = findOrCreateUserGameForBoolean(
+                userId, gameId, wishlist
+        );
+
+        userGame.changeWishlist(wishlist);
+
+        return wishlist;
+    }
+
+    @Transactional
+    public boolean changeBacklog(Long userId, Long gameId, boolean backlog) {
+
+        UserGame userGame = findOrCreateUserGameForBoolean(
+                userId, gameId, backlog
+        );
+
+        userGame.changeBacklog(backlog);
+
+        return backlog;
+    }
+
+    @Transactional
+    public boolean changeLiked(Long userId, Long gameId, boolean liked) {
+
+        UserGame userGame = findOrCreateUserGameForBoolean(
+                userId, gameId, liked
+        );
+
+        userGame.changeLiked(liked);
+
+        return liked;
+    }
 }
