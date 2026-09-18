@@ -1,7 +1,7 @@
 package com.gamelog.nbe121423355.global.config;
 
-import tools.jackson.databind.ObjectMapper;
 import com.gamelog.nbe121423355.global.dto.RsData;
+import com.gamelog.nbe121423355.global.security.jwt.CorsProperties;
 import com.gamelog.nbe121423355.global.security.jwt.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
@@ -13,8 +13,13 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
+import java.util.List;
 
 @Configuration
 public class SecurityConfig {
@@ -28,9 +33,11 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(
             HttpSecurity http,
             JwtAuthenticationFilter jwtFilter,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            CorsConfigurationSource corsConfigurationSource
     ) throws Exception {
         http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
@@ -59,5 +66,18 @@ public class SecurityConfig {
         response.setContentType("application/json; charset=UTF-8");
         response.setStatus(rsData.getStatusCode());
         response.getWriter().write(objectMapper.writeValueAsString(rsData));
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource(CorsProperties corsProperties) {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(corsProperties.allowedOrigins());
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 }
