@@ -9,10 +9,11 @@ import com.gamelog.nbe121423355.global.security.SecurityUser;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/library/games")
@@ -23,19 +24,22 @@ public class UserGameController {
     private final UserGameService userGameService;
 
     @GetMapping("")
-    public RsData<List<UserGameListResponse>> getUserGameList(
+    public RsData<UserGameLibraryResponse> getUserGameList(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "60") int size,
             @AuthenticationPrincipal SecurityUser user
     ){
-        System.out.println("user = " + user);
-        Long userId = user.getId();
-
-        List<UserGameListResponse> games =
-                userGameService.getUserGameList(userId);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<UserGameListResponse> pages =
+                userGameService.getUserGameList(user.getId(), pageable);
 
         return new RsData<>(
                 "200-1",
                 "라이브러리 게임 목록을 조회했습니다.",
-                games
+                new UserGameLibraryResponse(
+                        pages.getTotalPages(),
+                        pages.getContent()
+                )
         );
     }
 

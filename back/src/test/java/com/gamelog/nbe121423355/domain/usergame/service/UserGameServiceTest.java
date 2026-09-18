@@ -16,11 +16,14 @@ import com.gamelog.nbe121423355.global.exception.ServiceException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -597,8 +600,9 @@ class UserGameServiceTest {
     }
 
     @Test
-    @DisplayName("라이브러리_게임_목록을_조회")
+    @DisplayName("라이브러리_게임_목록을_페이지네이션으로_조회")
     void t19() {
+        // given
         Long userId = 1L;
 
         User user = new User(
@@ -621,40 +625,78 @@ class UserGameServiceTest {
         UserGame userGame1 = new UserGame(user, game1);
         UserGame userGame2 = new UserGame(user, game2);
 
-        given(userGameRepository.findAllByUser_IdAndInLibraryTrue(userId))
-                .willReturn(List.of(userGame1, userGame2));
+        Pageable pageable = PageRequest.of(0, 2);
 
-        List<UserGameListResponse> result =
-                userGameService.getUserGameList(userId);
+        Page<UserGame> userGamePage = new PageImpl<>(
+                List.of(userGame1, userGame2),
+                pageable,
+                2
+        );
 
-        assertThat(result).hasSize(2);
+        given(userGameRepository.findAllByUser_IdAndInLibraryTrue(
+                userId,
+                pageable
+        )).willReturn(userGamePage);
 
-        assertThat(result.get(0).gameId()).isEqualTo(1L);
-        assertThat(result.get(0).title()).isEqualTo("게임1");
-        assertThat(result.get(0).coverImageUrl()).isEqualTo("image1.jpg");
+        // when
+        Page<UserGameListResponse> result =
+                userGameService.getUserGameList(userId, pageable);
 
-        assertThat(result.get(1).gameId()).isEqualTo(2L);
-        assertThat(result.get(1).title()).isEqualTo("게임2");
-        assertThat(result.get(1).coverImageUrl()).isEqualTo("image2.jpg");
+        // then
+        assertThat(result.getContent()).hasSize(2);
+
+        assertThat(result.getContent().get(0).gameId())
+                .isEqualTo(1L);
+        assertThat(result.getContent().get(0).title())
+                .isEqualTo("게임1");
+        assertThat(result.getContent().get(0).coverImageUrl())
+                .isEqualTo("image1.jpg");
+
+        assertThat(result.getContent().get(1).gameId())
+                .isEqualTo(2L);
+        assertThat(result.getContent().get(1).title())
+                .isEqualTo("게임2");
+        assertThat(result.getContent().get(1).coverImageUrl())
+                .isEqualTo("image2.jpg");
+
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getTotalPages()).isEqualTo(1);
+        assertThat(result.getNumber()).isEqualTo(0);
+        assertThat(result.getSize()).isEqualTo(2);
 
         verify(userGameRepository)
-                .findAllByUser_IdAndInLibraryTrue(userId);
+                .findAllByUser_IdAndInLibraryTrue(userId, pageable);
     }
 
     @Test
-    @DisplayName("라이브러리에_게임이_없으면_빈_목록을_반환")
+    @DisplayName("라이브러리에_게임이_없으면_빈_페이지를_반환")
     void t20() {
+        // given
         Long userId = 1L;
 
-        given(userGameRepository.findAllByUser_IdAndInLibraryTrue(userId))
-                .willReturn(List.of());
+        Pageable pageable = PageRequest.of(0, 2);
 
-        List<UserGameListResponse> result =
-                userGameService.getUserGameList(userId);
+        Page<UserGame> emptyPage = new PageImpl<>(
+                List.of(),
+                pageable,
+                0
+        );
 
-        assertThat(result).isEmpty();
+        given(userGameRepository.findAllByUser_IdAndInLibraryTrue(
+                userId,
+                pageable
+        )).willReturn(emptyPage);
+
+        // when
+        Page<UserGameListResponse> result =
+                userGameService.getUserGameList(userId, pageable);
+
+        // then
+        assertThat(result.getContent()).isEmpty();
+        assertThat(result.getTotalElements()).isZero();
+        assertThat(result.getTotalPages()).isZero();
 
         verify(userGameRepository)
-                .findAllByUser_IdAndInLibraryTrue(userId);
+                .findAllByUser_IdAndInLibraryTrue(userId, pageable);
     }
 }

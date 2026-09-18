@@ -14,10 +14,11 @@ import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
 import com.gamelog.nbe121423355.domain.usergame.repository.UserGameRepository;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -30,11 +31,10 @@ public class UserGameService {
     private final PlatformRepository platformRepository;
 
     @Transactional(readOnly = true)
-    public List<UserGameListResponse> getUserGameList(Long userId){
-        return userGameRepository.findAllByUser_IdAndInLibraryTrue(userId)
-                .stream()
-                .map(UserGameListResponse::new)
-                .toList();
+    public Page<UserGameListResponse> getUserGameList(Long userId, Pageable pageable){
+
+        return userGameRepository.findAllByUser_IdAndInLibraryTrue(userId, pageable)
+                .map(UserGameListResponse::new);
     }
 
     //생성 또는 수정
