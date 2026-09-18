@@ -67,6 +67,27 @@ public class ApiV1UserController {
         );
     }
 
+    @PostMapping("/logout")
+    public RsData<Void> logout(
+            @CookieValue(value = "refreshToken", required = false) String refreshToken,
+            HttpServletResponse httpServletResponse
+    ) {
+        if (refreshToken != null) {
+            userService.logout(refreshToken);
+        }
+
+        ResponseCookie responseCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .path("/")
+                .maxAge(0)
+                .sameSite(cookieProperties.sameSite())
+                .secure(cookieProperties.secure())
+                .build();
+        httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
+
+        return new RsData<>("200-13", "로그아웃 성공");
+    }
+
     @PostMapping("/refresh")
     public RsData<TokenResponseDto> refresh(
             @CookieValue("refreshToken")

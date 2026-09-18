@@ -42,7 +42,7 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/users/signup", "/api/v1/users/login", "/api/v1/users/refresh",
-                                "/api/v1/users/check-email", "/api/v1/users/check-nickname").permitAll()
+                                "/api/v1/users/check-email", "/api/v1/users/check-nickname", "/api/v1/users/logout").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/games/*/reviews/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reviews/*/likes/count").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/v1/games", "/api/v1/games/**").permitAll()
