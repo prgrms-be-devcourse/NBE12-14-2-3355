@@ -119,7 +119,8 @@ public class RelatedGameQueryRepository {
                             (String) columns[1],
                             (String) columns[2],
                             toBigDecimal(columns[3]),
-                            toBigDecimal(columns[4])
+                            toBigDecimal(columns[4]),
+                            List.of()
                     );
                 })
                 .toList();
