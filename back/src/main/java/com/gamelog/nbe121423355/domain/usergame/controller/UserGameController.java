@@ -165,10 +165,10 @@ public class UserGameController {
     }
 
     @GetMapping("/profile")
-    public RsData<UserProfileResponse> profileTab(
+    public RsData<UserGameTasteResponse> profileTab(
             @AuthenticationPrincipal SecurityUser user
     ){
-        UserProfileResponse response = userGameService.profileTab(user.getId());
+        UserGameTasteResponse response = userGameService.profileTab(user.getId());
 
         return new RsData<>(
                 "200-1",

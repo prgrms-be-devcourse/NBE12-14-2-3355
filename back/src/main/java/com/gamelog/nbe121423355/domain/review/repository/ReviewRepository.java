@@ -30,4 +30,31 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
       )
 """)
     BigDecimal findAverageRating(@Param("userId") Long userId);
+
+    @Query("""
+        SELECT COUNT(r)
+        FROM Review r
+        JOIN r.userGame ug
+        WHERE ug.user.id = :userId
+          AND ug.inLibrary = true
+          AND (
+              ug.playStatus IS NOT NULL
+              OR ug.playing = true
+          )
+          AND r.rating >= 4.0
+    """)
+    long countHighRatedReviews(@Param("userId") Long userId);
+
+    @Query("""
+        SELECT COUNT(r)
+        FROM Review r
+        JOIN r.userGame ug
+        WHERE ug.user.id = :userId
+          AND ug.inLibrary = true
+          AND (
+              ug.playStatus IS NOT NULL
+              OR ug.playing = true
+          )
+    """)
+    long countRatedReviews(@Param("userId") Long userId);
 }

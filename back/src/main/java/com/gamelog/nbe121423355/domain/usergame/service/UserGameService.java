@@ -7,9 +7,6 @@ import com.gamelog.nbe121423355.domain.game.repository.PlatformRepository;
 import com.gamelog.nbe121423355.domain.review.repository.ReviewRepository;
 import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
-import com.gamelog.nbe121423355.domain.usergame.dto.UserGameListResponse;
-import com.gamelog.nbe121423355.domain.usergame.dto.UserGameReqBody;
-import com.gamelog.nbe121423355.domain.usergame.dto.UserGameSaveResult;
 import com.gamelog.nbe121423355.domain.usergame.dto.*;
 import com.gamelog.nbe121423355.domain.usergame.entity.PlayStatus;
 import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
@@ -22,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -35,6 +33,8 @@ public class UserGameService {
     private final GameRepository gameRepository;
     private final PlatformRepository platformRepository;
     private final ReviewRepository reviewRepository;
+    private static final BigDecimal LONG_PLAY_HOURS =
+            BigDecimal.valueOf(30);
 
     @Transactional(readOnly = true)
     public Page<UserGameListResponse> getUserGameList(Long userId, Pageable pageable){
@@ -281,7 +281,7 @@ public class UserGameService {
     }
 
     @Transactional(readOnly = true)
-    public UserProfileResponse profileTab(Long userId){
+    public UserGameTasteResponse profileTab(Long userId){
         List<UserGame> userGames =
                 userGameRepository.findPlayedGames(userId);
 
@@ -297,7 +297,121 @@ public class UserGameService {
         List<UserGameScatterResponse> scatterData =
                 userGameRepository.findPlayedGameScatterData(userId);
 
-        ProfileStatsResponse statsResponse = new ProfileStatsResponse(playedGameCount,averageRating,totalPlayTime);
-        return new UserProfileResponse(statsResponse,scatterData);
+        //내 게임 취향 한번에 보기
+        //30시간 이상 플레이 비율
+        List<UserGame> gamesWithPlayTime = userGames.stream()
+                .filter(ug -> ug.getPlayTimeHours() != null)
+                .toList();
+
+        long longPlayCount = gamesWithPlayTime.stream()
+                .filter(ug ->
+                        ug.getPlayTimeHours()
+                                .compareTo(LONG_PLAY_HOURS) >= 0
+                )
+                .count();
+
+        BigDecimal longPlayRatio = BigDecimal.ZERO;
+
+        if (!gamesWithPlayTime.isEmpty()) {
+            longPlayRatio = BigDecimal.valueOf(longPlayCount)
+                    .divide(
+                            BigDecimal.valueOf(gamesWithPlayTime.size()),
+                            4,
+                            RoundingMode.HALF_UP
+                    );
+        }
+
+        String timePlayMessage =
+                createLongPlayMessage(longPlayRatio);
+
+        //높은 평점 비율
+        long highRatedCount =
+                reviewRepository.countHighRatedReviews(userId);
+        long reviewCount =
+                reviewRepository.countRatedReviews(userId);
+
+        BigDecimal highRatingRatio = BigDecimal.ZERO;
+
+        if (reviewCount > 0) {
+            highRatingRatio = BigDecimal.valueOf(highRatedCount)
+                    .divide(
+                            BigDecimal.valueOf(reviewCount),
+                            4,
+                            RoundingMode.HALF_UP
+                    );
+        }
+
+        String highRatingMessage =
+                createHighRatingMessage(highRatingRatio);
+
+        //완료 게임 비율
+        long completedCount = userGames.stream()
+                .filter(ug -> ug.getCompletedAt() != null)
+                .count();
+
+        BigDecimal completionRatio = BigDecimal.ZERO;
+
+        if (!userGames.isEmpty()) {
+            completionRatio = BigDecimal.valueOf(completedCount)
+                    .divide(
+                            BigDecimal.valueOf(userGames.size()),
+                            4,
+                            RoundingMode.HALF_UP
+                    );
+        }
+
+        String completionMessage =
+                createCompletionMessage(completionRatio);
+
+//        ProfileStatsResponse statsResponse = new ProfileStatsResponse(playedGameCount,averageRating,totalPlayTime);
+//        return new UserProfileResponse(statsResponse,scatterData);
+        return new UserGameTasteResponse(
+                longPlayRatio,
+                timePlayMessage,
+                highRatingRatio,
+                highRatingMessage,
+                completionRatio,
+                completionMessage
+        );
+    }
+
+    private String createLongPlayMessage(BigDecimal ratio) {
+
+        if (ratio.compareTo(BigDecimal.valueOf(0.7)) >= 0) {
+            return "장시간 플레이하는 게임이 많아요.";
+        }
+
+        if (ratio.compareTo(BigDecimal.valueOf(0.4)) >= 0) {
+            return "장시간 플레이와 짧은 게임을 골고루 즐겨요.";
+        }
+
+        return "짧게 플레이하는 게임이 많아요.";
+    }
+
+    private String createHighRatingMessage(BigDecimal ratio) {
+
+        if (ratio.compareTo(BigDecimal.valueOf(0.7)) >= 0) {
+            return "높은 평점을 주는 게임이 많아요.";
+        }
+
+        if (ratio.compareTo(BigDecimal.valueOf(0.4)) >= 0) {
+            return "게임을 비교적 후하게 평가하는 편이에요.";
+        }
+
+        return "평점을 신중하게 주는 편이에요.";
+    }
+
+
+    private String createCompletionMessage(BigDecimal ratio) {
+
+        if (ratio.compareTo(BigDecimal.valueOf(0.7)) >= 0) {
+            return "게임을 끝까지 플레이하는 편이에요.";
+        }
+
+        if (ratio.compareTo(BigDecimal.valueOf(0.4)) >= 0) {
+            return "플레이한 게임 중 절반 정도를 완료했어요.";
+        }
+
+        return "다양한 게임을 경험하는 편이에요.";
     }
 }
