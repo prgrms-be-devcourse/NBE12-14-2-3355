@@ -9,7 +9,15 @@ jwt:
   access-token-validity: 3600000 #1시간
   refresh-token-validity: 1209600000 #14일
 
-
+# === cors === 로컬/test 그대로 상속
+# 프론트가 Next.js 프록시(브라우저->Vercel->Railway)로 백엔드를 호출하는 것이 지금 프론트형태
+# 정상 트래픽은 이 CORS 설정을 안 타고 지나감 — 직접 호출하는 경우를 위한 안전망
+app:
+  cors:
+    allowed-origins: http://localhost:3000
+  cookie:
+    same-site: Lax
+    secure: false
 
 # === igdb ===
 
@@ -81,3 +89,14 @@ spring:
   sql:
     init:
       mode: never
+
+jwt:
+  secret: ${JWT_SECRET}
+
+# 마찬가지로 안전망 — 프록시 경유 트래픽에는 적용 안 됨
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
+  cookie:
+    same-site: None
+    secure: true
