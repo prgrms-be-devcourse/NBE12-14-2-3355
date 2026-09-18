@@ -105,7 +105,6 @@ class GameControllerTest {
             "size, 101",
             "page, abc",
             "size, abc",
-            "sort, RATING",
             "sort, unknown"
     })
     @DisplayName("잘못된 페이지 파라미터는 400 응답을 반환한다")

@@ -2,6 +2,7 @@ package com.gamelog.nbe121423355.domain.game.service;
 
 import com.gamelog.nbe121423355.domain.game.client.IgdbClient;
 import com.gamelog.nbe121423355.domain.game.dto.GameListResponse;
+import com.gamelog.nbe121423355.domain.game.dto.GameSort;
 import com.gamelog.nbe121423355.domain.game.dto.IgdbGameResponse;
 import com.gamelog.nbe121423355.domain.game.repository.GameRepository;
 import lombok.RequiredArgsConstructor;
@@ -59,6 +60,12 @@ public class GameService {
             List<Long> platformIds,
             Pageable pageable
     ) {
+        return getGamesPage(keyword, genreIds, platformIds, pageable, null);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<GameListResponse> getGamesPage(String keyword, List<Long> genreIds,
+            List<Long> platformIds, Pageable pageable, GameSort sort) {
         String keywordPattern =
                 keyword == null || keyword.isBlank()
                         ? null
@@ -84,6 +91,7 @@ public class GameService {
                         queryGenreIds,
                         filterPlatforms,
                         queryPlatformIds,
+                        sort == null ? "" : sort.name(),
                         pageable
                 )
                 .map(GameListResponse::new);
