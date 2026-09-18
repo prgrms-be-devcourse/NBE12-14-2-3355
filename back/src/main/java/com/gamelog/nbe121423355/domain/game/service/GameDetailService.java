@@ -115,7 +115,29 @@ public class GameDetailService {
             );
         }
 
-        return relatedGameQueryRepository.findRelatedGames(gameId);
+        List<RelatedGameResponse> games = relatedGameQueryRepository.findRelatedGames(gameId);
+        if (games.isEmpty()) {
+            return games;
+        }
+
+        Map<Long, List<GameDetailResponse.GenreResponse>> genresByGameId = gameGenreRepository
+                .findAllWithGenreByGameIdIn(games.stream().map(RelatedGameResponse::id).toList())
+                .stream()
+                .collect(Collectors.groupingBy(
+                        item -> item.getGame().getId(),
+                        Collectors.mapping(
+                                item -> new GameDetailResponse.GenreResponse(
+                                        item.getGenre().getId(), item.getGenre().getName()),
+                                Collectors.toList()
+                        )
+                ));
+
+        return games.stream()
+                .map(item -> new RelatedGameResponse(
+                        item.id(), item.title(), item.coverImageUrl(), item.igdbRating(),
+                        item.recommendationScore(), genresByGameId.getOrDefault(item.id(), List.of())
+                ))
+                .toList();
     }
 
     // 평균 평점, 리뷰 수와 모든 0.5점 단위의 평점 분포를 구성
@@ -164,4 +186,3 @@ public class GameDetailService {
     }
 
 }
-
