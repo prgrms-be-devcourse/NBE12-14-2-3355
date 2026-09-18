@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getLikeStatus } from "@/features/reviews/api";
+import { getLikeStatus, setReviewLike } from "@/features/reviews/api";
 import type { Review, ReviewPage } from "@/lib/reviews";
 import styles from "./game-reviews.module.css";
 
@@ -10,35 +10,66 @@ type ReviewResponse = { data?: ReviewPage; msg?: string };
 const pageSize = 5;
 const numberFormat = new Intl.NumberFormat("ko-KR");
 
-function ReviewLikeCount({ reviewId }: { reviewId: number }) {
+function ReviewLikeCount({ reviewId, accessToken }: { reviewId: number; accessToken?: string }) {
   const [likeCount, setLikeCount] = useState<number | null>(null);
+  const [liked, setLiked] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     let active = true;
 
     getLikeStatus(reviewId)
       .then((status) => {
-        if (active) setLikeCount(status.likeCount);
+        if (active) {
+          setLikeCount(status.likeCount);
+          setLiked(status.liked);
+          setError("");
+        }
       })
-      .catch(() => {
-        if (active) setLikeCount(null);
+      .catch((reason: unknown) => {
+        if (active) {
+          setLikeCount(null);
+          setLiked(false);
+          setError(reason instanceof Error ? reason.message : "좋아요 정보를 불러오지 못했어요.");
+        }
       });
 
     return () => { active = false; };
-  }, [reviewId]);
+  }, [accessToken, reviewId]);
 
-  return <button
-    type="button"
-    className={styles.likeCount}
-    disabled
-    title="로그인 후 좋아요를 누를 수 있습니다."
-    aria-label={`좋아요 ${likeCount ?? 0}개. 로그인 후 좋아요를 누를 수 있습니다.`}
-  >
-    <span aria-hidden="true">♡</span>{likeCount == null ? "–" : numberFormat.format(likeCount)}
-  </button>;
+  async function toggleLike() {
+    if (!accessToken || likeCount == null || pending) return;
+    setPending(true);
+    setError("");
+    try {
+      const status = await setReviewLike(reviewId, liked, accessToken);
+      setLikeCount(status.likeCount);
+      setLiked(status.liked);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "좋아요를 처리하지 못했어요.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return <div className={styles.likeArea}>
+    <button
+      type="button"
+      className={`${styles.likeCount} ${liked ? styles.liked : ""}`}
+      onClick={toggleLike}
+      disabled={!accessToken || likeCount == null || pending}
+      title={accessToken ? (liked ? "좋아요 취소" : "리뷰 좋아요") : "로그인 후 좋아요를 누를 수 있습니다."}
+      aria-label={`좋아요 ${likeCount ?? 0}개${liked ? ", 내가 좋아요를 누름" : ""}`}
+      aria-pressed={liked}
+    >
+      <span aria-hidden="true">{liked ? "♥" : "♡"}</span>{pending ? "…" : likeCount == null ? "–" : numberFormat.format(likeCount)}
+    </button>
+    {error && <span className={styles.likeError} role="status">{error}</span>}
+  </div>;
 }
 
-function ReviewCard({ review }: { review: Review }) {
+function ReviewCard({ review, accessToken }: { review: Review; accessToken?: string }) {
   const [revealed, setRevealed] = useState(false);
   const hidden = review.spoiler && !revealed;
 
@@ -59,13 +90,21 @@ function ReviewCard({ review }: { review: Review }) {
       </p>
     </div>
     <div className={styles.cardActions}>
-      <ReviewLikeCount reviewId={review.reviewId} />
+      <ReviewLikeCount reviewId={review.reviewId} accessToken={accessToken} />
       {review.spoiler && revealed && <button className={styles.hideButton} onClick={() => setRevealed(false)}>다시 가리기</button>}
     </div>
   </article>;
 }
 
-export default function GameReviews({ gameId }: { gameId: string }) {
+export default function GameReviews({
+  gameId,
+  accessToken,
+  refreshKey = 0,
+}: {
+  gameId: string;
+  accessToken?: string;
+  refreshKey?: number;
+}) {
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const [sort, setSort] = useState<ReviewSort>("newest");
   const [sortOpen, setSortOpen] = useState(false);
@@ -119,7 +158,7 @@ export default function GameReviews({ gameId }: { gameId: string }) {
 
     void loadReviews();
     return () => controller.abort();
-  }, [gameId, page, sort, retry]);
+  }, [gameId, page, refreshKey, sort, retry]);
 
   return <section className={styles.section} aria-labelledby="reviews-title" aria-busy={loading}>
     <div className={styles.heading}>
@@ -143,7 +182,7 @@ export default function GameReviews({ gameId }: { gameId: string }) {
       : error ? <div className={styles.emptyState} role="alert"><h3>리뷰를 불러오지 못했어요.</h3><p>{error}</p><button onClick={() => setRetry(value => value + 1)}>다시 시도 ↗</button></div>
       : !result?.reviews.length ? <div className={styles.emptyState}><h3>아직 등록된 리뷰가 없어요.</h3><p>이 게임의 첫 번째 이야기를 기다리고 있어요.</p></div>
       : <>
-        <div className={styles.list}>{result.reviews.map(review => <ReviewCard key={review.reviewId} review={review} />)}</div>
+        <div className={styles.list}>{result.reviews.map(review => <ReviewCard key={review.reviewId} review={review} accessToken={accessToken} />)}</div>
         {result.totalPages > 1 && <nav className={styles.pagination} aria-label="리뷰 페이지 이동">
           <button disabled={page === 0} onClick={() => setPage(value => value - 1)}>← 이전</button>
           <span>{page + 1} / {result.totalPages}</span>

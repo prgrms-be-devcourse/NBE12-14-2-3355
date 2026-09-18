@@ -15,6 +15,8 @@ type Props = {
   platforms: Option[];
   accessToken?: string;
   onLoginRequired?: () => void;
+  onTokenChange?: (accessToken?: string) => void;
+  onSaved?: () => void;
 };
 
 type FormState = {
@@ -90,7 +92,14 @@ function toRequest(form: FormState): DetailedReviewSaveBody {
   };
 }
 
-export default function MyGameLog({ gameId, platforms, accessToken, onLoginRequired }: Props) {
+export default function MyGameLog({
+  gameId,
+  platforms,
+  accessToken,
+  onLoginRequired,
+  onTokenChange,
+  onSaved,
+}: Props) {
   const [tokenInput, setTokenInput] = useState("");
   const [temporaryToken, setTemporaryToken] = useState<string>();
   const [tokenVerified, setTokenVerified] = useState(false);
@@ -118,11 +127,13 @@ export default function MyGameLog({ gameId, platforms, accessToken, onLoginRequi
         setDetail(result);
         setForm(initialForm(result));
         setTokenVerified(true);
+        onTokenChange?.(token);
         setMessage("");
       } catch (reason) {
         if (!active) return;
         setTokenVerified(false);
         if (!accessToken) setTemporaryToken(undefined);
+        onTokenChange?.(undefined);
         setMessage(reason instanceof ReviewApiError && reason.status === 401
           ? "토큰 인증에 실패했습니다. 새 accessToken을 입력해 주세요."
           : reason instanceof Error ? reason.message : "내 기록을 불러오지 못했습니다.");
@@ -134,7 +145,7 @@ export default function MyGameLog({ gameId, platforms, accessToken, onLoginRequi
     void load();
 
     return () => { active = false; };
-  }, [accessToken, effectiveAccessToken, gameId]);
+  }, [accessToken, effectiveAccessToken, gameId, onTokenChange]);
 
   function connectTemporaryToken(event: FormEvent) {
     event.preventDefault();
@@ -155,6 +166,7 @@ export default function MyGameLog({ gameId, platforms, accessToken, onLoginRequi
     setDetail(null);
     setForm(initialForm(null));
     setEditing(false);
+    onTokenChange?.(undefined);
     setMessage("임시 토큰 연결을 해제했습니다.");
   }
 
@@ -192,6 +204,7 @@ export default function MyGameLog({ gameId, platforms, accessToken, onLoginRequi
       setForm(initialForm(saved));
       setEditing(false);
       setMessage(hasReview ? "게임 기록과 리뷰를 저장했습니다." : "리뷰 없이 게임 기록만 저장했습니다.");
+      onSaved?.();
     } catch (reason) {
       if (reason instanceof ReviewApiError && reason.status === 401) {
         setTokenVerified(false);
@@ -217,13 +230,15 @@ export default function MyGameLog({ gameId, platforms, accessToken, onLoginRequi
     <button type="button" className={styles.editButton} onClick={openEditor} disabled={loading}>
       {loading ? "토큰 확인 중…" : tokenVerified ? (visibleDetail?.userGame ? "기록 · 리뷰 수정" : "기록 · 리뷰 작성") : "임시 토큰으로 기록하기"}
     </button>
-    {!accessToken && (temporaryToken
+    {accessToken && onTokenChange
       ? <button type="button" className={styles.tokenDisconnect} onClick={disconnectTemporaryToken}>임시 토큰 연결 해제</button>
-      : <form className={styles.tokenForm} onSubmit={connectTemporaryToken}>
+      : temporaryToken
+        ? <button type="button" className={styles.tokenDisconnect} onClick={disconnectTemporaryToken}>임시 토큰 연결 해제</button>
+        : <form className={styles.tokenForm} onSubmit={connectTemporaryToken}>
         <label htmlFor={`temporary-token-${gameId}`}>개발 테스트용 accessToken</label>
         <input id={`temporary-token-${gameId}`} type="password" value={tokenInput} onChange={(event) => setTokenInput(event.target.value)} placeholder="Bearer 없이 토큰 붙여넣기" autoComplete="off" />
         <button type="submit">연결</button>
-      </form>)}
+      </form>}
     {message && <p className={styles.message} role="status">{message}</p>}
 
     {editing && effectiveAccessToken && tokenVerified && <div className={styles.backdrop} role="presentation" onMouseDown={(event) => {

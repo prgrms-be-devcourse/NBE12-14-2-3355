@@ -87,6 +87,8 @@ function GameStats({ statistics }: { statistics: GameStatistics }) {
 
 export default function GameDetailView({ gameId }: { gameId: string }) {
   const [game, setGame] = useState<GameDetail | null>(null);
+  const [reviewAccessToken, setReviewAccessToken] = useState<string>();
+  const [reviewRefreshKey, setReviewRefreshKey] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
@@ -139,7 +141,16 @@ export default function GameDetailView({ gameId }: { gameId: string }) {
       </div> : game ? <section className={styles.hero} aria-labelledby="game-title">
         <div className={styles.posterColumn}>
           <div className={styles.cover}><GameCover key={game.id} game={game} /></div>
-          <MyGameLog gameId={Number(gameId)} platforms={game.platforms ?? []} />
+          <MyGameLog
+            gameId={Number(gameId)}
+            platforms={game.platforms ?? []}
+            accessToken={reviewAccessToken}
+            onTokenChange={setReviewAccessToken}
+            onSaved={() => {
+              setReviewRefreshKey((value) => value + 1);
+              setRetry((value) => value + 1);
+            }}
+          />
         </div>
         <div className={styles.content}>
           <span className={styles.eyebrow}><span className="dot" /> GAME DETAILS</span>
@@ -157,7 +168,7 @@ export default function GameDetailView({ gameId }: { gameId: string }) {
           <GameStats statistics={game.statistics} />
         </div>
       </section> : null}
-      {!loading && !error && game && <GameReviews gameId={gameId} />}
+      {!loading && !error && game && <GameReviews gameId={gameId} accessToken={reviewAccessToken} refreshKey={reviewRefreshKey} />}
     </main>
   </>;
 }
