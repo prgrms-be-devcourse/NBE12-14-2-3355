@@ -7,9 +7,7 @@ import com.gamelog.nbe121423355.domain.game.repository.PlatformRepository;
 import com.gamelog.nbe121423355.domain.review.repository.ReviewRepository;
 import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
-import com.gamelog.nbe121423355.domain.usergame.dto.ProfileStatsResponse;
-import com.gamelog.nbe121423355.domain.usergame.dto.UserGameReqBody;
-import com.gamelog.nbe121423355.domain.usergame.dto.UserGameSaveResult;
+import com.gamelog.nbe121423355.domain.usergame.dto.*;
 import com.gamelog.nbe121423355.domain.usergame.entity.PlayStatus;
 import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
 import com.gamelog.nbe121423355.domain.usergame.repository.UserGameRepository;
@@ -271,20 +269,38 @@ public class UserGameService {
     }
 
     @Transactional(readOnly = true)
-    public ProfileStatsResponse profileTab(Long userId){
+    public List<UserGameScatterResponse> profileTab(Long userId){
         List<UserGame> userGames =
                 userGameRepository.findPlayedGames(userId);
 
+        //플레이 요약 카운터
         long playedGameCount = userGames.size();
-
-        double averageRating = reviewRepository.findAverageRating(userId);
-
-        long totalPlayTime = userGames.stream()
+        BigDecimal averageRating = reviewRepository.findAverageRating(userId);
+        BigDecimal totalPlayTime = userGames.stream()
                 .map(UserGame::getPlayTimeHours)
                 .filter(Objects::nonNull)
-                .mapToLong(BigDecimal::longValue)
-                .sum();
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        return new ProfileStatsResponse(playedGameCount,averageRating,totalPlayTime);
+        // 산점도
+        List<UserGameScatterResponse> scatterData =
+                reviewRepository.findPlayedGameReviews(userId)
+                        .stream()
+                        .map(review -> {
+                            UserGame ug = review.getUserGame();
+
+                            return new UserGameScatterResponse(
+                                    ug.getGame().getId(),
+                                    ug.getGame().getTitle(),
+                                    ug.getGame().getCoverImageUrl(),
+                                    ug.getPlayTimeHours(),
+                                    review.getRating()
+                            );
+                        })
+                        .toList();
+
+        System.out.println(scatterData.get(0));
+
+        ProfileStatsResponse statsResponse = new ProfileStatsResponse(playedGameCount,averageRating,totalPlayTime);
+        return scatterData;
     }
 }

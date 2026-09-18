@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/library/games")
 @RequiredArgsConstructor
@@ -144,10 +146,10 @@ public class UserGameController {
     }
 
     @GetMapping("/profile")
-    public RsData<ProfileStatsResponse> profileTab(
+    public RsData<List<UserGameScatterResponse>> profileTab(
             @AuthenticationPrincipal SecurityUser user
     ){
-        ProfileStatsResponse response = userGameService.profileTab(user.getId());
+        List<UserGameScatterResponse> response = userGameService.profileTab(user.getId());
 
         return new RsData<>(
                 "200-1",
