@@ -49,7 +49,8 @@ public class GameController {
                         keyword,
                         genreIds,
                         platformIds,
-                        request.toPageable()
+                        request.toPageable(),
+                        request.sort()
                 );
 
         return new RsData<>(
