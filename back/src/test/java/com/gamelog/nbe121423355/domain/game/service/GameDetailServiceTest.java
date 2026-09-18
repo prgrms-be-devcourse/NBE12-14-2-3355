@@ -300,6 +300,14 @@ class GameDetailServiceTest {
                 fiveRatingWithLike, new BigDecimal("5.0"), null, false
         ));
 
+        UserGame contentOnlyReview = saveUserGame(
+                "rating-content@test.com", "ratingContent",
+                null, false, false, false
+        );
+        entityManager.persist(new Review(
+                contentOnlyReview, null, "별점 없이 작성한 리뷰", false
+        ));
+
         UserGame likedWithoutReview = saveUserGame(
                 "rating4@test.com", "rating4",
                 null, false, false, false
@@ -311,10 +319,10 @@ class GameDetailServiceTest {
         // when: 해당 게임의 상세 정보를 조회하면
         GameDetailResponse response = gameDetailService.getGameDetail(gameId);
 
-        // then: 리뷰 3개와 좋아요 3개가 각각 집계되고 빈 평점 구간은 0명으로 반환된다
+        // then: 글만 작성한 리뷰도 리뷰 수에는 포함하고 평점 통계에서는 제외한다
         assertThat(response.statistics().averageRating())
                 .isEqualByComparingTo("3.5");
-        assertThat(response.statistics().reviewCount()).isEqualTo(3L);
+        assertThat(response.statistics().reviewCount()).isEqualTo(4L);
         assertThat(response.statistics().likeCount()).isEqualTo(3L);
 
         List<GameRatingDistributionResponse> distribution =

@@ -21,6 +21,7 @@
 .rating>span{font-size:18px}
 .rating strong{font-size:18px}
 .rating small{color:var(--muted);font-size:11px}
+.noRating{color:var(--muted);font-size:12px}
 .cardHeader time{color:var(--muted);font-size:11px}
 .reviewBody{position:relative;min-height:66px;padding-top:16px}
 .reviewBody p{color:#cbd2c8;font-size:13px;line-height:1.8;white-space:pre-line;overflow-wrap:anywhere}
@@ -28,7 +29,11 @@
 .spoilerCover{position:absolute;inset:10px 0 0;z-index:1;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;padding:12px;text-align:center;color:var(--text);font-size:12px}
 .spoilerCover button{padding:8px 11px;border:1px solid #60764d;border-radius:4px;background:#293a25;color:var(--lime);font-size:11px}
 .spoilerCover button:hover{background:#344b2b}
-.hideButton{margin-top:9px;padding:4px 0;color:var(--muted);font-size:11px}
+.cardActions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:9px}
+.likeCount{display:inline-flex;align-items:center;gap:6px;padding:5px 0;color:var(--muted);font-size:11px;cursor:not-allowed}
+.likeCount>span{color:var(--lime);font-size:16px;line-height:1}
+.likeCount:disabled{opacity:1}
+.hideButton{margin-left:auto;padding:4px 0;color:var(--muted);font-size:11px}
 .hideButton:hover{color:var(--lime)}
 .loading,.emptyState{display:flex;min-height:210px;flex-direction:column;align-items:center;justify-content:center;gap:13px;padding:24px;border:1px dashed var(--line);border-radius:8px;color:var(--muted);font-size:12px;text-align:center}
 .emptyState h3{color:var(--text);font-size:17px}

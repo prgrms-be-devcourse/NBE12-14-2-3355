@@ -9,7 +9,6 @@ public record DetailedReviewSaveRequest(
         @Valid
         UserGameReqBody userGame,
 
-        @NotNull(message = "리뷰는 필수입니다.")
         @Valid
         ReviewSaveRequest review
 ) {

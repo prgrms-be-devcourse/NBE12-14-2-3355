@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { coverUrl, type GameDetail, type GameStatistics } from "@/lib/games";
 import GameReviews from "@/components/game-reviews";
+import MyGameLog from "@/components/my-game-log";
 import styles from "./game-detail-view.module.css";
 
 type DetailResponse = { data?: GameDetail; msg?: string };
@@ -138,6 +139,7 @@ export default function GameDetailView({ gameId }: { gameId: string }) {
       </div> : game ? <section className={styles.hero} aria-labelledby="game-title">
         <div className={styles.posterColumn}>
           <div className={styles.cover}><GameCover key={game.id} game={game} /></div>
+          <MyGameLog gameId={Number(gameId)} platforms={game.platforms ?? []} />
         </div>
         <div className={styles.content}>
           <span className={styles.eyebrow}><span className="dot" /> GAME DETAILS</span>
