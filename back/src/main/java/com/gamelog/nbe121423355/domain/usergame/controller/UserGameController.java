@@ -9,6 +9,9 @@ import com.gamelog.nbe121423355.global.security.SecurityUser;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +23,26 @@ public class UserGameController {
 
     private final UserGameService userGameService;
 
+    @GetMapping("")
+    public RsData<UserGameLibraryResponse> getUserGameList(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "60") int size,
+            @AuthenticationPrincipal SecurityUser user
+    ){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<UserGameListResponse> pages =
+                userGameService.getUserGameList(user.getId(), pageable);
+
+        return new RsData<>(
+                "200-1",
+                "라이브러리 게임 목록을 조회했습니다.",
+                new UserGameLibraryResponse(
+                        pages.getTotalPages(),
+                        pages.getContent()
+                )
+        );
+    }
+
     //등록 및 수정
     @PostMapping("/{gameId}")
     public RsData<UserGameDto> addGameToLibrary(
@@ -27,8 +50,6 @@ public class UserGameController {
             @Valid @RequestBody UserGameReqBody reqBody,
             @AuthenticationPrincipal SecurityUser user
             ){
-
-        System.out.println("user = " + user);
 
         Long userId = user.getId();
         UserGameSaveResult result = userGameService.addOrUpdateGameToLibrary(userId,gameId,reqBody);
