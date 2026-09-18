@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { coverUrl, type GameDetail, type GameStatistics } from "@/lib/games";
 import GameReviews from "@/components/game-reviews";
+import RelatedGames from "@/components/related-games";
 import MyGameLog from "@/components/my-game-log";
 import styles from "./game-detail-view.module.css";
 
@@ -157,7 +158,10 @@ export default function GameDetailView({ gameId }: { gameId: string }) {
           <GameStats statistics={game.statistics} />
         </div>
       </section> : null}
-      {!loading && !error && game && <GameReviews gameId={gameId} />}
+      {!loading && !error && game && <>
+        <RelatedGames key={gameId} gameId={gameId} />
+        <GameReviews gameId={gameId} />
+      </>}
     </main>
   </>;
 }
