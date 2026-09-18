@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Slf4j
+@org.springframework.core.annotation.Order(10)
 @Component
 @Profile("local")
 @ConditionalOnProperty(
