@@ -69,6 +69,7 @@ public class SecurityConfig {
         response.getWriter().write(objectMapper.writeValueAsString(rsData));
     }
 
+    // 프론트는 Next.js 프록시로 백엔드를 호출하는 형태로 되어있어서 정상 트래픽은 이 설정을 안 탐 — 직접 호출 대비 안전망
     @Bean
     public CorsConfigurationSource corsConfigurationSource(CorsProperties corsProperties) {
         CorsConfiguration config = new CorsConfiguration();
