@@ -6,6 +6,7 @@ import com.gamelog.nbe121423355.domain.game.repository.GameRepository;
 import com.gamelog.nbe121423355.domain.game.repository.PlatformRepository;
 import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
+import com.gamelog.nbe121423355.domain.usergame.dto.UserGameListResponse;
 import com.gamelog.nbe121423355.domain.usergame.dto.UserGameReqBody;
 import com.gamelog.nbe121423355.domain.usergame.dto.UserGameSaveResult;
 import com.gamelog.nbe121423355.domain.usergame.entity.PlayStatus;
@@ -13,6 +14,8 @@ import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
 import com.gamelog.nbe121423355.domain.usergame.repository.UserGameRepository;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +29,13 @@ public class UserGameService {
     private final UserRepository userRepository;
     private final GameRepository gameRepository;
     private final PlatformRepository platformRepository;
+
+    @Transactional(readOnly = true)
+    public Page<UserGameListResponse> getUserGameList(Long userId, Pageable pageable){
+
+        return userGameRepository.findAllByUser_IdAndInLibraryTrue(userId, pageable)
+                .map(UserGameListResponse::new);
+    }
 
     //생성 또는 수정
     @Transactional

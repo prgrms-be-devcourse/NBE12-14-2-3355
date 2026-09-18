@@ -53,18 +53,20 @@ public class ReviewService {
             Long gameId,
             DetailedReviewSaveRequest request
     ) {
-        // 게임 기록을 먼저 저장한 뒤 같은 기록에 리뷰를 저장.
+        // 게임 기록은 항상 저장하고, 리뷰 요청이 있으면 같은 기록에 리뷰를 저장한다.
         UserGameSaveResult userGameResult = userGameService.addOrUpdateGameToLibrary(
                 userId,
                 gameId,
                 request.userGame()
         );
 
-        ReviewResponse review = saveReview(
-                userId,
-                userGameResult.userGame().getId(),
-                request.review()
-        );
+        ReviewResponse review = request.review() == null || !request.review().hasReviewContent()
+                ? findReviewResponse(userGameResult.userGame().getId())
+                : saveReview(
+                        userId,
+                        userGameResult.userGame().getId(),
+                        request.review()
+                );
 
         return new DetailedReviewResponse(
                 new UserGameDto(userGameResult.userGame()),
@@ -74,6 +76,8 @@ public class ReviewService {
 
     @Transactional
     public ReviewResponse saveReview(Long userId, Long userGameId, ReviewSaveRequest request) {
+        validateReviewContent(request);
+
         UserGame userGame = getUserGame(userGameId);
         validateOwner(userId, userGame);
 
@@ -114,6 +118,8 @@ public class ReviewService {
 
     @Transactional
     public ReviewResponse updateReview(Long userId, Long reviewId, ReviewSaveRequest request) {
+        validateReviewContent(request);
+
         Review review = getReviewEntity(reviewId);
         validateOwner(userId, review.getUserGame());
 
@@ -140,6 +146,18 @@ public class ReviewService {
     private Review getReviewEntity(Long reviewId) {
         return reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ServiceException("404-3", "리뷰를 찾을 수 없습니다."));
+    }
+
+    private ReviewResponse findReviewResponse(Long userGameId) {
+        return reviewRepository.findByUserGame_Id(userGameId)
+                .map(ReviewResponse::from)
+                .orElse(null);
+    }
+
+    private void validateReviewContent(ReviewSaveRequest request) {
+        if (!request.hasReviewContent()) {
+            throw new ServiceException("400-4", "별점 또는 리뷰 내용 중 하나는 입력해야 합니다.");
+        }
     }
 
     private void validateOwner(Long userId, UserGame userGame) {

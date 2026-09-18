@@ -43,7 +43,8 @@ public class ReviewLikeController {
             @AuthenticationPrincipal SecurityUser securityUser,
             @PathVariable Long reviewId
     ) {
-        ReviewLikeResponse response = reviewLikeService.getLikeStatus(securityUser.getId(), reviewId);
+        Long userId = securityUser == null ? null : securityUser.getId();
+        ReviewLikeResponse response = reviewLikeService.getLikeStatus(userId, reviewId);
         return new RsData<>("200-10", "리뷰 좋아요 정보를 조회했습니다.", response);
     }
 }
