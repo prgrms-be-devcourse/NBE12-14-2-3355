@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { getLikeStatus } from "@/features/reviews/api";
 import type { Review, ReviewPage } from "@/lib/reviews";
 import styles from "./game-reviews.module.css";
 
@@ -9,13 +10,43 @@ type ReviewResponse = { data?: ReviewPage; msg?: string };
 const pageSize = 5;
 const numberFormat = new Intl.NumberFormat("ko-KR");
 
+function ReviewLikeCount({ reviewId }: { reviewId: number }) {
+  const [likeCount, setLikeCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    getLikeStatus(reviewId)
+      .then((status) => {
+        if (active) setLikeCount(status.likeCount);
+      })
+      .catch(() => {
+        if (active) setLikeCount(null);
+      });
+
+    return () => { active = false; };
+  }, [reviewId]);
+
+  return <button
+    type="button"
+    className={styles.likeCount}
+    disabled
+    title="로그인 후 좋아요를 누를 수 있습니다."
+    aria-label={`좋아요 ${likeCount ?? 0}개. 로그인 후 좋아요를 누를 수 있습니다.`}
+  >
+    <span aria-hidden="true">♡</span>{likeCount == null ? "–" : numberFormat.format(likeCount)}
+  </button>;
+}
+
 function ReviewCard({ review }: { review: Review }) {
   const [revealed, setRevealed] = useState(false);
   const hidden = review.spoiler && !revealed;
 
   return <article className={styles.card}>
     <div className={styles.cardHeader}>
-      <div className={styles.rating}><span aria-hidden="true">★</span><strong>{review.rating.toFixed(1)}</strong><small>/ 5.0</small></div>
+      {review.rating == null
+        ? <div className={styles.noRating}>별점 없음</div>
+        : <div className={styles.rating}><span aria-hidden="true">★</span><strong>{review.rating.toFixed(1)}</strong><small>/ 5.0</small></div>}
       <time dateTime={review.createdDate}>{review.createdDate.slice(0, 10).replaceAll("-", ".")}</time>
     </div>
     <div className={styles.reviewBody}>
@@ -27,7 +58,10 @@ function ReviewCard({ review }: { review: Review }) {
         {review.content?.trim() || "별점만 남긴 리뷰입니다."}
       </p>
     </div>
-    {review.spoiler && revealed && <button className={styles.hideButton} onClick={() => setRevealed(false)}>다시 가리기</button>}
+    <div className={styles.cardActions}>
+      <ReviewLikeCount reviewId={review.reviewId} />
+      {review.spoiler && revealed && <button className={styles.hideButton} onClick={() => setRevealed(false)}>다시 가리기</button>}
+    </div>
   </article>;
 }
 
