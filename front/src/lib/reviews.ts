@@ -1,7 +1,7 @@
 export type Review = {
   reviewId: number;
   userGameId: number;
-  rating: number;
+  rating: number | null;
   content: string | null;
   spoiler: boolean;
   createdDate: string;

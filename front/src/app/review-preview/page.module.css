@@ -1,0 +1,13 @@
+.main{width:min(900px,calc(100% - 40px));margin:0 auto;padding:52px 0 80px}
+.header{padding:26px 28px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(120deg,#1e271a,#171c1a);margin-bottom:34px}
+.header>span{color:var(--lime);font-size:9px;font-weight:700;letter-spacing:2px}
+.header h1{font-size:28px;margin:10px 0 8px}
+.header p{color:var(--muted);font-size:12px;line-height:1.7}
+.header code{display:inline-block;margin:0 5px;padding:2px 5px;border-radius:4px;background:#111;color:#cbea91}
+.authPanel{position:relative;border:1px solid #3b4735;background:#171d18;border-radius:10px;padding:20px 22px;margin-bottom:26px;display:grid;grid-template-columns:minmax(180px,.7fr) minmax(280px,1.3fr);align-items:center;gap:20px}
+.authPanel span{color:var(--lime);font-size:8px;font-weight:700;letter-spacing:1.7px}.authPanel h2{font-size:16px;margin:6px 0}.authPanel p{color:var(--muted);font-size:10px;line-height:1.6}
+.tokenForm label{display:block;color:#bfc7bd;font-size:10px;margin-bottom:7px}.tokenForm>div{display:flex;gap:8px}.tokenForm input{min-width:0;flex:1;border:1px solid #3c463c;border-radius:6px;background:#101513;color:var(--text);padding:10px 12px;outline:none}.tokenForm input:focus{border-color:var(--lime)}
+.tokenForm button,.connected button{background:var(--lime);color:#17200f;border-radius:6px;padding:10px 13px;font-size:11px;font-weight:750;white-space:nowrap}
+.connected{display:flex;align-items:center;justify-content:flex-end;gap:15px}.connected strong{display:flex;align-items:center;gap:8px;color:#d6efad;font-size:12px}.connected i{display:block;width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 9px #c3ed79}
+.authPanel .notice{grid-column:1/-1;color:#c8daa9;border-top:1px solid #30382f;padding-top:10px;margin-top:-5px}
+@media(max-width:640px){.main{width:min(100% - 28px,900px);padding-top:28px}.header{padding:20px}.header h1{font-size:22px}.authPanel{grid-template-columns:1fr;padding:17px}.tokenForm>div{flex-direction:column}.connected{justify-content:space-between}}

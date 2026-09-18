@@ -28,7 +28,7 @@ public class Review extends BaseEntity {
     @JoinColumn(name = "user_game_id", nullable = false, unique = true)
     private UserGame userGame;
 
-    @Column(nullable = false, precision = 2, scale = 1)
+    @Column(precision = 2, scale = 1)
     private BigDecimal rating;
 
     @Column(columnDefinition = "TEXT")
@@ -40,18 +40,20 @@ public class Review extends BaseEntity {
     public Review(UserGame userGame, BigDecimal rating, String content, boolean spoiler) {
         this.userGame = Objects.requireNonNull(userGame, "userGame은 필수입니다.");
         this.rating = validateRating(rating);
-        this.content = content;
+        this.content = validateContent(rating, content);
         this.spoiler = spoiler;
     }
 
     public void edit(BigDecimal rating, String content, boolean spoiler) {
         this.rating = validateRating(rating);
-        this.content = content;
+        this.content = validateContent(rating, content);
         this.spoiler = spoiler;
     }
 
     private static BigDecimal validateRating(BigDecimal rating) {
-        Objects.requireNonNull(rating, "rating은 필수입니다.");
+        if (rating == null) {
+            return null;
+        }
 
         boolean outOfRange = rating.compareTo(MIN_RATING) < 0
                 || rating.compareTo(MAX_RATING) > 0;
@@ -62,5 +64,13 @@ public class Review extends BaseEntity {
         }
 
         return rating;
+    }
+
+    private static String validateContent(BigDecimal rating, String content) {
+        if (rating == null && (content == null || content.isBlank())) {
+            throw new IllegalArgumentException("별점 또는 리뷰 내용 중 하나는 입력해야 합니다.");
+        }
+
+        return content;
     }
 }

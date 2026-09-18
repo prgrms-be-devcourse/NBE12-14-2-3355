@@ -1,0 +1,35 @@
+.section{border-top:1px solid var(--line);padding:40px 0;color:var(--text)}
+.heading{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px}
+.heading h2{font-size:24px;letter-spacing:-.7px;margin:7px 0}
+.heading p{color:var(--muted);font-size:12px}
+.eyebrow{color:var(--lime);font-size:9px;font-weight:700;letter-spacing:2px}
+.primaryButton{background:var(--lime);color:#17200f;border-radius:6px;padding:11px 16px;font-weight:750;font-size:12px;white-space:nowrap}
+.primaryButton:hover:not(:disabled){background:#d4f59e}
+.list{display:grid;gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:19px 20px}
+.myCard{border-color:#536a3e;box-shadow:inset 3px 0 var(--lime)}
+.cardHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.cardHeader>div{display:flex;flex-direction:column;gap:5px}
+.cardHeader strong{font-size:13px}.cardHeader span:not(.rating):not(.noRating){color:var(--muted);font-size:10px}
+.rating{color:var(--lime);font-weight:750}.noRating{color:var(--muted);font-size:11px}
+.content{color:#cdd2cc;line-height:1.75;white-space:pre-wrap;overflow-wrap:anywhere}
+.spoiler{width:100%;padding:18px;border:1px dashed #4c5748;border-radius:6px;color:#aeb8ac;background:#151a18;font-size:12px}
+.spoiler:hover{border-color:var(--lime);color:var(--lime)}
+.cardActions{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:17px;padding-top:13px;border-top:1px solid #272e2c}
+.cardActions button{font-size:11px;color:var(--muted)}.cardActions button:hover:not(:disabled){color:var(--lime)}
+.cardActions .danger:hover:not(:disabled){color:#f0a892}.likeArea{margin-right:auto;display:flex;align-items:center;gap:9px;min-width:0}.likeError{color:#f0a892;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:300px}.cardActions .liked{color:#d8f59f}
+.editor{border:1px solid #4b5e3b;background:#1c231b;border-radius:10px;padding:22px;margin-bottom:20px;display:grid;gap:18px}
+.editorHeading{display:flex;justify-content:space-between;align-items:start;border-bottom:1px solid #34402e;padding-bottom:15px}
+.editorHeading span{font-size:8px;letter-spacing:1.8px;color:var(--lime)}.editorHeading h3{font-size:17px;margin-top:5px}
+.editorHeading>button{font-size:24px;color:var(--muted);line-height:1}
+.editor label{display:grid;gap:8px;font-size:12px;font-weight:650}.editor label small{display:inline;color:var(--muted);font-weight:400;margin-left:4px}
+.editor select,.editor textarea{width:100%;border:1px solid #3a443b;border-radius:6px;background:#141918;color:var(--text);padding:11px 12px;outline:none}
+.editor select:focus,.editor textarea:focus{border-color:var(--lime)}.editor textarea{resize:vertical;line-height:1.7}
+.editor .checkLabel{display:flex;grid-template-columns:auto 1fr;align-items:center;gap:9px;font-weight:400;color:#bdc5bb}
+.checkLabel input{accent-color:var(--lime)}
+.formError{color:#f0b39c;font-size:11px}.editorActions{display:flex;justify-content:flex-end;gap:10px}.editorActions>button:first-child{padding:11px 14px;color:var(--muted)}
+.error{display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid #70483d;background:#2a1e1a;color:#efb7a5;border-radius:7px;padding:13px 15px;margin-bottom:16px;font-size:11px}
+.error button{color:#ffd4c7;text-decoration:underline}.loading,.empty{min-height:180px;border:1px dashed var(--line);border-radius:9px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.empty{flex-direction:column;gap:8px}.empty strong{color:var(--text);font-size:15px}.empty p{font-size:11px}
+.pagination{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:20px;color:var(--muted);font-size:11px}.pagination button{border:1px solid var(--line);border-radius:5px;padding:8px 12px}.pagination button:hover:not(:disabled){border-color:var(--lime);color:var(--lime)}
+@media(max-width:640px){.section{padding:30px 0}.heading{align-items:flex-start}.heading h2{font-size:20px}.card{padding:16px}.cardHeader{flex-direction:column}.editor{padding:17px}.primaryButton{padding:10px 12px}.heading p{max-width:190px;line-height:1.6}}

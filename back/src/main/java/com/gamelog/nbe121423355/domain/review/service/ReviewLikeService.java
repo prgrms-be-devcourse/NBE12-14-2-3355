@@ -50,7 +50,8 @@ public class ReviewLikeService {
     public ReviewLikeResponse getLikeStatus(Long userId, Long reviewId) {
         getReview(reviewId);
 
-        boolean liked = reviewLikeRepository.existsByReview_IdAndUser_Id(reviewId, userId);
+        boolean liked = userId != null
+                && reviewLikeRepository.existsByReview_IdAndUser_Id(reviewId, userId);
         return createResponse(reviewId, liked);
     }
 
