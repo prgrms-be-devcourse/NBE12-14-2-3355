@@ -29,14 +29,6 @@ public class GameService {
         return gameImportService.saveGames(games);
     }
 
-    @Transactional(readOnly=true)
-    public List<GameListResponse> getGames(){
-        return gameRepository.findAll()
-                .stream()
-                .map(game->new GameListResponse(game))
-                .toList();
-    }
-
     // 기존 페이징 호출 유지
     @Transactional(readOnly = true)
     public Page<GameListResponse> getGamesPage(Pageable pageable) {
