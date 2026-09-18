@@ -281,7 +281,7 @@ public class UserGameService {
     }
 
     @Transactional(readOnly = true)
-    public List<UserGameScatterResponse> profileTab(Long userId){
+    public UserProfileResponse profileTab(Long userId){
         List<UserGame> userGames =
                 userGameRepository.findPlayedGames(userId);
 
@@ -295,24 +295,9 @@ public class UserGameService {
 
         // 산점도
         List<UserGameScatterResponse> scatterData =
-                reviewRepository.findPlayedGameReviews(userId)
-                        .stream()
-                        .map(review -> {
-                            UserGame ug = review.getUserGame();
-
-                            return new UserGameScatterResponse(
-                                    ug.getGame().getId(),
-                                    ug.getGame().getTitle(),
-                                    ug.getGame().getCoverImageUrl(),
-                                    ug.getPlayTimeHours(),
-                                    review.getRating()
-                            );
-                        })
-                        .toList();
-
-        System.out.println(scatterData.get(0));
+                userGameRepository.findPlayedGameScatterData(userId);
 
         ProfileStatsResponse statsResponse = new ProfileStatsResponse(playedGameCount,averageRating,totalPlayTime);
-        return scatterData;
+        return new UserProfileResponse(statsResponse,scatterData);
     }
 }

@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Optional;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
@@ -31,19 +30,4 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
       )
 """)
     BigDecimal findAverageRating(@Param("userId") Long userId);
-
-    @Query("""
-    SELECT r
-    FROM Review r
-    JOIN FETCH r.userGame ug
-    JOIN FETCH ug.game g
-    WHERE ug.user.id = :userId
-      AND ug.inLibrary = true
-      AND (
-          ug.playStatus IS NOT NULL
-          OR ug.playing = true
-      )
-      AND ug.playTimeHours IS NOT NULL
-""")
-    List<Review> findPlayedGameReviews(@Param("userId") Long userId);
 }

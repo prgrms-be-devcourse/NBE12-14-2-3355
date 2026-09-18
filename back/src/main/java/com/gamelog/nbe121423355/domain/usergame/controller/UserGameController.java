@@ -15,8 +15,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/v1/library/games")
 @RequiredArgsConstructor
@@ -167,10 +165,10 @@ public class UserGameController {
     }
 
     @GetMapping("/profile")
-    public RsData<List<UserGameScatterResponse>> profileTab(
+    public RsData<UserProfileResponse> profileTab(
             @AuthenticationPrincipal SecurityUser user
     ){
-        List<UserGameScatterResponse> response = userGameService.profileTab(user.getId());
+        UserProfileResponse response = userGameService.profileTab(user.getId());
 
         return new RsData<>(
                 "200-1",
