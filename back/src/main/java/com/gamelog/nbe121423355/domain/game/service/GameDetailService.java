@@ -24,6 +24,7 @@ public class GameDetailService {
     private final GamePlatformRepository gamePlatformRepository;
     private final GameSeriesGameRepository gameSeriesGameRepository;
     private final GameStatisticsRepository gameStatisticsRepository;
+    private final RelatedGameQueryRepository relatedGameQueryRepository;
 
     // 게임 기본 정보와 연결 정보, 상태·평점·리뷰·좋아요 통계를 조회해 상세 응답으로 반환
     public GameDetailResponse getGameDetail(Long gameId) {
@@ -103,6 +104,18 @@ public class GameDetailService {
                 series,
                 statistics
         );
+    }
+
+    // 기준 게임의 존재 여부를 확인한 뒤 연관 추천 게임 상위 5개를 반환
+    public List<RelatedGameResponse> getRelatedGames(Long gameId) {
+        if (!gameRepository.existsById(gameId)) {
+            throw new ServiceException(
+                    "404-1",
+                    "존재하지 않는 게임입니다."
+            );
+        }
+
+        return relatedGameQueryRepository.findRelatedGames(gameId);
     }
 
     // 평균 평점, 리뷰 수와 모든 0.5점 단위의 평점 분포를 구성
