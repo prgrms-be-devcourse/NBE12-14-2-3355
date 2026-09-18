@@ -59,6 +59,15 @@ public interface GameRepository extends JpaRepository<Game,Long> {
                           AND gp.platform.id IN :platformIds
                     )
                 )
+                ORDER BY CASE
+                    WHEN :metric = 'RATING' THEN
+                        (SELECT COALESCE(AVG(r.rating), 0.0) FROM Review r WHERE r.userGame.game = g)
+                    WHEN :metric = 'LIBRARY' THEN
+                        (SELECT COUNT(ug.id) FROM UserGame ug WHERE ug.game = g AND ug.inLibrary = true)
+                    WHEN :metric = 'PLAY_TIME' THEN
+                        (SELECT COALESCE(AVG(ug.playTimeHours), 0.0) FROM UserGame ug WHERE ug.game = g)
+                    ELSE 0.0
+                END DESC
                 """,
             countQuery = """
                 SELECT COUNT(g)
@@ -93,6 +102,7 @@ public interface GameRepository extends JpaRepository<Game,Long> {
             @Param("genreIds") List<Long> genreIds,
             @Param("filterPlatforms") boolean filterPlatforms,
             @Param("platformIds") List<Long> platformIds,
+            @Param("metric") String metric,
             Pageable pageable
     );
 }
