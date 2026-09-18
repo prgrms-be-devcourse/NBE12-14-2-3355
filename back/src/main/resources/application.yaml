@@ -5,7 +5,7 @@ spring:
     active: local
 # ===== jwt 토큰 =====
 jwt:
-  secret: 2yFvv+amd1bJKWDQ/picSaxbhQ+VKrMIjFqIqbBqib8=
+  secret: ${JWT_SECRET}
   access-token-validity: 3600000 #1시간
   refresh-token-validity: 1209600000 #14일
 
@@ -70,13 +70,15 @@ spring:
     activate:
       on-profile: prod
   datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    spring:
+      datasource:
+        url: jdbc:mysql://${MYSQLHOST}:${MYSQLPORT}/${MYSQLDATABASE}
+        username: ${MYSQLUSER}
+        password: ${MYSQLPASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: validate   # 운영에서는 절대 update/create 쓰지 말 것
+      ddl-auto: update   # 운영에서는 절대 update/create 쓰지 말 것
     show-sql: false
   sql:
     init:
