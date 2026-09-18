@@ -1,5 +1,6 @@
 package com.gamelog.nbe121423355.domain.game.service;
 
+import com.gamelog.nbe121423355.domain.game.dto.GameDetailResponse;
 import com.gamelog.nbe121423355.domain.game.dto.IgdbGameResponse;
 import com.gamelog.nbe121423355.domain.game.dto.RelatedGameResponse;
 import com.gamelog.nbe121423355.domain.game.entity.Game;
@@ -107,6 +108,12 @@ class RelatedGameRecommendationTest {
                         candidates.get(3).getId()
                 );
         assertThat(result.get(0).recommendationScore()).isEqualByComparingTo("70.0");
+        assertThat(result.get(0).genres())
+                .extracting(GameDetailResponse.GenreResponse::name)
+                .containsExactlyInAnyOrder("RPG", "액션");
+        assertThat(result.get(1).genres())
+                .extracting(GameDetailResponse.GenreResponse::name)
+                .containsExactly("RPG");
     }
 
     @Test
