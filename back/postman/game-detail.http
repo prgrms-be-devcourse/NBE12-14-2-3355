@@ -1,0 +1,34 @@
+# Gamelog - Game Detail API
+# IntelliJ IDEA HTTP Client에서 각 요청 왼쪽의 실행 버튼(▶)을 눌러 테스트합니다.
+
+@baseUrl = http://localhost:8080
+@gameId = 6
+@invalidGameId = 9999999
+
+###
+# @name getGameDetail
+# 1. Gamelog 게임 상세 정보 조회
+# GameLog DB ID를 기준으로 게임의 상세 정보를 조회합니다.
+GET {{baseUrl}}/api/v1/games/{{gameId}}
+
+
+
+###
+# @name getRelatedGames
+# 2. Gamelog 연관 추천 게임 상위 5개 조회
+# GameLog DB ID를 기준으로 알고리즘 추천 상위 5개 게임 목록을 조회합니다.
+GET {{baseUrl}}/api/v1/games/{{gameId}}/related
+
+
+
+###
+# @name getGameDetailNotFound
+# 3. [실패 검증] Gamelog 존재하지 않는 게임 상세 조회 시 404 응답
+GET {{baseUrl}}/api/v1/games/{{invalidGameId}}
+
+
+
+###
+# @name getRelatedGamesNotFound
+# 4. [실패 검증] Gamelog 존재하지 않는 게임의 연관 추천 조회 시 404 응답
+GET {{baseUrl}}/api/v1/games/{{invalidGameId}}/related

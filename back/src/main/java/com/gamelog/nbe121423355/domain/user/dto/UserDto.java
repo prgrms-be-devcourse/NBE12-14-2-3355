@@ -6,13 +6,19 @@ import com.gamelog.nbe121423355.domain.user.entity.User;
 public record UserDto(
         Long id,
         String nickname,
-        String email
+        String email,
+        String profileImageUrl,
+        String bio,
+        boolean onboardingCompleted
 ) {
     public UserDto(User user) {
         this(
                 user.getId(),
                 user.getNickname(),
-                user.getEmail()
+                user.getEmail(),
+                user.getProfileImageUrl(),
+                user.getBio(),
+                user.isOnboardingCompleted()
         );
     }
 }

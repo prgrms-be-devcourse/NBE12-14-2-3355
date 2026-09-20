@@ -22,19 +22,6 @@ public class GameController {
 
     private final GameService gameService;
 
-    @GetMapping
-    public RsData<List<GameListResponse>> list(){
-        List<GameListResponse> responseList=gameService.getGames();
-
-        RsData<List<GameListResponse>> rsData=new RsData<>(
-                "200-1",
-                "게임 목록을 조회했습니다.",
-                responseList
-        );
-
-        return rsData;
-    }
-
     @GetMapping("/suggestions")
     public RsData<List<GameListResponse>> suggestions(
             @RequestParam(name = "keyword", required = false) String keyword
@@ -62,7 +49,8 @@ public class GameController {
                         keyword,
                         genreIds,
                         platformIds,
-                        request.toPageable()
+                        request.toPageable(),
+                        request.sort()
                 );
 
         return new RsData<>(

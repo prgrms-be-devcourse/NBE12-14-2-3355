@@ -24,6 +24,8 @@ public record PageRequest(
         Sort order = sort == null ? Sort.by("id").ascending() : switch (sort) {
             case LATEST -> Sort.by(Sort.Order.desc("releaseDate"), Sort.Order.asc("id"));
             case TITLE -> Sort.by(Sort.Order.asc("title"), Sort.Order.asc("id"));
+            // 집계 정렬은 Repository에서 처리하고, 동점은 ID순으로 정렬합니다.
+            case RATING, LIBRARY, PLAY_TIME -> Sort.by("id").ascending();
         };
         return org.springframework.data.domain.PageRequest.of(
                 page, size, order

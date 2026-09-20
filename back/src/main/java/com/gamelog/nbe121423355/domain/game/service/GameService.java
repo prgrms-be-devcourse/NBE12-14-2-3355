@@ -2,6 +2,7 @@ package com.gamelog.nbe121423355.domain.game.service;
 
 import com.gamelog.nbe121423355.domain.game.client.IgdbClient;
 import com.gamelog.nbe121423355.domain.game.dto.GameListResponse;
+import com.gamelog.nbe121423355.domain.game.dto.GameSort;
 import com.gamelog.nbe121423355.domain.game.dto.IgdbGameResponse;
 import com.gamelog.nbe121423355.domain.game.repository.GameRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,14 +28,6 @@ public class GameService {
         List<IgdbGameResponse> games = fetchGamesFromIgdb();
 
         return gameImportService.saveGames(games);
-    }
-
-    @Transactional(readOnly=true)
-    public List<GameListResponse> getGames(){
-        return gameRepository.findAll()
-                .stream()
-                .map(game->new GameListResponse(game))
-                .toList();
     }
 
     // 기존 페이징 호출 유지
@@ -67,6 +60,12 @@ public class GameService {
             List<Long> platformIds,
             Pageable pageable
     ) {
+        return getGamesPage(keyword, genreIds, platformIds, pageable, null);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<GameListResponse> getGamesPage(String keyword, List<Long> genreIds,
+            List<Long> platformIds, Pageable pageable, GameSort sort) {
         String keywordPattern =
                 keyword == null || keyword.isBlank()
                         ? null
@@ -92,6 +91,7 @@ public class GameService {
                         queryGenreIds,
                         filterPlatforms,
                         queryPlatformIds,
+                        sort == null ? "" : sort.name(),
                         pageable
                 )
                 .map(GameListResponse::new);

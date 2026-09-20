@@ -1,16 +1,20 @@
 package com.gamelog.nbe121423355.domain.user.service;
 
 import com.gamelog.nbe121423355.domain.user.dto.*;
+import com.gamelog.nbe121423355.domain.user.entity.RefreshToken;
 import com.gamelog.nbe121423355.domain.user.entity.User;
+import com.gamelog.nbe121423355.domain.user.repository.RefreshTokenRepository;
 import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import com.gamelog.nbe121423355.global.security.jwt.JwtProvider;
+import io.jsonwebtoken.Claims;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 
 @Service
@@ -19,6 +23,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     // 로그인 결과를 Controller에 전달하기 위한 내부 운반용 record
     public record LoginResult(UserDto user, String accessToken, String refreshToken) {}
@@ -54,7 +59,20 @@ public class UserService {
         }
         String accessToken = jwtProvider.generateAccessToken(user.getId(), user.getRole());
         String refreshToken = jwtProvider.generateRefreshToken(user.getId());
+        Claims claims = jwtProvider.parseClaims(refreshToken);
+        LocalDateTime expiryDate = claims.getExpiration().toInstant()
+                .atZone(ZoneId.systemDefault()).toLocalDateTime();
+        refreshTokenRepository.save(new RefreshToken(null, claims.getId(), user, expiryDate));
         return new LoginResult(new UserDto(user), accessToken, refreshToken);
+    }
+
+    // 로그아웃 메소드
+    @Transactional
+    public void logout(String refreshToken) {
+        if (jwtProvider.validateToken(refreshToken)) {
+            String jti = jwtProvider.parseClaims(refreshToken).getId();
+            refreshTokenRepository.deleteByTokenId(jti);
+        }
     }
 
     // 토큰 갱신 메소드
@@ -62,6 +80,9 @@ public class UserService {
         if(!jwtProvider.validateToken(refreshToken)) {
             throw new ServiceException("401-2", "유효하지 않은 토큰 입니다.");
         }
+        String jti = jwtProvider.parseClaims(refreshToken).getId();
+        refreshTokenRepository.findByTokenId(jti)
+                .orElseThrow(() -> new ServiceException("401-2", "로그아웃된 토큰입니다."));
         Long userId = jwtProvider.getUserId(refreshToken);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ServiceException("401-2", "유효하지 않은 토큰입니다."));
