@@ -6,6 +6,7 @@ import type {
   PreferredGenre,
   SignupRequestBody,
   TokenResponseDto,
+  UpdateProfileRequestBody,
   UserDto,
 } from "./types";
 
@@ -65,6 +66,10 @@ export function refresh() {
 
 export function getMe(accessToken: string) {
   return request<UserDto>("me", { accessToken });
+}
+
+export function updateProfile(body: UpdateProfileRequestBody, accessToken: string) {
+  return request<UserDto>("me", { method: "PATCH", body: JSON.stringify(body), accessToken });
 }
 
 export function completeOnboarding(accessToken: string) {
