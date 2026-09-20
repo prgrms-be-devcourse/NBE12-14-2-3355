@@ -488,7 +488,7 @@ public class UserGameService {
         }
 
         long completedCount = playedGames.stream()
-                .filter(ug -> ug.getPlayStatus().equals(PlayStatus.COMPLETED))
+                .filter(ug -> PlayStatus.COMPLETED.equals(ug.getPlayStatus()))
                 .count();
 
         BigDecimal completionRatio =
