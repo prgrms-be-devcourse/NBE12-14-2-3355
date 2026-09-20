@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import GameSearch from "@/components/game-search";
+import AuthNav from "@/components/auth/auth-nav";
 import { coverUrl, demoGames, demoOptions, emptyFilters, type Filters, type Game, type GamePage, type Option } from "@/lib/games";
 
 function Icon({ name, size = 20 }: { name: "search" | "game" | "filter" | "arrow" | "close"; size?: number }) {
@@ -132,6 +133,7 @@ export default function Discover() {
       <Link className="logo" href="/" aria-label="GameLog 홈"><Icon name="game" size={29}/><span>GameLog<span className="lime">.</span></span></Link>
       <nav aria-label="주요 메뉴"><a className="nav-active" href="#discover" aria-current="page">게임 탐색</a><a href="#catalog">전체 게임</a></nav>
       <GameSearch value={input} demo={demo} onChange={setInput} onSearch={submitSearch} onSelect={openGame}/>
+      <AuthNav/>
       <span className="header-note">PLAY. RECORD. DISCOVER.</span>
     </div></header>
 
