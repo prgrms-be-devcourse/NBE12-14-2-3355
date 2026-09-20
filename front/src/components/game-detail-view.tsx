@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { coverUrl, type GameDetail, type GameStatistics } from "@/lib/games";
 import GameReviews from "@/components/game-reviews";
 import RelatedGames from "@/components/related-games";
 import MyGameLog from "@/components/my-game-log";
+import AuthNav from "@/components/auth/auth-nav";
+import { useAuth } from "@/features/auth/auth-context";
 import styles from "./game-detail-view.module.css";
 
 type DetailResponse = { data?: GameDetail; msg?: string };
@@ -87,6 +90,8 @@ function GameStats({ statistics }: { statistics: GameStatistics }) {
 }
 
 export default function GameDetailView({ gameId }: { gameId: string }) {
+  const router = useRouter();
+  const auth = useAuth();
   const [game, setGame] = useState<GameDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -123,6 +128,7 @@ export default function GameDetailView({ gameId }: { gameId: string }) {
     <header className="header"><div className="header-inner">
       <Link className="logo" href="/" aria-label="GameLog 홈">GameLog<span className="lime">.</span></Link>
       <nav aria-label="현재 위치"><Link href="/">게임 탐색</Link><span className={styles.currentNav} aria-current="page">게임 상세</span></nav>
+      <AuthNav/>
       <span className={`header-note ${styles.headerNote}`}>PLAY. RECORD. DISCOVER.</span>
     </div></header>
 
@@ -140,7 +146,12 @@ export default function GameDetailView({ gameId }: { gameId: string }) {
       </div> : game ? <section className={styles.hero} aria-labelledby="game-title">
         <div className={styles.posterColumn}>
           <div className={styles.cover}><GameCover key={game.id} game={game} /></div>
-          <MyGameLog gameId={Number(gameId)} platforms={game.platforms ?? []} />
+          <MyGameLog
+            gameId={Number(gameId)}
+            platforms={game.platforms ?? []}
+            accessToken={auth.accessToken ?? undefined}
+            onLoginRequired={() => router.push(`/login?next=/games/${gameId}`)}
+          />
         </div>
         <div className={styles.content}>
           <span className={styles.eyebrow}><span className="dot" /> GAME DETAILS</span>
