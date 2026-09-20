@@ -182,8 +182,7 @@ Content-Type: application/json
 
 ###
 # @name 게임 기록 수정
-PATCH {{baseUrl}}/api/v1/library/games/1?
-    userId=1
+PATCH {{baseUrl}}/api/v1/library/games/1?userId=1
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
@@ -194,7 +193,7 @@ Content-Type: application/json
   "isWishlist": false,
   "isLiked": false,
   "platformId": 1,
-  "playTimeHours": 42.5,
+  "playTimeHours": 100.5,
   "finishTimeHours": 35.0,
   "masterTimeHours": 80.0,
   "startedAt": "2026-08-01",
@@ -233,3 +232,6 @@ Authorization: Bearer {{accessToken}}
 Content-Type: application/x-www-form-urlencoded
 
 ###
+# @name 프로필 탭
+GET {{baseUrl}}/api/v1/library/games/profile
+Authorization: Bearer {{accessToken}}
