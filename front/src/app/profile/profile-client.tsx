@@ -21,8 +21,8 @@ function ProfileSidebar({
   onSaved: (user: UserDto) => void;
 }) {
   const [nickname, setNickname] = useState(user.nickname);
-  const [bio, setBio] = useState("");
-  const [profileImageUrl, setProfileImageUrl] = useState("");
+  const [bio, setBio] = useState(user.bio ?? "");
+  const [profileImageUrl, setProfileImageUrl] = useState(user.profileImageUrl ?? "");
 
   const [editingNickname, setEditingNickname] = useState(false);
   const [nicknameDraft, setNicknameDraft] = useState(user.nickname);
@@ -170,10 +170,6 @@ function ProfileSidebar({
 
       {error && <p className={styles.error} role="alert">{error}</p>}
       {message && !anyEditing && <p className={styles.success} role="status">{message}</p>}
-      <p className={styles.note}>
-        한줄소개·프로필 이미지는 서버가 아직 다시 불러오는 걸 지원하지 않아서, 새로고침하면 빈 칸으로 다시 보여요.
-        이 화면을 벗어나지 않는 동안 순서대로 저장한 내용은 유지돼요.
-      </p>
     </aside>
   );
 }
