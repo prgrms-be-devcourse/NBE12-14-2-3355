@@ -3,6 +3,9 @@ import type {
   DetailedReview,
   DetailedReviewSaveBody,
   LikeStatus,
+  ReportStatus,
+  ReviewReport,
+  ReviewReportPage,
   ReviewPage,
 } from "./types";
 
@@ -83,6 +86,37 @@ export function getLikeStatus(reviewId: number, accessToken?: string) {
 export function setReviewLike(reviewId: number, liked: boolean, accessToken: string) {
   return request<LikeStatus>(`reviews/${reviewId}/likes`, {
     method: liked ? "DELETE" : "POST",
+    accessToken,
+  });
+}
+
+export function createReviewReport(reviewId: number, reason: string, accessToken: string) {
+  return request<ReviewReport>(`reviews/${reviewId}/reports`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+    accessToken,
+  });
+}
+
+export function getReviewReports(
+  accessToken: string,
+  page: number,
+  size = 20,
+  status?: ReportStatus,
+) {
+  const query = new URLSearchParams({ page: String(page), size: String(size), sort: "createdDate,desc" });
+  if (status) query.set("status", status);
+  return request<ReviewReportPage>(`admin/review-reports?${query}`, { accessToken });
+}
+
+export function updateReviewReportStatus(
+  reportId: number,
+  status: Exclude<ReportStatus, "PENDING">,
+  accessToken: string,
+) {
+  return request<ReviewReport>(`admin/review-reports/${reportId}/status`, {
+    method: "PUT",
+    body: JSON.stringify({ status }),
     accessToken,
   });
 }

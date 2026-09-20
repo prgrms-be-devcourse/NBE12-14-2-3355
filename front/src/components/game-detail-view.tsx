@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { coverUrl, type GameDetail, type GameStatistics } from "@/lib/games";
 import GameReviews from "@/components/game-reviews";
 import MyGameLog from "@/components/my-game-log";
@@ -87,18 +87,32 @@ function GameStats({ statistics }: { statistics: GameStatistics }) {
 
 export default function GameDetailView({ gameId }: { gameId: string }) {
   const [game, setGame] = useState<GameDetail | null>(null);
-  const [reviewAccessToken, setReviewAccessToken] = useState<string>();
+  const [reviewAccessToken, setReviewAccessToken] = useState<string | undefined>(() => {
+    if (typeof window === "undefined") return undefined;
+    return window.sessionStorage.getItem("gamelogAccessToken") || undefined;
+  });
   const [reviewRefreshKey, setReviewRefreshKey] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
+  const loadedGameIdRef = useRef<string | null>(null);
+
+
+  function updateReviewAccessToken(token?: string) {
+    setReviewAccessToken(token);
+    if (token) window.sessionStorage.setItem("gamelogAccessToken", token);
+    else window.sessionStorage.removeItem("gamelogAccessToken");
+  }
 
   useEffect(() => {
     const controller = new AbortController();
 
     async function loadGame() {
-      setLoading(true);
-      setError("");
+      const initialLoad = loadedGameIdRef.current !== gameId;
+      if (initialLoad) {
+        setLoading(true);
+        setError("");
+      }
       try {
         const response = await fetch(`/api/games/${gameId}`, { signal: controller.signal });
         const body = (await response.json()) as DetailResponse;
@@ -106,13 +120,14 @@ export default function GameDetailView({ gameId }: { gameId: string }) {
           throw new Error(response.status === 404 ? "게임 정보를 찾지 못했어요." : body.msg || "게임 정보를 불러오지 못했어요.");
         }
         setGame(body.data);
+        loadedGameIdRef.current = gameId;
       } catch (reason) {
-        if (!controller.signal.aborted) {
+        if (!controller.signal.aborted && initialLoad) {
           setGame(null);
           setError(reason instanceof Error ? reason.message : "게임 정보를 불러오지 못했어요.");
         }
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!controller.signal.aborted && initialLoad) setLoading(false);
       }
     }
 
@@ -145,7 +160,8 @@ export default function GameDetailView({ gameId }: { gameId: string }) {
             gameId={Number(gameId)}
             platforms={game.platforms ?? []}
             accessToken={reviewAccessToken}
-            onTokenChange={setReviewAccessToken}
+            refreshKey={reviewRefreshKey}
+            onTokenChange={updateReviewAccessToken}
             onSaved={() => {
               setReviewRefreshKey((value) => value + 1);
               setRetry((value) => value + 1);
@@ -168,7 +184,15 @@ export default function GameDetailView({ gameId }: { gameId: string }) {
           <GameStats statistics={game.statistics} />
         </div>
       </section> : null}
-      {!loading && !error && game && <GameReviews gameId={gameId} accessToken={reviewAccessToken} refreshKey={reviewRefreshKey} />}
+      {!loading && !error && game && <GameReviews
+        gameId={gameId}
+        accessToken={reviewAccessToken}
+        refreshKey={reviewRefreshKey}
+        onDeleted={() => {
+          setReviewRefreshKey((value) => value + 1);
+          setRetry((value) => value + 1);
+        }}
+      />}
     </main>
   </>;
 }

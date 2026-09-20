@@ -5,6 +5,7 @@ import com.gamelog.nbe121423355.domain.review.dto.request.DetailedReviewSaveRequ
 import com.gamelog.nbe121423355.domain.review.dto.request.ReviewSaveRequest;
 import com.gamelog.nbe121423355.domain.review.dto.response.DetailedReviewResponse;
 import com.gamelog.nbe121423355.domain.review.entity.Review;
+import com.gamelog.nbe121423355.domain.review.entity.ReviewStatus;
 import com.gamelog.nbe121423355.domain.review.repository.ReviewRepository;
 import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.domain.usergame.dto.UserGameReqBody;
@@ -156,7 +157,7 @@ class ReviewServiceTest {
         prepareUserGameSave();
         when(userGameRepository.findById(USER_GAME_ID))
                 .thenReturn(Optional.of(userGame));
-        when(reviewRepository.findByUserGame_Id(USER_GAME_ID))
+        when(reviewRepository.findIncludingDeletedByUserGameId(USER_GAME_ID))
                 .thenReturn(Optional.empty());
         when(reviewRepository.save(any(Review.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -198,7 +199,7 @@ class ReviewServiceTest {
     void saveNewReview() {
         prepareOwnedUserGame();
         when(userGameRepository.findById(USER_GAME_ID)).thenReturn(Optional.of(userGame));
-        when(reviewRepository.findByUserGame_Id(USER_GAME_ID)).thenReturn(Optional.empty());
+        when(reviewRepository.findIncludingDeletedByUserGameId(USER_GAME_ID)).thenReturn(Optional.empty());
         when(reviewRepository.save(any(Review.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -220,7 +221,7 @@ class ReviewServiceTest {
         prepareOwnedUserGame();
         Review existingReview = prepareReview();
         when(userGameRepository.findById(USER_GAME_ID)).thenReturn(Optional.of(userGame));
-        when(reviewRepository.findByUserGame_Id(USER_GAME_ID))
+        when(reviewRepository.findIncludingDeletedByUserGameId(USER_GAME_ID))
                 .thenReturn(Optional.of(existingReview));
 
         reviewService.saveReview(
@@ -230,6 +231,28 @@ class ReviewServiceTest {
         );
 
         verify(existingReview).edit(new BigDecimal("3.5"), "수정된 리뷰", true);
+        verify(reviewRepository).flush();
+        verify(reviewRepository, never()).save(any(Review.class));
+    }
+
+    @DisplayName("사용자가 삭제했던 리뷰를 다시 작성하면 기존 리뷰를 복구한다")
+    @Test
+    void restoreDeletedReview() {
+        prepareOwnedUserGame();
+        Review deletedReview = prepareReview();
+        when(deletedReview.isDeletedByUser()).thenReturn(true);
+        when(deletedReview.isActive()).thenReturn(false);
+        when(userGameRepository.findById(USER_GAME_ID)).thenReturn(Optional.of(userGame));
+        when(reviewRepository.findIncludingDeletedByUserGameId(USER_GAME_ID))
+                .thenReturn(Optional.of(deletedReview));
+
+        reviewService.saveReview(
+                USER_ID,
+                USER_GAME_ID,
+                new ReviewSaveRequest(new BigDecimal("4.0"), "다시 작성한 리뷰", false)
+        );
+
+        verify(deletedReview).restore(new BigDecimal("4.0"), "다시 작성한 리뷰", false);
         verify(reviewRepository).flush();
         verify(reviewRepository, never()).save(any(Review.class));
     }
@@ -276,7 +299,7 @@ class ReviewServiceTest {
         Review review = prepareReview();
         when(review.getId()).thenReturn(10L);
         when(review.getContent()).thenReturn("조회할 리뷰");
-        when(reviewRepository.findById(10L)).thenReturn(Optional.of(review));
+        when(reviewRepository.findActiveById(10L)).thenReturn(Optional.of(review));
 
         var response = reviewService.getReview(10L);
 
@@ -287,7 +310,7 @@ class ReviewServiceTest {
     @DisplayName("존재하지 않는 리뷰를 조회하면 404 오류가 발생한다")
     @Test
     void getMissingReview() {
-        when(reviewRepository.findById(10L)).thenReturn(Optional.empty());
+        when(reviewRepository.findActiveById(10L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> reviewService.getReview(10L))
                 .isInstanceOf(ServiceException.class)
@@ -301,7 +324,7 @@ class ReviewServiceTest {
     void updateOwnReview() {
         prepareOwnedUserGame();
         Review review = prepareReview();
-        when(reviewRepository.findById(10L)).thenReturn(Optional.of(review));
+        when(reviewRepository.findActiveById(10L)).thenReturn(Optional.of(review));
 
         reviewService.updateReview(
                 USER_ID,
@@ -319,7 +342,7 @@ class ReviewServiceTest {
         when(userGame.getUser()).thenReturn(user);
         when(user.getId()).thenReturn(2L);
         Review review = prepareReview();
-        when(reviewRepository.findById(10L)).thenReturn(Optional.of(review));
+        when(reviewRepository.findActiveById(10L)).thenReturn(Optional.of(review));
 
         assertThatThrownBy(() -> reviewService.updateReview(
                 USER_ID,
@@ -341,11 +364,46 @@ class ReviewServiceTest {
         when(userGame.getUser()).thenReturn(user);
         when(user.getId()).thenReturn(USER_ID);
         Review review = prepareReview();
-        when(reviewRepository.findById(10L)).thenReturn(Optional.of(review));
+        when(reviewRepository.findActiveById(10L)).thenReturn(Optional.of(review));
 
         reviewService.deleteReview(USER_ID, 10L);
 
-        verify(reviewRepository).delete(review);
+        verify(review).deleteByUser();
+        verify(reviewRepository).flush();
+        verify(reviewRepository, never()).delete(any(Review.class));
+    }
+
+    @DisplayName("리뷰 소프트 삭제는 신고 확인에 필요한 원문을 보존한다")
+    @Test
+    void softDeleteKeepsReviewContent() {
+        Review review = new Review(
+                userGame,
+                new BigDecimal("4.5"),
+                "신고 검토에 필요한 리뷰 원문",
+                true
+        );
+
+        review.deleteByUser();
+
+        assertThat(review.getStatus()).isEqualTo(ReviewStatus.DELETED_BY_USER);
+        assertThat(review.getDeletedAt()).isNotNull();
+        assertThat(review.getRating()).isEqualByComparingTo("4.5");
+        assertThat(review.getContent()).isEqualTo("신고 검토에 필요한 리뷰 원문");
+        assertThat(review.isSpoiler()).isTrue();
+    }
+
+    @DisplayName("사용자가 삭제한 리뷰를 다시 작성하면 활성 상태로 복구한다")
+    @Test
+    void restoreSoftDeletedReviewEntity() {
+        Review review = new Review(userGame, null, "삭제 전 리뷰", false);
+        review.deleteByUser();
+
+        review.restore(new BigDecimal("3.5"), "복구한 리뷰", true);
+
+        assertThat(review.getStatus()).isEqualTo(ReviewStatus.ACTIVE);
+        assertThat(review.getDeletedAt()).isNull();
+        assertThat(review.getRating()).isEqualByComparingTo("3.5");
+        assertThat(review.getContent()).isEqualTo("복구한 리뷰");
     }
 
     @DisplayName("다른 사용자의 리뷰는 삭제할 수 없다")
@@ -354,7 +412,7 @@ class ReviewServiceTest {
         when(userGame.getUser()).thenReturn(user);
         when(user.getId()).thenReturn(2L);
         Review review = prepareReview();
-        when(reviewRepository.findById(10L)).thenReturn(Optional.of(review));
+        when(reviewRepository.findActiveById(10L)).thenReturn(Optional.of(review));
 
         assertThatThrownBy(() -> reviewService.deleteReview(USER_ID, 10L))
                 .isInstanceOf(ServiceException.class)
@@ -362,6 +420,7 @@ class ReviewServiceTest {
                         ((ServiceException) exception).getResultCode()
                 ).isEqualTo("403-1"));
 
+        verify(review, never()).deleteByUser();
         verify(reviewRepository, never()).delete(any(Review.class));
     }
 
@@ -479,6 +538,7 @@ class ReviewServiceTest {
     private Review prepareReview() {
         Review review = org.mockito.Mockito.mock(Review.class);
         when(review.getUserGame()).thenReturn(userGame);
+        when(review.isActive()).thenReturn(true);
         return review;
     }
 }

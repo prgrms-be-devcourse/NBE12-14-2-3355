@@ -7,6 +7,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.Objects;
 
 @Entity
@@ -36,6 +37,16 @@ public class ReviewReport extends BaseEntity {
     @Column(nullable = false, length = 255)
     private String reason;
 
+    // 신고 이후 작성자가 리뷰를 수정·삭제·재작성해도 신고 당시 원문을 보존합니다.
+    @Column(name = "review_rating_snapshot", precision = 2, scale = 1)
+    private BigDecimal reviewRatingSnapshot;
+
+    @Column(name = "review_content_snapshot", columnDefinition = "TEXT")
+    private String reviewContentSnapshot;
+
+    @Column(name = "review_spoiler_snapshot")
+    private Boolean reviewSpoilerSnapshot;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private ReportStatus status;
@@ -44,6 +55,9 @@ public class ReviewReport extends BaseEntity {
         this.review = Objects.requireNonNull(review, "review는 필수입니다.");
         this.reporter = Objects.requireNonNull(reporter, "reporter는 필수입니다.");
         this.reason = validateReason(reason);
+        this.reviewRatingSnapshot = review.getRating();
+        this.reviewContentSnapshot = review.getContent();
+        this.reviewSpoilerSnapshot = review.isSpoiler();
         this.status = ReportStatus.PENDING;
     }
 

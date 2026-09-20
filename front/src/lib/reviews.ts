@@ -1,6 +1,14 @@
 export type Review = {
   reviewId: number;
   userGameId: number;
+  userId: number;
+  nickname: string | null;
+  profileImageUrl: string | null;
+  playStatus: string | null;
+  playing: boolean;
+  backlog: boolean;
+  wishlist: boolean;
+  platformName: string | null;
   rating: number | null;
   content: string | null;
   spoiler: boolean;
