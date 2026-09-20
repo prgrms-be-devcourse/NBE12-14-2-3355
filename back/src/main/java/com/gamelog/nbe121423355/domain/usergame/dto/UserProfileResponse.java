@@ -4,6 +4,7 @@ import java.util.List;
 
 public record UserProfileResponse(
         ProfileStatsResponse stats,
-        List<UserGameScatterResponse> scatterData
+        List<UserGameScatterResponse> scatterData,
+        UserGameTasteResponse tasteResponse
 ) {
 }

@@ -50,4 +50,20 @@ public interface UserGameRepository extends JpaRepository<UserGame, Long> {
     List<UserGameScatterResponse> findPlayedGameScatterData(
             @Param("userId") Long userId
     );
+
+    @Query("""
+    SELECT genre.name, COUNT(DISTINCT ug.game.id)
+    FROM UserGame ug
+    JOIN ug.game g
+    JOIN g.genre genre
+    WHERE ug.user.id = :userId
+      AND ug.inLibrary = true
+      AND (
+          ug.playStatus IS NOT NULL
+          OR ug.playing = true
+      )
+    GROUP BY genre.name
+    ORDER BY COUNT(DISTINCT ug.game.id) DESC
+""")
+    List<Object[]> findGenreDistribution(@Param("userId") Long userId);
 }

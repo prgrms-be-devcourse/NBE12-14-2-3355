@@ -33,8 +33,13 @@ public class UserGameService {
     private final GameRepository gameRepository;
     private final PlatformRepository platformRepository;
     private final ReviewRepository reviewRepository;
-    private static final BigDecimal LONG_PLAY_HOURS =
-            BigDecimal.valueOf(30);
+    private static final BigDecimal LONG_PLAY_HOURS = BigDecimal.valueOf(30);
+    private static final BigDecimal HIGH_RATIO = BigDecimal.valueOf(0.7);
+    private static final BigDecimal MEDIUM_RATIO = BigDecimal.valueOf(0.4);
+    private static final BigDecimal HIGH_RATING = BigDecimal.valueOf(4.0);
+    private static final BigDecimal LOW_RATING = BigDecimal.valueOf(2.5);
+    private static final int MIN_DATA_COUNT = 3;
+
 
     @Transactional(readOnly = true)
     public Page<UserGameListResponse> getUserGameList(Long userId, Pageable pageable){
@@ -281,14 +286,17 @@ public class UserGameService {
     }
 
     @Transactional(readOnly = true)
-    public UserGameTasteResponse profileTab(Long userId){
-        List<UserGame> userGames =
+    public UserProfileResponse profileTab(Long userId){
+        List<UserGame> playedGames =
                 userGameRepository.findPlayedGames(userId);
 
+        List<BigDecimal> ratings =
+                reviewRepository.findPlayedGameRatings(userId);
+
         //플레이 요약 카운터
-        long playedGameCount = userGames.size();
+        long playedGameCount = playedGames.size();
         BigDecimal averageRating = reviewRepository.findAverageRating(userId);
-        BigDecimal totalPlayTime = userGames.stream()
+        BigDecimal totalPlayTime = playedGames.stream()
                 .map(UserGame::getPlayTimeHours)
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -299,119 +307,252 @@ public class UserGameService {
 
         //내 게임 취향 한번에 보기
         //30시간 이상 플레이 비율
-        List<UserGame> gamesWithPlayTime = userGames.stream()
-                .filter(ug -> ug.getPlayTimeHours() != null)
+        TasteMetricResponse longPlay =
+                calculateLongPlay(playedGames);
+
+        TasteMetricResponse rating =
+                calculateRating(ratings);
+
+        TasteMetricResponse completion =
+                calculateCompletion(playedGames);
+
+        ProfileStatsResponse statsResponse = new ProfileStatsResponse(playedGameCount,averageRating,totalPlayTime);
+        UserGameTasteResponse tasteResponse = new UserGameTasteResponse(
+                longPlay,
+                rating,
+                completion
+        );
+        return new UserProfileResponse(statsResponse,scatterData, tasteResponse);
+    }
+
+    private TasteMetricResponse calculateLongPlay(
+            List<UserGame> playedGames
+    ) {
+
+        List<BigDecimal> playTimes = playedGames.stream()
+                .map(UserGame::getPlayTimeHours)
+                .filter(Objects::nonNull)
                 .toList();
 
-        long longPlayCount = gamesWithPlayTime.stream()
-                .filter(ug ->
-                        ug.getPlayTimeHours()
-                                .compareTo(LONG_PLAY_HOURS) >= 0
+        if (playTimes.size() < MIN_DATA_COUNT) {
+            return new TasteMetricResponse(
+                    null,
+                    "아직 플레이 기록이 부족해요.",
+                    "플레이 시간 기록이 3개 이상 쌓이면 확인할 수 있어요."
+            );
+        }
+
+        long longPlayCount = playTimes.stream()
+                .filter(playTime ->
+                        playTime.compareTo(LONG_PLAY_HOURS) >= 0
                 )
                 .count();
 
-        BigDecimal longPlayRatio = BigDecimal.ZERO;
+        BigDecimal longPlayRatio =
+                calculateRatio(longPlayCount, playTimes.size());
 
-        if (!gamesWithPlayTime.isEmpty()) {
-            longPlayRatio = BigDecimal.valueOf(longPlayCount)
-                    .divide(
-                            BigDecimal.valueOf(gamesWithPlayTime.size()),
-                            4,
-                            RoundingMode.HALF_UP
-                    );
+        // 70% 이상
+        if (longPlayRatio.compareTo(HIGH_RATIO) >= 0) {
+
+            return new TasteMetricResponse(
+                    longPlayRatio,
+                    "장시간 플레이하는 게임이 많아요.",
+                    createPercentageDescription(
+                            longPlayRatio,
+                            "30시간 이상 플레이한 게임이"
+                    )
+            );
         }
 
-        String timePlayMessage =
-                createLongPlayMessage(longPlayRatio);
+        // 40% 이상
+        if (longPlayRatio.compareTo(MEDIUM_RATIO) >= 0) {
 
-        //높은 평점 비율
-        long highRatedCount =
-                reviewRepository.countHighRatedReviews(userId);
-        long reviewCount =
-                reviewRepository.countRatedReviews(userId);
-
-        BigDecimal highRatingRatio = BigDecimal.ZERO;
-
-        if (reviewCount > 0) {
-            highRatingRatio = BigDecimal.valueOf(highRatedCount)
-                    .divide(
-                            BigDecimal.valueOf(reviewCount),
-                            4,
-                            RoundingMode.HALF_UP
-                    );
+            return new TasteMetricResponse(
+                    longPlayRatio,
+                    "장시간 플레이와 짧은 게임을 골고루 즐겨요.",
+                    createPercentageDescription(
+                            longPlayRatio,
+                            "30시간 이상 플레이한 게임이"
+                    )
+            );
         }
 
-        String highRatingMessage =
-                createHighRatingMessage(highRatingRatio);
+        // 40% 미만이면 짧은 게임 비율을 보여준다.
+        BigDecimal shortPlayRatio =
+                BigDecimal.ONE.subtract(longPlayRatio);
 
-        //완료 게임 비율
-        long completedCount = userGames.stream()
-                .filter(ug -> ug.getCompletedAt() != null)
-                .count();
-
-        BigDecimal completionRatio = BigDecimal.ZERO;
-
-        if (!userGames.isEmpty()) {
-            completionRatio = BigDecimal.valueOf(completedCount)
-                    .divide(
-                            BigDecimal.valueOf(userGames.size()),
-                            4,
-                            RoundingMode.HALF_UP
-                    );
-        }
-
-        String completionMessage =
-                createCompletionMessage(completionRatio);
-
-//        ProfileStatsResponse statsResponse = new ProfileStatsResponse(playedGameCount,averageRating,totalPlayTime);
-//        return new UserProfileResponse(statsResponse,scatterData);
-        return new UserGameTasteResponse(
-                longPlayRatio,
-                timePlayMessage,
-                highRatingRatio,
-                highRatingMessage,
-                completionRatio,
-                completionMessage
+        return new TasteMetricResponse(
+                shortPlayRatio,
+                "짧게 플레이하는 게임이 많아요.",
+                createPercentageDescription(
+                        shortPlayRatio,
+                        "30시간 미만 플레이한 게임이"
+                )
         );
     }
 
-    private String createLongPlayMessage(BigDecimal ratio) {
+    private TasteMetricResponse calculateRating(
+            List<BigDecimal> ratings
+    ) {
 
-        if (ratio.compareTo(BigDecimal.valueOf(0.7)) >= 0) {
-            return "장시간 플레이하는 게임이 많아요.";
+        if (ratings.size() < MIN_DATA_COUNT) {
+            return new TasteMetricResponse(
+                    null,
+                    "아직 평가 기록이 부족해요.",
+                    "게임 평가가 3개 이상 쌓이면 확인할 수 있어요."
+            );
         }
 
-        if (ratio.compareTo(BigDecimal.valueOf(0.4)) >= 0) {
-            return "장시간 플레이와 짧은 게임을 골고루 즐겨요.";
+        long highRatingCount = ratings.stream()
+                .filter(rating ->
+                        rating.compareTo(HIGH_RATING) >= 0
+                )
+                .count();
+
+        long mediumRatingCount = ratings.stream()
+                .filter(rating ->
+                        rating.compareTo(LOW_RATING) >= 0
+                                && rating.compareTo(HIGH_RATING) < 0
+                )
+                .count();
+
+        long lowRatingCount = ratings.stream()
+                .filter(rating ->
+                        rating.compareTo(LOW_RATING) < 0
+                )
+                .count();
+
+        BigDecimal highRatingRatio =
+                calculateRatio(highRatingCount, ratings.size());
+
+        BigDecimal mediumRatingRatio =
+                calculateRatio(mediumRatingCount, ratings.size());
+
+        BigDecimal lowRatingRatio =
+                calculateRatio(lowRatingCount, ratings.size());
+
+        // ① 2.5 ~ 4.0 구간이 가장 크거나 동률인 경우
+        if (mediumRatingRatio.compareTo(highRatingRatio) >= 0
+                && mediumRatingRatio.compareTo(lowRatingRatio) >= 0) {
+
+            return new TasteMetricResponse(
+                    mediumRatingRatio,
+                    "게임을 비교적 후하게 평가하는 편이에요.",
+                    createPercentageDescription(
+                            mediumRatingRatio,
+                            "2.5점 이상 4.0점 미만으로 평가한 게임이"
+                    )
+            );
         }
 
-        return "짧게 플레이하는 게임이 많아요.";
+
+        // ② 4.0 이상 구간이 가장 큰 경우
+        if (highRatingRatio.compareTo(lowRatingRatio) >= 0) {
+
+            return new TasteMetricResponse(
+                    highRatingRatio,
+                    "높은 평점을 주는 게임이 많아요.",
+                    createPercentageDescription(
+                            highRatingRatio,
+                            "4.0점 이상 평가한 게임이"
+                    )
+            );
+        }
+
+
+        // ③ 2.5 미만 구간이 가장 큰 경우
+        return new TasteMetricResponse(
+                lowRatingRatio,
+                "평점을 신중하게 주는 편이에요.",
+                createPercentageDescription(
+                        lowRatingRatio,
+                        "2.5점 미만으로 평가한 게임이"
+                )
+        );
     }
 
-    private String createHighRatingMessage(BigDecimal ratio) {
+    private TasteMetricResponse calculateCompletion(
+            List<UserGame> playedGames
+    ) {
 
-        if (ratio.compareTo(BigDecimal.valueOf(0.7)) >= 0) {
-            return "높은 평점을 주는 게임이 많아요.";
+        if (playedGames.size() < MIN_DATA_COUNT) {
+            return new TasteMetricResponse(
+                    null,
+                    "아직 게임 기록이 부족해요.",
+                    "플레이한 게임이 3개 이상 쌓이면 확인할 수 있어요."
+            );
         }
 
-        if (ratio.compareTo(BigDecimal.valueOf(0.4)) >= 0) {
-            return "게임을 비교적 후하게 평가하는 편이에요.";
+        long completedCount = playedGames.stream()
+                .filter(ug -> ug.getPlayStatus().equals(PlayStatus.COMPLETED))
+                .count();
+
+        BigDecimal completionRatio =
+                calculateRatio(
+                        completedCount,
+                        playedGames.size()
+                );
+
+        // 70% 이상
+        if (completionRatio.compareTo(HIGH_RATIO) >= 0) {
+
+            return new TasteMetricResponse(
+                    completionRatio,
+                    "게임을 끝까지 플레이하는 편이에요.",
+                    createPercentageDescription(
+                            completionRatio,
+                            "완료한 게임이"
+                    )
+            );
         }
 
-        return "평점을 신중하게 주는 편이에요.";
+        // 40% 이상
+        if (completionRatio.compareTo(MEDIUM_RATIO) >= 0) {
+
+            return new TasteMetricResponse(
+                    completionRatio,
+                    "플레이한 게임 중 절반 정도를 완료했어요.",
+                    createPercentageDescription(
+                            completionRatio,
+                            "완료한 게임이"
+                    )
+            );
+        }
+
+        return new TasteMetricResponse(
+                completionRatio,
+                "끝까지 완료하기보다 여러 게임을 플레이하는 편이에요.",
+                createPercentageDescription(
+                        completionRatio,
+                        "완료한 게임이"
+                )
+        );
     }
 
+    private BigDecimal calculateRatio(
+            long count,
+            int total
+    ) {
 
-    private String createCompletionMessage(BigDecimal ratio) {
+        return BigDecimal.valueOf(count)
+                .divide(
+                        BigDecimal.valueOf(total),
+                        4,
+                        RoundingMode.HALF_UP
+                );
+    }
 
-        if (ratio.compareTo(BigDecimal.valueOf(0.7)) >= 0) {
-            return "게임을 끝까지 플레이하는 편이에요.";
-        }
+    private String createPercentageDescription(
+            BigDecimal ratio,
+            String subject
+    ) {
 
-        if (ratio.compareTo(BigDecimal.valueOf(0.4)) >= 0) {
-            return "플레이한 게임 중 절반 정도를 완료했어요.";
-        }
+        BigDecimal percentage = ratio
+                .multiply(BigDecimal.valueOf(100))
+                .stripTrailingZeros();
 
-        return "다양한 게임을 경험하는 편이에요.";
+        return subject + " "
+                + percentage.toPlainString()
+                + "%예요.";
     }
 }
