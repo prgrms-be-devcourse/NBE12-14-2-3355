@@ -32,8 +32,8 @@ class GameServiceTest {
     private GameRepository gameRepository;
 
     @Test
-    @DisplayName("전체 목록 조회는 저장된 게임을 DTO로 모두 반환한다")
-    void getGamesReturnsAllGames() {
+    @DisplayName("페이지 조회는 저장된 게임의 DTO 필드를 반환한다")
+    void getGamesPageMapsDtoFields() {
         // given
         assertThat(gameRepository.count()).isZero();
 
@@ -45,7 +45,7 @@ class GameServiceTest {
         );
 
         // when
-        List<GameListResponse> responses = gameService.getGames();
+        List<GameListResponse> responses = gameService.getGamesPage(PageRequest.of(0, 20, Sort.by("id"))).getContent();
 
         // then
         assertThat(responses)
@@ -75,13 +75,13 @@ class GameServiceTest {
     }
 
     @Test
-    @DisplayName("전체 목록 조회 시 저장된 게임이 없으면 빈 목록을 반환한다")
-    void getGamesReturnsEmptyListWhenNoGamesExist() {
+    @DisplayName("페이지 내용은 저장된 게임이 없으면 빈 목록이다")
+    void getGamesPageContentIsEmptyWhenNoGamesExist() {
         // given
         assertThat(gameRepository.count()).isZero();
 
         // when
-        List<GameListResponse> responses = gameService.getGames();
+        List<GameListResponse> responses = gameService.getGamesPage(PageRequest.of(0, 20, Sort.by("id"))).getContent();
 
         // then
         assertThat(responses).isEmpty();

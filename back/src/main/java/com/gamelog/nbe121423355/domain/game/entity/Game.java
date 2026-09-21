@@ -42,6 +42,29 @@ public class Game extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    // 번역 전 원문을 보존하고 변경된 원문을 재번역할 때 사용합니다.
+    @Column(columnDefinition = "TEXT")
+    private String descriptionSource;
+
+    @Column(length = 64)
+    private String descriptionTranslatedHash;
+
+    public String prepareDescriptionTranslation() {
+        if (descriptionSource == null) descriptionSource = description;
+        return descriptionSource;
+    }
+
+    public void applyDescriptionTranslation(String source, String translated, String hash) {
+        if (!java.util.Objects.equals(descriptionSource, source)) {
+            throw new IllegalStateException("번역 중 원문이 변경되었습니다.");
+        }
+        if (translated == null || translated.isBlank()) {
+            throw new IllegalArgumentException("번역 결과가 비어 있습니다.");
+        }
+        description = translated;
+        descriptionTranslatedHash = hash;
+    }
+
     @Column(name = "igdb_rating", precision = 5, scale = 2)
     private BigDecimal igdbRating;
 
@@ -98,7 +121,11 @@ public class Game extends BaseEntity {
         }
 
         this.title = response.name();
-        this.description = response.summary();
+        if (response.summary() != null && !response.summary().isBlank()) {
+            this.descriptionSource = response.summary();
+            // 번역 실패 시에도 기존 한국어 설명을 유지합니다.
+            if (descriptionTranslatedHash == null) this.description = response.summary();
+        }
 
         String coverUrl = response.cover() == null
                 ? null

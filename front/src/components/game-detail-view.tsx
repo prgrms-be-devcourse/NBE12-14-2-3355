@@ -1,10 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { coverUrl, type GameDetail, type GameStatistics } from "@/lib/games";
 import GameReviews from "@/components/game-reviews";
+import RelatedGames from "@/components/related-games";
 import MyGameLog from "@/components/my-game-log";
+import AuthNav from "@/components/auth/auth-nav";
+import { useAuth } from "@/features/auth/auth-context";
 import styles from "./game-detail-view.module.css";
 
 type DetailResponse = { data?: GameDetail; msg?: string };
@@ -86,23 +90,14 @@ function GameStats({ statistics }: { statistics: GameStatistics }) {
 }
 
 export default function GameDetailView({ gameId }: { gameId: string }) {
+  const router = useRouter();
+  const auth = useAuth();
   const [game, setGame] = useState<GameDetail | null>(null);
-  const [reviewAccessToken, setReviewAccessToken] = useState<string | undefined>(() => {
-    if (typeof window === "undefined") return undefined;
-    return window.sessionStorage.getItem("gamelogAccessToken") || undefined;
-  });
   const [reviewRefreshKey, setReviewRefreshKey] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
   const loadedGameIdRef = useRef<string | null>(null);
-
-
-  function updateReviewAccessToken(token?: string) {
-    setReviewAccessToken(token);
-    if (token) window.sessionStorage.setItem("gamelogAccessToken", token);
-    else window.sessionStorage.removeItem("gamelogAccessToken");
-  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -139,6 +134,7 @@ export default function GameDetailView({ gameId }: { gameId: string }) {
     <header className="header"><div className="header-inner">
       <Link className="logo" href="/" aria-label="GameLog 홈">GameLog<span className="lime">.</span></Link>
       <nav aria-label="현재 위치"><Link href="/">게임 탐색</Link><span className={styles.currentNav} aria-current="page">게임 상세</span></nav>
+      <AuthNav/>
       <span className={`header-note ${styles.headerNote}`}>PLAY. RECORD. DISCOVER.</span>
     </div></header>
 
@@ -157,16 +153,16 @@ export default function GameDetailView({ gameId }: { gameId: string }) {
         <div className={styles.posterColumn}>
           <div className={styles.cover}><GameCover key={game.id} game={game} /></div>
           <MyGameLog
-            gameId={Number(gameId)}
-            platforms={game.platforms ?? []}
-            accessToken={reviewAccessToken}
-            refreshKey={reviewRefreshKey}
-            onTokenChange={updateReviewAccessToken}
-            onSaved={() => {
-              setReviewRefreshKey((value) => value + 1);
-              setRetry((value) => value + 1);
-            }}
-          />
+         gameId={Number(gameId)}
+         platforms={game.platforms ?? []}
+         accessToken={auth.accessToken ?? undefined}
+         refreshKey={reviewRefreshKey}
+         onLoginRequired={() => router.push(`/login?next=/games/${gameId}`)}
+         onSaved={() => {
+         setReviewRefreshKey((value) => value + 1);
+         setRetry((value) => value + 1);
+         }}
+         /> 
         </div>
         <div className={styles.content}>
           <span className={styles.eyebrow}><span className="dot" /> GAME DETAILS</span>
@@ -184,15 +180,21 @@ export default function GameDetailView({ gameId }: { gameId: string }) {
           <GameStats statistics={game.statistics} />
         </div>
       </section> : null}
-      {!loading && !error && game && <GameReviews
-        gameId={gameId}
-        accessToken={reviewAccessToken}
-        refreshKey={reviewRefreshKey}
-        onDeleted={() => {
-          setReviewRefreshKey((value) => value + 1);
-          setRetry((value) => value + 1);
+{!loading && !error && game && (
+  <>
+    <RelatedGames key={gameId} gameId={gameId} />
+
+    <GameReviews
+      gameId={gameId}
+      accessToken={auth.accessToken ?? undefined}
+      refreshKey={reviewRefreshKey}
+      onDeleted={() => {
+        setReviewRefreshKey((value) => value + 1);
+        setRetry((value) => value + 1);
         }}
-      />}
+      />
+      </>
+    )}
     </main>
   </>;
 }

@@ -1,0 +1,51 @@
+.shell{min-height:100dvh;display:flex;flex-direction:column;align-items:center;padding:56px 20px 80px;background:var(--bg);gap:36px}
+.logo{font-size:25px;letter-spacing:-1px;font-weight:800;color:var(--text)}
+.panel{width:100%;max-width:640px;display:flex;flex-direction:column;gap:24px}
+.stepIndicator{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:.3px}
+.stepActive{color:var(--lime);font-weight:700}
+.stepDone{color:var(--text)}
+.stepPending{color:var(--muted)}
+.stepDivider{flex:1;height:1px;background:var(--line)}
+.step{display:flex;flex-direction:column;gap:14px}
+.eyebrow{color:var(--lime);font-size:10px;font-weight:700;letter-spacing:1.8px}
+.title{font-size:26px;font-weight:700;margin:6px 0 0;color:var(--text)}
+.subtitle{font-size:13px;color:var(--muted);line-height:1.7;margin:0}
+.genreGrid{display:flex;flex-wrap:wrap;gap:10px}
+.genre,.genreSelected{padding:9px 16px;border-radius:20px;border:1px solid var(--line);font-size:12px;color:var(--muted);background:#181d1b}
+.genreSelected{border-color:var(--lime);color:var(--lime);background:#20291b}
+@keyframes onboardingShake{10%,90%{transform:translateX(-1px)}20%,80%{transform:translateX(2px)}30%,50%,70%{transform:translateX(-4px)}40%,60%{transform:translateX(4px)}}
+.genreShake{animation:onboardingShake .4s;border-color:#f0bfa8;color:#f0bfa8}
+.hint{font-size:12px;color:var(--muted)}
+.gameGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:12px}
+.gameCard,.gameCardSelected{display:flex;flex-direction:column;gap:8px;padding:8px;border-radius:8px;border:1px solid var(--line);background:#181d1b;text-align:left}
+.gameCardSelected{border-color:var(--lime);background:#20291b}
+.gameCover{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:5px;background:#111414}
+.gameCoverFallback{width:100%;aspect-ratio:2/3;border-radius:5px;background:#232b29;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--muted)}
+.gameCardTitle{font-size:11px;color:var(--text);line-height:1.4;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.gameCardSelected .gameCardTitle{color:var(--lime)}
+.gameCardShake{animation:onboardingShake .4s;border-color:#f0bfa8}
+.resultShake{animation:onboardingShake .4s;color:#f0bfa8}
+.loadMore{align-self:center;padding:10px 22px;border:1px solid var(--line);border-radius:5px;color:var(--lime);font-size:12px}
+.loadMore:hover:not(:disabled){border-color:var(--lime);background:#1c231c}
+.loadMore:disabled{opacity:.5}
+.searchInput{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:6px;background:#101512;color:var(--text);font-size:13px;outline:none}
+.searchInput:focus{border-color:var(--lime)}
+.resultList{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto}
+.resultList li button{display:flex;align-items:center;gap:12px;width:100%;padding:8px;border-radius:6px;text-align:left;color:var(--text);font-size:13px}
+.resultList li button:hover:not(:disabled){background:#202826}
+.resultList li button:disabled{opacity:.4}
+.resultCover{width:32px;height:45px;object-fit:cover;border-radius:3px;flex-shrink:0;background:#111414}
+.resultCoverFallback{width:32px;height:45px;border-radius:3px;flex-shrink:0;background:#232b29;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{font-size:11px;padding:6px 10px;background:#27321f;color:#c9e3a4;border:1px solid #3a482f;border-radius:4px}
+.error{font-size:12px;color:#f0bfa8}
+.actions{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-top:6px}
+.actionsRight{display:flex;align-items:center;gap:18px}
+.skip{font-size:12px;color:var(--muted)}
+.skip:hover{color:var(--lime)}
+.back{font-size:12px;color:var(--muted)}
+.back:hover{color:var(--lime)}
+.complete{padding:13px 22px;border-radius:5px;background:var(--lime);color:#192012;font-size:13px;font-weight:700}
+.complete:hover:not(:disabled){background:#d4f59e}
+.complete:disabled{opacity:.6}
+.loading{color:var(--muted);font-size:13px;padding:80px 0;text-align:center}

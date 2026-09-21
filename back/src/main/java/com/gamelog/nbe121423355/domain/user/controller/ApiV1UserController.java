@@ -6,6 +6,7 @@ import com.gamelog.nbe121423355.domain.user.service.UserPreferenceGenreService;
 import com.gamelog.nbe121423355.domain.user.service.UserService;
 import com.gamelog.nbe121423355.global.dto.RsData;
 import com.gamelog.nbe121423355.global.security.SecurityUser;
+import com.gamelog.nbe121423355.global.security.jwt.CookieProperties;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class ApiV1UserController {
     private final UserService userService;
     private final UserPreferenceGenreService userPreferenceGenreService;
     private final UserPreferenceGameService userPreferenceGameService;
+    private final CookieProperties cookieProperties;
 
 
     @PostMapping ("/signup")
@@ -52,6 +54,8 @@ public class ApiV1UserController {
                 .httpOnly(true)
                 .path("/")
                 .maxAge(Duration.ofDays(14))
+                .sameSite(cookieProperties.sameSite())
+                .secure(cookieProperties.secure())
                 .build();
         httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
 
@@ -61,6 +65,27 @@ public class ApiV1UserController {
                 "로그인 성공",
                 body
         );
+    }
+
+    @PostMapping("/logout")
+    public RsData<Void> logout(
+            @CookieValue(value = "refreshToken", required = false) String refreshToken,
+            HttpServletResponse httpServletResponse
+    ) {
+        if (refreshToken != null) {
+            userService.logout(refreshToken);
+        }
+
+        ResponseCookie responseCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .path("/")
+                .maxAge(0)
+                .sameSite(cookieProperties.sameSite())
+                .secure(cookieProperties.secure())
+                .build();
+        httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
+
+        return new RsData<>("200-13", "로그아웃 성공");
     }
 
     @PostMapping("/refresh")

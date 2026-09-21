@@ -4,10 +4,10 @@ import com.gamelog.nbe121423355.domain.game.entity.Game;
 import com.gamelog.nbe121423355.domain.game.entity.Platform;
 import com.gamelog.nbe121423355.domain.game.repository.GameRepository;
 import com.gamelog.nbe121423355.domain.game.repository.PlatformRepository;
+import com.gamelog.nbe121423355.domain.review.repository.ReviewRepository;
 import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
-import com.gamelog.nbe121423355.domain.usergame.dto.UserGameReqBody;
-import com.gamelog.nbe121423355.domain.usergame.dto.UserGameSaveResult;
+import com.gamelog.nbe121423355.domain.usergame.dto.*;
 import com.gamelog.nbe121423355.domain.usergame.entity.PlayStatus;
 import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
 import com.gamelog.nbe121423355.domain.usergame.repository.UserGameRepository;
@@ -15,15 +15,20 @@ import com.gamelog.nbe121423355.global.exception.ServiceException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,6 +54,9 @@ class UserGameServiceTest {
 
     @Mock
     private PlatformRepository platformRepository;
+
+    @Mock
+    private ReviewRepository reviewRepository;
 
     @Test
     @DisplayName("라이브러리에_게임을_등록")
@@ -592,5 +600,527 @@ class UserGameServiceTest {
 
         verify(userGameRepository, never())
                 .save(any(UserGame.class));
+    }
+
+    @Test
+    @DisplayName("라이브러리_게임_목록을_페이지네이션으로_조회")
+    void t19() {
+        // given
+        Long userId = 1L;
+
+        User user = new User(
+                "테스트",
+                "test@test.com",
+                "password"
+        );
+
+        Game game1 = mock(Game.class);
+        Game game2 = mock(Game.class);
+
+        given(game1.getId()).willReturn(1L);
+        given(game1.getTitle()).willReturn("게임1");
+        given(game1.getCoverImageUrl()).willReturn("image1.jpg");
+
+        given(game2.getId()).willReturn(2L);
+        given(game2.getTitle()).willReturn("게임2");
+        given(game2.getCoverImageUrl()).willReturn("image2.jpg");
+
+        UserGame userGame1 = new UserGame(user, game1);
+        UserGame userGame2 = new UserGame(user, game2);
+
+        Pageable pageable = PageRequest.of(0, 2);
+
+        Page<UserGame> userGamePage = new PageImpl<>(
+                List.of(userGame1, userGame2),
+                pageable,
+                2
+        );
+
+        given(userGameRepository.findAllByUser_IdAndInLibraryTrue(
+                userId,
+                pageable
+        )).willReturn(userGamePage);
+
+        // when
+        Page<UserGameListResponse> result =
+                userGameService.getUserGameList(userId, pageable);
+
+        // then
+        assertThat(result.getContent()).hasSize(2);
+
+        assertThat(result.getContent().get(0).gameId())
+                .isEqualTo(1L);
+        assertThat(result.getContent().get(0).title())
+                .isEqualTo("게임1");
+        assertThat(result.getContent().get(0).coverImageUrl())
+                .isEqualTo("image1.jpg");
+
+        assertThat(result.getContent().get(1).gameId())
+                .isEqualTo(2L);
+        assertThat(result.getContent().get(1).title())
+                .isEqualTo("게임2");
+        assertThat(result.getContent().get(1).coverImageUrl())
+                .isEqualTo("image2.jpg");
+
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getTotalPages()).isEqualTo(1);
+        assertThat(result.getNumber()).isEqualTo(0);
+        assertThat(result.getSize()).isEqualTo(2);
+
+        verify(userGameRepository)
+                .findAllByUser_IdAndInLibraryTrue(userId, pageable);
+    }
+
+    @Test
+    @DisplayName("라이브러리에_게임이_없으면_빈_페이지를_반환")
+    void t20() {
+        // given
+        Long userId = 1L;
+
+        Pageable pageable = PageRequest.of(0, 2);
+
+        Page<UserGame> emptyPage = new PageImpl<>(
+                List.of(),
+                pageable,
+                0
+        );
+
+        given(userGameRepository.findAllByUser_IdAndInLibraryTrue(
+                userId,
+                pageable
+        )).willReturn(emptyPage);
+
+        // when
+        Page<UserGameListResponse> result =
+                userGameService.getUserGameList(userId, pageable);
+
+        // then
+        assertThat(result.getContent()).isEmpty();
+        assertThat(result.getTotalElements()).isZero();
+        assertThat(result.getTotalPages()).isZero();
+
+        verify(userGameRepository)
+                .findAllByUser_IdAndInLibraryTrue(userId, pageable);
+    }
+
+    @Test
+    @DisplayName("프로필 탭 조회 - 플레이 요약과 취향 분석을 정상적으로 반환한다")
+    void t21() {
+        // given
+        Long userId = 1L;
+
+        UserGame game1 = mock(UserGame.class);
+        UserGame game2 = mock(UserGame.class);
+        UserGame game3 = mock(UserGame.class);
+
+        when(game1.getPlayTimeHours())
+                .thenReturn(BigDecimal.valueOf(40));
+        when(game2.getPlayTimeHours())
+                .thenReturn(BigDecimal.valueOf(20));
+        when(game3.getPlayTimeHours())
+                .thenReturn(BigDecimal.valueOf(10));
+
+        when(game1.getPlayStatus())
+                .thenReturn(PlayStatus.COMPLETED);
+        when(game2.getPlayStatus())
+                .thenReturn(PlayStatus.PLAYED);
+        when(game3.getPlayStatus())
+                .thenReturn(PlayStatus.COMPLETED);
+
+        List<UserGame> playedGames =
+                List.of(game1, game2, game3);
+
+        List<BigDecimal> ratings = List.of(
+                BigDecimal.valueOf(4.5),
+                BigDecimal.valueOf(3.5),
+                BigDecimal.valueOf(2.0)
+        );
+
+        List<UserGameScatterDto> scatterData = List.of(
+                mock(UserGameScatterDto.class),
+                mock(UserGameScatterDto.class),
+                mock(UserGameScatterDto.class)
+        );
+
+        List<UserGameGenreDTO> genreData = List.of(
+                new UserGameGenreDTO(
+                        1L,
+                        "RPG",
+                        2L
+                ),
+                new UserGameGenreDTO(
+                        2L,
+                        "Action",
+                        1L
+                )
+        );
+
+        when(userGameRepository.findPlayedGames(userId))
+                .thenReturn(playedGames);
+
+        when(reviewRepository.findPlayedGameRatings(userId))
+                .thenReturn(ratings);
+
+        when(reviewRepository.findAverageRating(userId))
+                .thenReturn(BigDecimal.valueOf(3.3));
+
+        when(userGameRepository.findPlayedGameScatterData(userId))
+                .thenReturn(scatterData);
+
+        when(userGameRepository.findGenreDistribution(userId))
+                .thenReturn(genreData);
+
+        // when
+        UserProfileResponse response =
+                userGameService.profileTab(userId);
+
+        // then
+        assertThat(response).isNotNull();
+
+        // 플레이 요약
+        assertThat(response.stats().playedGameCount())
+                .isEqualTo(3);
+
+        assertThat(response.stats().averageRating())
+                .isEqualByComparingTo("3.3");
+
+        assertThat(response.stats().totalPlayTime())
+                .isEqualByComparingTo("70");
+
+        // 산점도
+        assertThat(response.scatterData())
+                .hasSize(3);
+
+        // 취향 분석
+        assertThat(response.tasteResponse())
+                .isNotNull();
+
+        // 장르 분포
+        assertThat(response.genreDistribution())
+                .hasSize(2);
+    }
+
+    @Test
+    @DisplayName("장시간 플레이 게임이 40% 이상이면 장시간 플레이와 짧은 게임을 골고루 즐긴다고 판단한다")
+    void t22() {
+        // given
+        Long userId = 1L;
+
+        UserGame game1 = mock(UserGame.class);
+        UserGame game2 = mock(UserGame.class);
+        UserGame game3 = mock(UserGame.class);
+
+        when(game1.getPlayTimeHours())
+                .thenReturn(BigDecimal.valueOf(30));
+        when(game2.getPlayTimeHours())
+                .thenReturn(BigDecimal.valueOf(50));
+        when(game3.getPlayTimeHours())
+                .thenReturn(BigDecimal.valueOf(10));
+
+        when(userGameRepository.findPlayedGames(userId))
+                .thenReturn(List.of(game1, game2, game3));
+
+        when(reviewRepository.findPlayedGameRatings(userId))
+                .thenReturn(List.of());
+
+        when(reviewRepository.findAverageRating(userId))
+                .thenReturn(BigDecimal.ZERO);
+
+        when(userGameRepository.findPlayedGameScatterData(userId))
+                .thenReturn(List.of());
+
+        when(userGameRepository.findGenreDistribution(userId))
+                .thenReturn(List.of());
+
+        // when
+        UserProfileResponse response =
+                userGameService.profileTab(userId);
+
+        // then
+        TasteMetricDto longPlay =
+                response.tasteResponse().longPlay();
+
+        assertThat(longPlay.ratio())
+                .isEqualByComparingTo("0.6667");
+
+        assertThat(longPlay.message())
+                .isEqualTo("장시간 플레이와 짧은 게임을 골고루 즐겨요.");
+    }
+
+    @Test
+    @DisplayName("장시간 플레이 비율이 70% 이상이면 장시간 플레이 성향으로 판단한다")
+    void t23() {
+        // given
+        Long userId = 1L;
+
+        UserGame game1 = mock(UserGame.class);
+        UserGame game2 = mock(UserGame.class);
+        UserGame game3 = mock(UserGame.class);
+
+        when(game1.getPlayTimeHours())
+                .thenReturn(BigDecimal.valueOf(30));
+        when(game2.getPlayTimeHours())
+                .thenReturn(BigDecimal.valueOf(40));
+        when(game3.getPlayTimeHours())
+                .thenReturn(BigDecimal.valueOf(50));
+
+        mockProfileRepositories(
+                userId,
+                List.of(game1, game2, game3)
+        );
+
+        // when
+        UserProfileResponse response =
+                userGameService.profileTab(userId);
+
+        // then
+        TasteMetricDto result =
+                response.tasteResponse().longPlay();
+
+        assertThat(result.ratio())
+                .isEqualByComparingTo("1");
+
+        assertThat(result.message())
+                .isEqualTo("장시간 플레이하는 게임이 많아요.");
+    }
+
+    @Test
+    @DisplayName("플레이 시간 기록이 3개 미만이면 장시간 플레이 성향을 분석하지 않는다")
+    void t24() {
+        // given
+        Long userId = 1L;
+
+        UserGame game1 = mock(UserGame.class);
+        UserGame game2 = mock(UserGame.class);
+
+        when(game1.getPlayTimeHours())
+                .thenReturn(BigDecimal.valueOf(30));
+        when(game2.getPlayTimeHours())
+                .thenReturn(BigDecimal.valueOf(20));
+
+        mockProfileRepositories(
+                userId,
+                List.of(game1, game2)
+        );
+
+        // when
+        UserProfileResponse response =
+                userGameService.profileTab(userId);
+
+        // then
+        TasteMetricDto result =
+                response.tasteResponse().longPlay();
+
+        assertThat(result.ratio())
+                .isNull();
+
+        assertThat(result.message())
+                .isEqualTo("아직 플레이 기록이 부족해요.");
+    }
+
+    @Test
+    @DisplayName("2.5 이상 4.0 미만 평점이 가장 많으면 중간 평점 성향으로 판단한다")
+    void t26() {
+        // given
+        Long userId = 1L;
+
+        List<BigDecimal> ratings = List.of(
+                BigDecimal.valueOf(3.0),
+                BigDecimal.valueOf(3.5),
+                BigDecimal.valueOf(4.5),
+                BigDecimal.valueOf(2.0)
+        );
+
+        mockProfileRepositories(
+                userId,
+                createPlayedGames(3)
+        );
+
+        when(reviewRepository.findPlayedGameRatings(userId))
+                .thenReturn(ratings);
+
+        // when
+        UserProfileResponse response =
+                userGameService.profileTab(userId);
+
+        // then
+        TasteMetricDto result =
+                response.tasteResponse().rating();
+
+        assertThat(result.ratio())
+                .isEqualByComparingTo("0.5");
+
+        assertThat(result.message())
+                .isEqualTo("게임을 비교적 후하게 평가하는 편이에요.");
+    }
+
+    @Test
+    @DisplayName("높은 평점과 중간 평점이 동률이면 중간 평점 성향을 선택한다")
+    void t27() {
+        // given
+        Long userId = 1L;
+
+        List<BigDecimal> ratings = List.of(
+                BigDecimal.valueOf(4.0),
+                BigDecimal.valueOf(4.5),
+                BigDecimal.valueOf(3.0),
+                BigDecimal.valueOf(3.5)
+        );
+
+        mockProfileRepositories(
+                userId,
+                createPlayedGames(3)
+        );
+
+        when(reviewRepository.findPlayedGameRatings(userId))
+                .thenReturn(ratings);
+
+        // when
+        UserProfileResponse response =
+                userGameService.profileTab(userId);
+
+        // then
+        assertThat(response.tasteResponse().rating().message())
+                .isEqualTo("게임을 비교적 후하게 평가하는 편이에요.");
+    }
+
+    @Test
+    @DisplayName("완료 비율이 40% 이상 70% 미만이면 절반 정도를 완료했다고 판단한다")
+    void t28() {
+        // given
+        Long userId = 1L;
+
+        UserGame game1 = mock(UserGame.class);
+        UserGame game2 = mock(UserGame.class);
+        UserGame game3 = mock(UserGame.class);
+
+        when(game1.getPlayStatus())
+                .thenReturn(PlayStatus.COMPLETED);
+
+        when(game2.getPlayStatus())
+                .thenReturn(PlayStatus.COMPLETED);
+
+        when(game3.getPlayStatus())
+                .thenReturn(PlayStatus.PLAYED);
+
+        mockProfileRepositories(
+                userId,
+                List.of(game1, game2, game3)
+        );
+
+        // when
+        UserProfileResponse response =
+                userGameService.profileTab(userId);
+
+        // then
+        TasteMetricDto result =
+                response.tasteResponse().completion();
+
+        assertThat(result.ratio())
+                .isEqualByComparingTo("0.6667");
+
+        assertThat(result.message())
+                .isEqualTo("플레이한 게임 중 절반 정도를 완료했어요.");
+    }
+
+    @Test
+    @DisplayName("장르별 게임 수를 기준으로 장르 비율을 계산한다")
+    void t29() {
+        // given
+        Long userId = 1L;
+
+        mockProfileRepositories(
+                userId,
+                createPlayedGames(3)
+        );
+
+        when(userGameRepository.findGenreDistribution(userId))
+                .thenReturn(List.of(
+                        new UserGameGenreDTO(1L, "RPG", 2L),
+                        new UserGameGenreDTO(2L, "Action", 1L)
+                ));
+
+        // when
+        UserProfileResponse response =
+                userGameService.profileTab(userId);
+
+        // then
+        List<UserGameGenreDistributionResponse> result =
+                response.genreDistribution();
+
+        assertThat(result).hasSize(2);
+
+        assertThat(result.get(0).genreName())
+                .isEqualTo("RPG");
+
+        assertThat(result.get(0).ratio())
+                .isEqualByComparingTo("0.6667");
+
+        assertThat(result.get(1).genreName())
+                .isEqualTo("Action");
+
+        assertThat(result.get(1).ratio())
+                .isEqualByComparingTo("0.3333");
+    }
+
+    @Test
+    @DisplayName("장르 데이터가 없으면 빈 목록을 반환한다")
+    void t30() {
+        // given
+        Long userId = 1L;
+
+        mockProfileRepositories(
+                userId,
+                createPlayedGames(3)
+        );
+
+        when(userGameRepository.findGenreDistribution(userId))
+                .thenReturn(List.of());
+
+        // when
+        UserProfileResponse response =
+                userGameService.profileTab(userId);
+
+        // then
+        assertThat(response.genreDistribution())
+                .isEmpty();
+    }
+
+    private void mockProfileRepositories(
+            Long userId,
+            List<UserGame> playedGames
+    ) {
+        when(userGameRepository.findPlayedGames(userId))
+                .thenReturn(playedGames);
+
+        when(reviewRepository.findPlayedGameRatings(userId))
+                .thenReturn(List.of());
+
+        when(reviewRepository.findAverageRating(userId))
+                .thenReturn(BigDecimal.ZERO);
+
+        when(userGameRepository.findPlayedGameScatterData(userId))
+                .thenReturn(List.of());
+
+        when(userGameRepository.findGenreDistribution(userId))
+                .thenReturn(List.of());
+    }
+
+    private List<UserGame> createPlayedGames(int count) {
+        List<UserGame> games = new ArrayList<>();
+
+        for (int i = 0; i < count; i++) {
+            UserGame game = mock(UserGame.class);
+
+            when(game.getPlayTimeHours())
+                    .thenReturn(BigDecimal.valueOf(10));
+
+            when(game.getPlayStatus())
+                    .thenReturn(PlayStatus.PLAYED);
+
+            games.add(game);
+        }
+
+        return games;
     }
 }

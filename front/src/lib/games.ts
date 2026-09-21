@@ -1,4 +1,12 @@
 export type Option = { id: number; name: string };
+export type RelatedGame = {
+  id: number;
+  title: string;
+  coverImageUrl: string | null;
+  igdbRating: number | null;
+  recommendationScore: number;
+  genres: Option[];
+};
 export type Game = { id: number; title: string; coverImageUrl: string | null; releaseDate: string | null; igdbRating: number | null; genres?: Option[]; platforms?: Option[]; description?: string; developer?: string };
 export type GameStatistics = {
   playedCount: number;

@@ -167,14 +167,69 @@ class ApiV1UserControllerTest {
     @Test
     @DisplayName("토큰 재발급 성공")
     void refresh_success() throws Exception {
+        saveUser("test@test.com", "nickname", "password123");
+        Cookie refreshTokenCookie = loginAndGetRefreshTokenCookie();
+
+        mockMvc.perform(post("/api/v1/users/refresh")
+                        .cookie(refreshTokenCookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resultCode").value("200-2"))
+                .andExpect(jsonPath("$.data.accessToken").isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("토큰 재발급 실패 - RefreshToken DB에 없는 토큰(로그인을 거치지 않고 직접 생성한 토큰)")
+    void refresh_fail_tokenNotInDb() throws Exception {
         User user = saveUser("test@test.com", "nickname", "password123");
         String refreshToken = jwtProvider.generateRefreshToken(user.getId());
 
         mockMvc.perform(post("/api/v1/users/refresh")
                         .cookie(new Cookie("refreshToken", refreshToken)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.resultCode").value("401-2"));
+    }
+
+    @Test
+    @DisplayName("로그아웃 성공 - refreshToken 쿠키가 즉시 만료되고, 이후 그 토큰으로 재발급 시도하면 401")
+    void logout_success() throws Exception {
+        saveUser("test@test.com", "nickname", "password123");
+        Cookie refreshTokenCookie = loginAndGetRefreshTokenCookie();
+
+        MvcResult logoutResult = mockMvc.perform(post("/api/v1/users/logout")
+                        .cookie(refreshTokenCookie))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.resultCode").value("200-2"))
-                .andExpect(jsonPath("$.data.accessToken").isNotEmpty());
+                .andExpect(jsonPath("$.resultCode").value("200-13"))
+                .andReturn();
+
+        Cookie clearedCookie = logoutResult.getResponse().getCookie("refreshToken");
+        assertThat(clearedCookie).isNotNull();
+        assertThat(clearedCookie.getMaxAge()).isZero();
+
+        mockMvc.perform(post("/api/v1/users/refresh")
+                        .cookie(refreshTokenCookie))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.resultCode").value("401-2"));
+    }
+
+    @Test
+    @DisplayName("로그아웃 - refreshToken 쿠키 없이 호출해도 200 (idempotent)")
+    void logout_withoutCookie_stillOk() throws Exception {
+        mockMvc.perform(post("/api/v1/users/logout"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resultCode").value("200-13"));
+    }
+
+    private Cookie loginAndGetRefreshTokenCookie() throws Exception {
+        MvcResult loginResult = mockMvc.perform(post("/api/v1/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email": "test@test.com", "password": "password123"}
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+        Cookie refreshTokenCookie = loginResult.getResponse().getCookie("refreshToken");
+        assertThat(refreshTokenCookie).isNotNull();
+        return refreshTokenCookie;
     }
 
     @Test
