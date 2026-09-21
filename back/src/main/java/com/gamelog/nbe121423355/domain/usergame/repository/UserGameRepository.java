@@ -15,6 +15,10 @@ import java.util.Optional;
 public interface UserGameRepository extends JpaRepository<UserGame, Long> {
     Optional<UserGame> findByUser_IdAndGame_Id(Long userId, Long gameId);
     Page<UserGame> findAllByUser_IdAndInLibraryTrue(Long userId, Pageable pageable);
+    List<UserGame> findAllByUserIdAndGameIdIn(
+            Long userId,
+            List<Long> gameIds
+    );
 
     @Query("""
     SELECT ug
@@ -22,7 +26,7 @@ public interface UserGameRepository extends JpaRepository<UserGame, Long> {
     WHERE ug.user.id = :userId
       AND ug.inLibrary = true
       AND (
-          ug.playStatus IS NOT NULL
+          ug.playStatus IS NOT NULL정
           OR ug.playing = true
       )
 """)

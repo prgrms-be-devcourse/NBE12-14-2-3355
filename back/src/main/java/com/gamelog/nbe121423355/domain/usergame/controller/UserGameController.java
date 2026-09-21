@@ -15,6 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/library/games")
 @RequiredArgsConstructor
@@ -177,4 +179,20 @@ public class UserGameController {
         );
     }
 
+    @PutMapping("/favorite-games")
+    public RsData<List<UserFavoriteGameResponse>> updateFavoriteGames(
+            @RequestBody UserFavoriteGameRequest request,
+            @AuthenticationPrincipal SecurityUser user
+    ) {
+        List<UserFavoriteGameResponse> response = userGameService.updateFavoriteGames(
+                user.getId(),
+                request.gameIds()
+        );
+
+        return new RsData<>(
+                "200-1",
+                "인생게임을 수정했습니다.",
+                response
+        );
+    }
 }
