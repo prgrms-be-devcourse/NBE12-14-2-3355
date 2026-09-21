@@ -10,6 +10,7 @@ import com.gamelog.nbe121423355.domain.user.repository.RefreshTokenRepository;
 import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import com.gamelog.nbe121423355.global.security.jwt.JwtProvider;
+import com.gamelog.nbe121423355.global.upload.ImageUploadService;
 import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,11 +18,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -42,6 +47,9 @@ class UserServiceTest {
 
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
+
+    @MockitoBean
+    private ImageUploadService imageUploadService;
 
     private User saveUser(String email, String nickname, String rawPassword) {
         return userRepository.save(
@@ -338,5 +346,40 @@ class UserServiceTest {
         assertThatThrownBy(() -> userService.updateProfile(999_999L, requestDto))
                 .isInstanceOf(ServiceException.class)
                 .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("404-1"));
+    }
+
+    @Test
+    @DisplayName("프로필 수정 - 이미지 URL이 바뀌면 옛날 이미지를 삭제함")
+    void updateProfile_deletesOldImage_whenImageUrlChanges() {
+        User user = saveUser("test@test.com", "nickname", "password123");
+        user.updateProfile(user.getNickname(), "http://image.com/old.png", user.getBio());
+        UpdateProfileRequestDto requestDto = new UpdateProfileRequestDto("nickname", "http://image.com/new.png", null);
+
+        userService.updateProfile(user.getId(), requestDto);
+
+        verify(imageUploadService).deleteImage("http://image.com/old.png");
+    }
+
+    @Test
+    @DisplayName("프로필 수정 - 이미지 URL이 그대로면 삭제 호출 안 함")
+    void updateProfile_doesNotDeleteImage_whenImageUrlUnchanged() {
+        User user = saveUser("test@test.com", "nickname", "password123");
+        user.updateProfile(user.getNickname(), "http://image.com/same.png", user.getBio());
+        UpdateProfileRequestDto requestDto = new UpdateProfileRequestDto("nickname", "http://image.com/same.png", null);
+
+        userService.updateProfile(user.getId(), requestDto);
+
+        verify(imageUploadService, never()).deleteImage(anyString());
+    }
+
+    @Test
+    @DisplayName("프로필 수정 - 원래 이미지가 없었으면 삭제 호출 안 함")
+    void updateProfile_doesNotDeleteImage_whenOldUrlWasNull() {
+        User user = saveUser("test@test.com", "nickname", "password123");
+        UpdateProfileRequestDto requestDto = new UpdateProfileRequestDto("nickname", "http://image.com/new.png", null);
+
+        userService.updateProfile(user.getId(), requestDto);
+
+        verify(imageUploadService, never()).deleteImage(anyString());
     }
 }
