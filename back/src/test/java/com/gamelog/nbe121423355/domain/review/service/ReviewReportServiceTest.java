@@ -48,7 +48,7 @@ class ReviewReportServiceTest {
         UserGame userGame = mock(UserGame.class);
         lenient().when(writer.getId()).thenReturn(1L);
         lenient().when(reporter.getId()).thenReturn(2L);
-        when(userGame.getUser()).thenReturn(writer);
+        lenient().when(userGame.getUser()).thenReturn(writer);
         review = new Review(userGame, new BigDecimal("4.5"), "신고 대상 리뷰", false);
     }
 

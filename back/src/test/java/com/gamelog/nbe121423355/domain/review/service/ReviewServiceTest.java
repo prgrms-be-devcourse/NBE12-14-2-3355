@@ -32,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -220,6 +221,7 @@ class ReviewServiceTest {
     void saveReviewUpdatesExistingReview() {
         prepareOwnedUserGame();
         Review existingReview = prepareReview();
+        when(existingReview.isActive()).thenReturn(true);
         when(userGameRepository.findById(USER_GAME_ID)).thenReturn(Optional.of(userGame));
         when(reviewRepository.findIncludingDeletedByUserGameId(USER_GAME_ID))
                 .thenReturn(Optional.of(existingReview));
@@ -241,7 +243,6 @@ class ReviewServiceTest {
         prepareOwnedUserGame();
         Review deletedReview = prepareReview();
         when(deletedReview.isDeletedByUser()).thenReturn(true);
-        when(deletedReview.isActive()).thenReturn(false);
         when(userGameRepository.findById(USER_GAME_ID)).thenReturn(Optional.of(userGame));
         when(reviewRepository.findIncludingDeletedByUserGameId(USER_GAME_ID))
                 .thenReturn(Optional.of(deletedReview));
@@ -296,6 +297,7 @@ class ReviewServiceTest {
     @DisplayName("리뷰를 단건 조회한다")
     @Test
     void getReview() {
+        prepareOwnedUserGame();
         Review review = prepareReview();
         when(review.getId()).thenReturn(10L);
         when(review.getContent()).thenReturn("조회할 리뷰");
@@ -427,6 +429,7 @@ class ReviewServiceTest {
     @DisplayName("게임별 리뷰 목록을 페이지 정보와 함께 조회한다")
     @Test
     void getGameReviews() {
+        prepareOwnedUserGame();
         Review review = prepareReview();
         when(review.getId()).thenReturn(10L);
         when(review.getContent()).thenReturn("게임 리뷰");
@@ -447,6 +450,7 @@ class ReviewServiceTest {
     @DisplayName("사용자별 리뷰 목록을 페이지 정보와 함께 조회한다")
     @Test
     void getUserReviews() {
+        prepareOwnedUserGame();
         Review review = prepareReview();
         when(review.getId()).thenReturn(10L);
         when(review.getContent()).thenReturn("사용자 리뷰");
@@ -530,7 +534,7 @@ class ReviewServiceTest {
     }
 
     private void prepareOwnedUserGame() {
-        when(userGame.getId()).thenReturn(USER_GAME_ID);
+        lenient().when(userGame.getId()).thenReturn(USER_GAME_ID);
         when(userGame.getUser()).thenReturn(user);
         when(user.getId()).thenReturn(USER_ID);
     }
@@ -538,7 +542,6 @@ class ReviewServiceTest {
     private Review prepareReview() {
         Review review = org.mockito.Mockito.mock(Review.class);
         when(review.getUserGame()).thenReturn(userGame);
-        when(review.isActive()).thenReturn(true);
         return review;
     }
 }
