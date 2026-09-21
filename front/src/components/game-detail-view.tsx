@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { coverUrl, type GameDetail, type GameStatistics } from "@/lib/games";
 import GameReviews from "@/components/game-reviews";
 import RelatedGames from "@/components/related-games";
@@ -93,16 +93,21 @@ export default function GameDetailView({ gameId }: { gameId: string }) {
   const router = useRouter();
   const auth = useAuth();
   const [game, setGame] = useState<GameDetail | null>(null);
+  const [reviewRefreshKey, setReviewRefreshKey] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
+  const loadedGameIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
 
     async function loadGame() {
-      setLoading(true);
-      setError("");
+      const initialLoad = loadedGameIdRef.current !== gameId;
+      if (initialLoad) {
+        setLoading(true);
+        setError("");
+      }
       try {
         const response = await fetch(`/api/games/${gameId}`, { signal: controller.signal });
         const body = (await response.json()) as DetailResponse;
@@ -110,13 +115,14 @@ export default function GameDetailView({ gameId }: { gameId: string }) {
           throw new Error(response.status === 404 ? "게임 정보를 찾지 못했어요." : body.msg || "게임 정보를 불러오지 못했어요.");
         }
         setGame(body.data);
+        loadedGameIdRef.current = gameId;
       } catch (reason) {
-        if (!controller.signal.aborted) {
+        if (!controller.signal.aborted && initialLoad) {
           setGame(null);
           setError(reason instanceof Error ? reason.message : "게임 정보를 불러오지 못했어요.");
         }
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!controller.signal.aborted && initialLoad) setLoading(false);
       }
     }
 
@@ -147,11 +153,16 @@ export default function GameDetailView({ gameId }: { gameId: string }) {
         <div className={styles.posterColumn}>
           <div className={styles.cover}><GameCover key={game.id} game={game} /></div>
           <MyGameLog
-            gameId={Number(gameId)}
-            platforms={game.platforms ?? []}
-            accessToken={auth.accessToken ?? undefined}
-            onLoginRequired={() => router.push(`/login?next=/games/${gameId}`)}
-          />
+         gameId={Number(gameId)}
+         platforms={game.platforms ?? []}
+         accessToken={auth.accessToken ?? undefined}
+         refreshKey={reviewRefreshKey}
+         onLoginRequired={() => router.push(`/login?next=/games/${gameId}`)}
+         onSaved={() => {
+         setReviewRefreshKey((value) => value + 1);
+         setRetry((value) => value + 1);
+         }}
+         /> 
         </div>
         <div className={styles.content}>
           <span className={styles.eyebrow}><span className="dot" /> GAME DETAILS</span>
@@ -169,10 +180,21 @@ export default function GameDetailView({ gameId }: { gameId: string }) {
           <GameStats statistics={game.statistics} />
         </div>
       </section> : null}
-      {!loading && !error && game && <>
-        <RelatedGames key={gameId} gameId={gameId} />
-        <GameReviews gameId={gameId} />
-      </>}
+{!loading && !error && game && (
+  <>
+    <RelatedGames key={gameId} gameId={gameId} />
+
+    <GameReviews
+      gameId={gameId}
+      accessToken={auth.accessToken ?? undefined}
+      refreshKey={reviewRefreshKey}
+      onDeleted={() => {
+        setReviewRefreshKey((value) => value + 1);
+        setRetry((value) => value + 1);
+        }}
+      />
+      </>
+    )}
     </main>
   </>;
 }

@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
@@ -37,6 +38,14 @@ public class Review extends BaseEntity {
     @Column(name = "is_spoiler", nullable = false)
     private boolean spoiler;
 
+    // 기존 데이터는 status가 null일 수 있으므로 null도 ACTIVE로 취급합니다.
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private ReviewStatus status = ReviewStatus.ACTIVE;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     public Review(UserGame userGame, BigDecimal rating, String content, boolean spoiler) {
         this.userGame = Objects.requireNonNull(userGame, "userGame은 필수입니다.");
         this.rating = validateRating(rating);
@@ -48,6 +57,30 @@ public class Review extends BaseEntity {
         this.rating = validateRating(rating);
         this.content = validateContent(rating, content);
         this.spoiler = spoiler;
+    }
+
+    public void restore(BigDecimal rating, String content, boolean spoiler) {
+        edit(rating, content, spoiler);
+        this.status = ReviewStatus.ACTIVE;
+        this.deletedAt = null;
+    }
+
+    public void deleteByUser() {
+        this.status = ReviewStatus.DELETED_BY_USER;
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public void hideByAdmin() {
+        this.status = ReviewStatus.HIDDEN_BY_ADMIN;
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public boolean isActive() {
+        return status == null || status == ReviewStatus.ACTIVE;
+    }
+
+    public boolean isDeletedByUser() {
+        return status == ReviewStatus.DELETED_BY_USER;
     }
 
     private static BigDecimal validateRating(BigDecimal rating) {

@@ -70,12 +70,22 @@ public class ReviewReportService {
         ReviewReport report = reviewReportRepository.findById(reportId)
                 .orElseThrow(() -> new ServiceException("404-5", "리뷰 신고를 찾을 수 없습니다."));
 
+        if (report.getStatus() != ReportStatus.PENDING) {
+            throw new ServiceException("409-4", "이미 처리된 리뷰 신고입니다.");
+        }
+        if (request.status() == ReportStatus.PENDING) {
+            throw new ServiceException("400-5", "신고 처리 결과는 승인 또는 반려여야 합니다.");
+        }
+
+        if (request.status() == ReportStatus.APPROVED) {
+            report.getReview().hideByAdmin();
+        }
         report.changeStatus(request.status());
         return ReviewReportResponse.from(report);
     }
 
     private Review getReview(Long reviewId) {
-        return reviewRepository.findById(reviewId)
+        return reviewRepository.findActiveById(reviewId)
                 .orElseThrow(() -> new ServiceException("404-3", "리뷰를 찾을 수 없습니다."));
     }
 

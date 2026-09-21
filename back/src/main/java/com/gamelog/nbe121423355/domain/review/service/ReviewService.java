@@ -82,10 +82,16 @@ public class ReviewService {
         validateOwner(userId, userGame);
 
         // 리뷰가 있으면 수정하고 없으면 새로 작성.
-        Review review = reviewRepository.findByUserGame_Id(userGameId).orElse(null);
+        Review review = reviewRepository.findIncludingDeletedByUserGameId(userGameId).orElse(null);
 
         if (review != null) {
-            review.edit(request.rating(), request.content(), request.spoiler());
+            if (review.isDeletedByUser()) {
+                review.restore(request.rating(), request.content(), request.spoiler());
+            } else if (!review.isActive()) {
+                throw new ServiceException("409-3", "관리자에 의해 숨김 처리된 리뷰는 다시 작성할 수 없습니다.");
+            } else {
+                review.edit(request.rating(), request.content(), request.spoiler());
+            }
             reviewRepository.flush();
             return ReviewResponse.from(review);
         }
@@ -135,7 +141,8 @@ public class ReviewService {
         Review review = getReviewEntity(reviewId);
         validateOwner(userId, review.getUserGame());
 
-        reviewRepository.delete(review);
+        review.deleteByUser();
+        reviewRepository.flush();
     }
 
     private UserGame getUserGame(Long userGameId) {
@@ -144,7 +151,7 @@ public class ReviewService {
     }
 
     private Review getReviewEntity(Long reviewId) {
-        return reviewRepository.findById(reviewId)
+        return reviewRepository.findActiveById(reviewId)
                 .orElseThrow(() -> new ServiceException("404-3", "리뷰를 찾을 수 없습니다."));
     }
 

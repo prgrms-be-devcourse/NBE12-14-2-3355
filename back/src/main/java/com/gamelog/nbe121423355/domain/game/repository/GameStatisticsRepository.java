@@ -43,6 +43,7 @@ public interface GameStatisticsRepository extends Repository<UserGame, Long> {
                 COUNT(review.id) AS reviewCount
             FROM Review review
             WHERE review.userGame.game.id = :gameId
+                AND (review.status IS NULL OR review.status = com.gamelog.nbe121423355.domain.review.entity.ReviewStatus.ACTIVE)
             """)
     GameRatingStatisticsProjection findRatingStatisticsByGameId(
             @Param("gameId") Long gameId
@@ -56,6 +57,7 @@ public interface GameStatisticsRepository extends Repository<UserGame, Long> {
             FROM Review review
             WHERE review.userGame.game.id = :gameId
                 AND review.rating IS NOT NULL
+                AND (review.status IS NULL OR review.status = com.gamelog.nbe121423355.domain.review.entity.ReviewStatus.ACTIVE)
             GROUP BY review.rating
             ORDER BY review.rating
             """)

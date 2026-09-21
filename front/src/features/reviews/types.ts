@@ -7,6 +7,14 @@ export type ApiResponse<T> = {
 export type Review = {
   reviewId: number;
   userGameId: number;
+  userId: number;
+  nickname: string | null;
+  profileImageUrl: string | null;
+  playStatus: string | null;
+  playing: boolean;
+  backlog: boolean;
+  wishlist: boolean;
+  platformName: string | null;
   rating: number | null;
   content: string | null;
   spoiler: boolean;
@@ -59,6 +67,33 @@ export type LikeStatus = {
   reviewId: number;
   likeCount: number;
   liked: boolean;
+};
+
+export type ReportStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type ReviewStatus = "ACTIVE" | "DELETED_BY_USER" | "HIDDEN_BY_ADMIN";
+
+export type ReviewReport = {
+  reportId: number;
+  reviewId: number;
+  reporterId: number;
+  reviewWriterId: number;
+  reason: string;
+  reviewRating: number | null;
+  reviewContent: string | null;
+  reviewSpoiler: boolean;
+  reviewStatus: ReviewStatus;
+  status: ReportStatus;
+  createdDate: string;
+  lastModifiedDate: string;
+};
+
+export type ReviewReportPage = {
+  reports: ReviewReport[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  hasNext: boolean;
 };
 
 export type DetailedReviewSaveBody = {
