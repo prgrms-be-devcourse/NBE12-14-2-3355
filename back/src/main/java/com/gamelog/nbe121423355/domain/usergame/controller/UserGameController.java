@@ -10,8 +10,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,13 +23,11 @@ public class UserGameController {
 
     @GetMapping("")
     public RsData<UserGameLibraryResponse> getUserGameList(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "60") int size,
+            @Valid @ModelAttribute UserGameSearchRequest request,
             @AuthenticationPrincipal SecurityUser user
     ){
-        Pageable pageable = PageRequest.of(page, size);
         Page<UserGameListResponse> pages =
-                userGameService.getUserGameList(user.getId(), pageable);
+                userGameService.getUserGameList(user.getId(), request);
 
         return new RsData<>(
                 "200-1",
