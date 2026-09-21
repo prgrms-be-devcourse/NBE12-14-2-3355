@@ -40,11 +40,15 @@ public interface GameStatisticsRepository extends Repository<UserGame, Long> {
             @Param("gameId") Long gameId
     );
 
-    // 게임 ID를 기준으로 평균 평점과 리뷰 수를 집계
+    // 게임 ID를 기준으로 평균 평점, 평가 수와 내용이 있는 리뷰 수를 각각 집계
     @Query("""
             SELECT
                 COALESCE(AVG(review.rating), 0.0) AS averageRating,
-                COUNT(review.id) AS reviewCount
+                COUNT(review.rating) AS ratingCount,
+                COALESCE(SUM(
+                    CASE WHEN review.content IS NOT NULL AND TRIM(review.content) <> ''
+                    THEN 1L ELSE 0L END
+                ), 0L) AS reviewCount
             FROM Review review
             WHERE review.userGame.game.id = :gameId
                 AND (review.status IS NULL OR review.status = com.gamelog.nbe121423355.domain.review.entity.ReviewStatus.ACTIVE)

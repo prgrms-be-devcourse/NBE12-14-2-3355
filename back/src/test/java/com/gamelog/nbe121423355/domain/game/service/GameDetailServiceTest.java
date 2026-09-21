@@ -6,6 +6,7 @@ import com.gamelog.nbe121423355.domain.game.dto.IgdbGameResponse;
 import com.gamelog.nbe121423355.domain.game.entity.*;
 import com.gamelog.nbe121423355.domain.game.repository.*;
 import com.gamelog.nbe121423355.domain.review.entity.Review;
+import com.gamelog.nbe121423355.domain.review.repository.ReviewRepository;
 import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.domain.usergame.entity.PlayStatus;
 import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
@@ -19,6 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.data.domain.PageRequest;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -59,6 +61,9 @@ class GameDetailServiceTest {
 
     @Autowired
     private EntityManager entityManager;
+
+    @Autowired
+    private ReviewRepository reviewRepository;
 
     private Game game;
     private Long gameId;
@@ -160,6 +165,7 @@ class GameDetailServiceTest {
         assertThat(response.statistics().likeCount()).isZero();
         assertThat(response.statistics().averageRating())
                 .isEqualByComparingTo("0");
+        assertThat(response.statistics().ratingCount()).isZero();
         assertThat(response.statistics().reviewCount()).isZero();
         assertThat(response.statistics().ratingDistribution())
                 .hasSize(10)
@@ -319,11 +325,19 @@ class GameDetailServiceTest {
         // when: 해당 게임의 상세 정보를 조회하면
         GameDetailResponse response = gameDetailService.getGameDetail(gameId);
 
-        // then: 글만 작성한 리뷰도 리뷰 수에는 포함하고 평점 통계에서는 제외한다
+        // then: 별점 전용 기록은 평가 통계에, 내용이 있는 기록은 리뷰 수와 공개 목록에 포함한다
         assertThat(response.statistics().averageRating())
                 .isEqualByComparingTo("3.5");
-        assertThat(response.statistics().reviewCount()).isEqualTo(4L);
+        assertThat(response.statistics().ratingCount()).isEqualTo(3L);
+        assertThat(response.statistics().reviewCount()).isEqualTo(1L);
         assertThat(response.statistics().likeCount()).isEqualTo(3L);
+
+        assertThat(reviewRepository.findByUserGame_Game_Id(
+                gameId,
+                PageRequest.of(0, 20)
+        ).getContent())
+                .extracting(Review::getContent)
+                .containsExactly("별점 없이 작성한 리뷰");
 
         List<GameRatingDistributionResponse> distribution =
                 response.statistics().ratingDistribution();

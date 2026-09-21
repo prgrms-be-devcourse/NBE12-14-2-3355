@@ -38,7 +38,9 @@ public class RelatedGameQueryRepository {
                        AVG(r.rating) AS avg_rating
                 FROM user_games ug
                 JOIN candidates c ON c.game_id = ug.game_id
-                JOIN reviews r ON r.user_game_id = ug.id
+                JOIN reviews r
+                  ON r.user_game_id = ug.id
+                 AND (r.status IS NULL OR r.status = 'ACTIVE')
                 WHERE r.rating IS NOT NULL
                 GROUP BY ug.game_id
             ),
@@ -49,7 +51,7 @@ public class RelatedGameQueryRepository {
                 LEFT JOIN rating_stats rs ON rs.game_id = c.game_id
                 /* 
                  * TODO: 유저 데이터가 충분해지면 아래 필터링 조건 조정 필요
-                 *   - 현재: 리뷰 5개 미만(데이터 부족으로 임시 포함) OR 평균 평점 3.5 이상
+                 *   - 현재: 평가 5개 미만(데이터 부족으로 임시 포함) OR 평균 평점 3.5 이상
                  *   - 변경 예시: COALESCE(rs.rating_count, 0) >= 10 AND rs.avg_rating >= 4.0
                  */
                 WHERE COALESCE(rs.rating_count, 0) < 5
@@ -58,7 +60,9 @@ public class RelatedGameQueryRepository {
             positive_users AS (
                 SELECT ug.user_id
                 FROM user_games ug
-                LEFT JOIN reviews r ON r.user_game_id = ug.id
+                LEFT JOIN reviews r
+                  ON r.user_game_id = ug.id
+                 AND (r.status IS NULL OR r.status = 'ACTIVE')
                 WHERE ug.game_id = :gameId
                   AND (
                       ug.play_status IS NOT NULL
@@ -82,7 +86,9 @@ public class RelatedGameQueryRepository {
                 FROM positive_users pu
                 JOIN user_games ug ON ug.user_id = pu.user_id
                 JOIN eligible_candidates c ON c.game_id = ug.game_id
-                LEFT JOIN reviews r ON r.user_game_id = ug.id
+                LEFT JOIN reviews r
+                  ON r.user_game_id = ug.id
+                 AND (r.status IS NULL OR r.status = 'ACTIVE')
                 WHERE ug.is_liked = TRUE
                    OR r.rating >= 4.0
                 GROUP BY ug.game_id

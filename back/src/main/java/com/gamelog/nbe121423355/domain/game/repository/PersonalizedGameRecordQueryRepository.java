@@ -34,6 +34,26 @@ public class PersonalizedGameRecordQueryRepository {
             ORDER BY ug.game.id, gg.id.genreId
             """;
 
+    // 추천 결과에서 제외할 사용자의 전체 플레이 또는 활성 평가·리뷰 게임 ID 조회
+    private static final String RECORDED_GAME_IDS_JPQL = """
+            SELECT DISTINCT ug.game.id
+            FROM UserGame ug
+            WHERE ug.user.id = :userId
+              AND (
+                  ug.playStatus IS NOT NULL
+                  OR ug.playing = true
+                  OR EXISTS (
+                      SELECT review.id
+                      FROM Review review
+                      WHERE review.userGame = ug
+                        AND (
+                            review.status IS NULL
+                            OR review.status = :activeReviewStatus
+                        )
+                  )
+              )
+            """;
+
     // 플레이 기록과 게임별 장르·활성 리뷰 별점을 사용자 기준으로 한 번에 조회
     public List<PersonalizedGameRecordProjection> findEligibleRecordsByUserId(Long userId) {
         // TODO: liked, wishlist, backlog 만 설정된 게임의 추천 반영 여부는 추후 검토
@@ -47,6 +67,15 @@ public class PersonalizedGameRecordQueryRepository {
                         PlayStatus.SHELVED
                 ))
                 .setParameter("droppedStatus", PlayStatus.DROPPED)
+                .setParameter("activeReviewStatus", ReviewStatus.ACTIVE)
+                .getResultList();
+    }
+
+    // 세부 플레이 상태와 관계없이 이미 플레이하거나 평가·리뷰한 게임 ID를 반환
+    public List<Long> findRecordedGameIdsByUserId(Long userId) {
+        return entityManager
+                .createQuery(RECORDED_GAME_IDS_JPQL, Long.class)
+                .setParameter("userId", userId)
                 .setParameter("activeReviewStatus", ReviewStatus.ACTIVE)
                 .getResultList();
     }

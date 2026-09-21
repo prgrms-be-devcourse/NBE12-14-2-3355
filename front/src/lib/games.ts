@@ -15,6 +15,7 @@ export type GameStatistics = {
   wishlistCount: number;
   likeCount: number;
   averageRating: number;
+  ratingCount: number;
   reviewCount: number;
   ratingDistribution: { rating: number; count: number }[];
   averagePlayTimeHours: number;

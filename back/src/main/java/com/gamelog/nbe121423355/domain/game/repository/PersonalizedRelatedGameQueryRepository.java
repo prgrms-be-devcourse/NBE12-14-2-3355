@@ -32,6 +32,7 @@ public class PersonalizedRelatedGameQueryRepository {
                 JOIN game_genres gg ON gg.genre_id = sg.genre_id
                 JOIN games g ON g.id = gg.game_id
                 WHERE gg.game_id <> sg.source_game_id
+                  AND gg.game_id NOT IN (:excludedGameIds)
                   AND g.igdb_rating >= 70.0
                 GROUP BY sg.source_game_id, gg.game_id
             ),
@@ -45,7 +46,9 @@ public class PersonalizedRelatedGameQueryRepository {
                        AVG(r.rating) AS avg_rating
                 FROM user_games ug
                 JOIN candidate_game_ids c ON c.game_id = ug.game_id
-                JOIN reviews r ON r.user_game_id = ug.id
+                JOIN reviews r
+                  ON r.user_game_id = ug.id
+                 AND (r.status IS NULL OR r.status = 'ACTIVE')
                 WHERE r.rating IS NOT NULL
                 GROUP BY ug.game_id
             ),
@@ -57,7 +60,7 @@ public class PersonalizedRelatedGameQueryRepository {
                 LEFT JOIN rating_stats rs ON rs.game_id = c.game_id
                 /*
                  * 기존 게임 상세 추천과 같은 후보 필터:
-                 * 리뷰 5개 미만 OR 평균 평점 3.5 이상
+                 * 평가 5개 미만 OR 평균 평점 3.5 이상
                  */
                 WHERE COALESCE(rs.rating_count, 0) < 5
                    OR rs.avg_rating >= 3.5
@@ -70,7 +73,9 @@ public class PersonalizedRelatedGameQueryRepository {
                     SELECT DISTINCT source_game_id
                     FROM source_genres
                 ) s ON s.source_game_id = ug.game_id
-                LEFT JOIN reviews r ON r.user_game_id = ug.id
+                LEFT JOIN reviews r
+                  ON r.user_game_id = ug.id
+                 AND (r.status IS NULL OR r.status = 'ACTIVE')
                 WHERE ug.play_status IS NOT NULL
                    OR ug.is_liked = TRUE
                    OR r.rating >= 4.0
@@ -94,7 +99,9 @@ public class PersonalizedRelatedGameQueryRepository {
                 JOIN eligible_candidates c
                   ON c.source_game_id = pu.source_game_id
                  AND c.game_id = ug.game_id
-                LEFT JOIN reviews r ON r.user_game_id = ug.id
+                LEFT JOIN reviews r
+                  ON r.user_game_id = ug.id
+                 AND (r.status IS NULL OR r.status = 'ACTIVE')
                 WHERE ug.is_liked = TRUE
                    OR r.rating >= 4.0
                 GROUP BY pu.source_game_id, ug.game_id
@@ -138,7 +145,8 @@ public class PersonalizedRelatedGameQueryRepository {
 
     // 여러 기준 게임의 연관 추천 상위 5개를 한 번에 조회해 Projection으로 반환
     public List<PersonalizedRelatedGameProjection> findTopFiveBySourceGameIds(
-            List<Long> sourceGameIds
+            List<Long> sourceGameIds,
+            List<Long> excludedGameIds
     ) {
         if (sourceGameIds.isEmpty()) {
             return List.of();
@@ -149,6 +157,11 @@ public class PersonalizedRelatedGameQueryRepository {
                 .createNativeQuery(RELATED_GAMES_BY_SOURCE_SQL)
                 .unwrap(NativeQuery.class)
                 .setParameterList("sourceGameIds", sourceGameIds)
+                // 빈 IN 목록을 피하기 위한 존재하지 않는 게임 ID
+                .setParameterList(
+                        "excludedGameIds",
+                        excludedGameIds.isEmpty() ? List.of(-1L) : excludedGameIds
+                )
                 .getResultList();
 
         return rows.stream()

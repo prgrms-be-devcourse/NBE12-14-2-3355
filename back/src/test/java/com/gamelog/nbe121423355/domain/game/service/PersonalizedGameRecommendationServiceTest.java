@@ -206,6 +206,96 @@ class PersonalizedGameRecommendationServiceTest {
     }
 
     @Test
+    @DisplayName("이미 플레이 기록이 있는 게임은 다른 기록의 연관 후보여도 제외한다")
+    void recommendExcludesRecordedGamesFromRecordCandidates() {
+        // given: 같은 장르의 기록 게임 2개와 아직 기록하지 않은 후보가 존재
+        User user = saveUser("exclude-recorded");
+        Genre action = saveGenre(2401L, "액션");
+
+        Game firstRecord = saveGame(2401L, "첫 번째 기록", "80.0");
+        Game secondRecord = saveGame(2402L, "두 번째 기록", "80.0");
+        Game newCandidate = saveGame(2403L, "새로운 후보", "70.0");
+
+        connectGenre(firstRecord, action);
+        connectGenre(secondRecord, action);
+        connectGenre(newCandidate, action);
+
+        UserGame firstUserGame = saveUserGame(
+                user,
+                firstRecord,
+                PlayStatus.COMPLETED,
+                false
+        );
+        saveReview(firstUserGame, "3.5");
+        saveUserGame(user, secondRecord, PlayStatus.PLAYED, false);
+        entityManager.flush();
+
+        // when: 사용자 맞춤 추천을 조회
+        List<PersonalizedGameRecommendationResponse> result =
+                recommendationService.recommend(user.getId());
+
+        // then: 기록 게임들은 제외하고 아직 기록하지 않은 후보만 반환
+        assertThat(result)
+                .extracting(PersonalizedGameRecommendationResponse::id)
+                .containsExactly(newCandidate.getId());
+    }
+
+    @Test
+    @DisplayName("DROPPED 기록 게임은 온보딩 장르 후보에서도 제외한다")
+    void recommendExcludesDroppedGamesFromOnboardingCandidates() {
+        // given: 선호 장르에 중단한 게임과 아직 기록하지 않은 게임이 존재
+        User user = saveUser("exclude-dropped");
+        Genre rpg = saveGenre(2501L, "RPG");
+
+        Game droppedGame = saveGame(2501L, "중단한 게임", "90.0");
+        Game newCandidate = saveGame(2502L, "새로운 후보", "80.0");
+
+        connectGenre(droppedGame, rpg);
+        connectGenre(newCandidate, rpg);
+
+        saveUserGame(user, droppedGame, PlayStatus.DROPPED, false);
+        entityManager.persist(new UserPreferenceGenre(user, rpg));
+        entityManager.flush();
+
+        // when: 사용자 맞춤 추천을 조회
+        List<PersonalizedGameRecommendationResponse> result =
+                recommendationService.recommend(user.getId());
+
+        // then: 중단한 게임을 제외하고 새로운 후보만 반환
+        assertThat(result)
+                .extracting(PersonalizedGameRecommendationResponse::id)
+                .containsExactly(newCandidate.getId());
+    }
+
+    @Test
+    @DisplayName("플레이 상태 없이 별점만 남긴 게임도 온보딩 후보에서 제외한다")
+    void recommendExcludesRatedGamesFromOnboardingCandidates() {
+        // given: 선호 장르에 별점만 남긴 게임과 아직 기록하지 않은 게임이 존재
+        User user = saveUser("exclude-rated");
+        Genre simulation = saveGenre(2601L, "시뮬레이션");
+
+        Game ratedGame = saveGame(2601L, "별점만 남긴 게임", "90.0");
+        Game newCandidate = saveGame(2602L, "새로운 후보", "80.0");
+
+        connectGenre(ratedGame, simulation);
+        connectGenre(newCandidate, simulation);
+
+        UserGame ratedUserGame = saveUserGame(user, ratedGame, null, false);
+        saveReview(ratedUserGame, "5.0");
+        entityManager.persist(new UserPreferenceGenre(user, simulation));
+        entityManager.flush();
+
+        // when: 사용자 맞춤 추천을 조회
+        List<PersonalizedGameRecommendationResponse> result =
+                recommendationService.recommend(user.getId());
+
+        // then: 별점을 남긴 게임을 제외하고 새로운 후보만 반환
+        assertThat(result)
+                .extracting(PersonalizedGameRecommendationResponse::id)
+                .containsExactly(newCandidate.getId());
+    }
+
+    @Test
     @DisplayName("게임 기록과 온보딩 선택이 모두 없으면 빈 목록을 반환한다")
     void recommendReturnsEmptyListWhenUserHasNoData() {
         // given: 게임 기록과 온보딩 선택이 없는 사용자
