@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.Comparator;
 import java.util.NoSuchElementException;
@@ -53,6 +54,16 @@ public class GlobalExceptionHandler {
         return new RsData<Void>(
                 "400-2",
                 "잘못된 형식의 요청 데이터입니다."
+        );
+    }
+
+    // 이미지 파일 크기 초과시 예외사항
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    @ResponseBody
+    public RsData<Void> handleException(MaxUploadSizeExceededException e) {
+        return new RsData<Void>(
+                "400-3",
+                "파일 크기가 너무 큽니다. 5MB 이하 파일만 업로드할 수 있습니다."
         );
     }
 
