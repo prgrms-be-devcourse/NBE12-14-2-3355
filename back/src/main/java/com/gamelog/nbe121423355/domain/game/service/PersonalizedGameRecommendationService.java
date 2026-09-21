@@ -1,5 +1,7 @@
 package com.gamelog.nbe121423355.domain.game.service;
 
+import com.gamelog.nbe121423355.domain.game.dto.GameDetailResponse;
+import com.gamelog.nbe121423355.domain.game.dto.PersonalizedGameRecommendationResponse;
 import com.gamelog.nbe121423355.domain.game.repository.PersonalizedGameRecordQueryRepository;
 import com.gamelog.nbe121423355.domain.game.repository.PersonalizedOnboardingPreferenceQueryRepository;
 import com.gamelog.nbe121423355.domain.game.repository.PersonalizedRecommendationCandidateQueryRepository;
@@ -36,8 +38,27 @@ public class PersonalizedGameRecommendationService {
     private final PersonalizedRelatedRankScoreCalculator relatedRankScoreCalculator;
     private final PersonalizedOnboardingScoreCalculator onboardingScoreCalculator;
 
+    // 사용자별 맞춤 추천 결과를 API 응답 DTO로 변환해 반환
+    public List<PersonalizedGameRecommendationResponse> recommend(Long userId) {
+        return recommendResults(userId).stream()
+                .map(result -> new PersonalizedGameRecommendationResponse(
+                        result.gameId(),
+                        result.title(),
+                        result.coverImageUrl(),
+                        result.igdbRating(),
+                        result.recommendationScore(),
+                        result.genres().stream()
+                                .map(genre -> new GameDetailResponse.GenreResponse(
+                                        genre.id(),
+                                        genre.name()
+                                ))
+                                .toList()
+                ))
+                .toList();
+    }
+
     // 사용 가능한 게임 기록을 우선하고, 사용할 수 없으면 온보딩 추천으로 전환
-    public List<PersonalizedRecommendationResult> recommend(Long userId) {
+    private List<PersonalizedRecommendationResult> recommendResults(Long userId) {
         List<PersonalizedGameRecordProjection> records =
                 gameRecordQueryRepository.findEligibleRecordsByUserId(userId);
 
