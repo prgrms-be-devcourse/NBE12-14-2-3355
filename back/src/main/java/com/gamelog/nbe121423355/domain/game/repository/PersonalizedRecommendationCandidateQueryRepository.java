@@ -55,6 +55,7 @@ public class PersonalizedRecommendationCandidateQueryRepository {
               ON review.userGame.game = game
              AND (review.status IS NULL OR review.status = :activeReviewStatus)
             WHERE gameGenre.genre.id IN :preferredGenreIds
+              AND game.id NOT IN :excludedGameIds
               AND game.igdbRating >= 70.0
             GROUP BY
                 game.id,
@@ -92,7 +93,10 @@ public class PersonalizedRecommendationCandidateQueryRepository {
     }
 
     // 선호 게임 없이 장르만 선택한 사용자의 추천 후보 ID를 최대 5개 반환
-    public List<Long> findTopFiveIdsByPreferredGenres(List<Long> preferredGenreIds) {
+    public List<Long> findTopFiveIdsByPreferredGenres(
+            List<Long> preferredGenreIds,
+            List<Long> excludedGameIds
+    ) {
         if (preferredGenreIds.isEmpty()) {
             return List.of();
         }
@@ -100,6 +104,11 @@ public class PersonalizedRecommendationCandidateQueryRepository {
         return entityManager
                 .createQuery(GENRE_ONLY_CANDIDATE_IDS_JPQL, Long.class)
                 .setParameter("preferredGenreIds", preferredGenreIds)
+                // 빈 IN 목록을 피하기 위한 존재하지 않는 게임 ID
+                .setParameter(
+                        "excludedGameIds",
+                        excludedGameIds.isEmpty() ? List.of(-1L) : excludedGameIds
+                )
                 .setParameter("activeReviewStatus", ReviewStatus.ACTIVE)
                 .setMaxResults(5)
                 .getResultList();

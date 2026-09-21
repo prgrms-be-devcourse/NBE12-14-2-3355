@@ -59,6 +59,9 @@ public class PersonalizedGameRecommendationService {
 
     // 사용 가능한 게임 기록을 우선하고, 사용할 수 없으면 온보딩 추천으로 전환
     private List<PersonalizedRecommendationResult> recommendResults(Long userId) {
+        List<Long> recordedGameIds =
+                gameRecordQueryRepository.findRecordedGameIdsByUserId(userId);
+
         List<PersonalizedGameRecordProjection> records =
                 gameRecordQueryRepository.findEligibleRecordsByUserId(userId);
 
@@ -67,20 +70,28 @@ public class PersonalizedGameRecommendationService {
                     recordSourceSelector.selectSourceGameIds(records);
 
             if (!sourceGameIds.isEmpty()) {
-                return recommendFromRecords(records, sourceGameIds);
+                return recommendFromRecords(
+                        records,
+                        sourceGameIds,
+                        recordedGameIds
+                );
             }
         }
 
-        return recommendFromOnboarding(userId);
+        return recommendFromOnboarding(userId, recordedGameIds);
     }
 
     // 기록 게임의 연관 추천 순위 점수와 상위 장르 가산점으로 추천 결과 생성
     private List<PersonalizedRecommendationResult> recommendFromRecords(
             List<PersonalizedGameRecordProjection> records,
-            List<Long> sourceGameIds
+            List<Long> sourceGameIds,
+            List<Long> recordedGameIds
     ) {
         List<PersonalizedRelatedGameProjection> relatedGames =
-                relatedGameQueryRepository.findTopFiveBySourceGameIds(sourceGameIds);
+                relatedGameQueryRepository.findTopFiveBySourceGameIds(
+                        sourceGameIds,
+                        recordedGameIds
+                );
 
         Map<Long, Integer> relatedScores =
                 relatedRankScoreCalculator.calculate(relatedGames);
@@ -101,7 +112,10 @@ public class PersonalizedGameRecommendationService {
     }
 
     // 온보딩 선호 게임을 우선 후보로 사용하고, 선호 게임이 없으면 장르 후보를 조회
-    private List<PersonalizedRecommendationResult> recommendFromOnboarding(Long userId) {
+    private List<PersonalizedRecommendationResult> recommendFromOnboarding(
+            Long userId,
+            List<Long> recordedGameIds
+    ) {
         List<Long> preferredGameIds = onboardingPreferenceQueryRepository.findPreferredGameIds(userId);
 
         List<Long> preferredGenreIds = onboardingPreferenceQueryRepository.findPreferredGenreIds(userId);
@@ -113,8 +127,14 @@ public class PersonalizedGameRecommendationService {
         Map<Long, Integer> relatedScores;
 
         if (!preferredGameIds.isEmpty()) {
+            List<Long> excludedGameIds = new ArrayList<>(recordedGameIds);
+            excludedGameIds.addAll(preferredGameIds);
+
             List<PersonalizedRelatedGameProjection> relatedGames =
-                    relatedGameQueryRepository.findTopFiveBySourceGameIds(preferredGameIds);
+                    relatedGameQueryRepository.findTopFiveBySourceGameIds(
+                            preferredGameIds,
+                            excludedGameIds.stream().distinct().toList()
+                    );
 
             relatedScores = onboardingScoreCalculator.calculateRelatedScores(
                     preferredGameIds,
@@ -122,7 +142,10 @@ public class PersonalizedGameRecommendationService {
             );
         } else {
             List<Long> genreCandidateIds =
-                    candidateQueryRepository.findTopFiveIdsByPreferredGenres(preferredGenreIds);
+                    candidateQueryRepository.findTopFiveIdsByPreferredGenres(
+                            preferredGenreIds,
+                            recordedGameIds
+                    );
 
             relatedScores = genreCandidateIds.stream()
                     .collect(Collectors.toMap(
