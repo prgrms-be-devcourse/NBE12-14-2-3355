@@ -61,7 +61,9 @@ public interface GameRepository extends JpaRepository<Game,Long> {
                 )
                 ORDER BY CASE
                     WHEN :metric = 'RATING' THEN
-                        (SELECT COALESCE(AVG(r.rating), 0.0) FROM Review r WHERE r.userGame.game = g)
+                        (SELECT COALESCE(AVG(r.rating), 0.0) FROM Review r
+                         WHERE r.userGame.game = g
+                           AND (r.status IS NULL OR r.status = com.gamelog.nbe121423355.domain.review.entity.ReviewStatus.ACTIVE))
                     WHEN :metric = 'LIBRARY' THEN
                         (SELECT COUNT(ug.id) FROM UserGame ug WHERE ug.game = g AND ug.inLibrary = true)
                     WHEN :metric = 'PLAY_TIME' THEN
