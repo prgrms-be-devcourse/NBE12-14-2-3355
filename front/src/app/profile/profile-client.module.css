@@ -12,16 +12,19 @@
 .bioText{font-size:13px;color:var(--text);line-height:1.6;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .bioEmpty{font-size:12px;color:var(--muted);font-style:italic;display:flex;align-items:center;gap:8px}
 
-.linkBtn{font-size:11px;color:var(--muted);font-style:normal;font-weight:600}
-.linkBtn:hover{color:var(--lime)}
+.linkBtn{padding:5px 12px;border:1px solid var(--line);border-radius:5px;background:transparent;color:var(--muted);font-size:11px;font-style:normal;font-weight:600;white-space:nowrap;cursor:pointer}
+.linkBtn:hover:not(:disabled){border-color:var(--lime);color:var(--lime);background:#1c231c}
+.linkBtn:disabled{opacity:.5;cursor:not-allowed}
 
 .inlineEdit{display:flex;flex-direction:column;gap:8px}
 .inlineEdit input,.inlineEdit textarea{padding:9px 10px;border:1px solid var(--line);border-radius:5px;background:#101512;color:var(--text);font-size:12px;outline:none;font-family:inherit;resize:vertical;width:100%}
 .inlineEdit input:focus,.inlineEdit textarea:focus{border-color:var(--lime)}
 .inlineActions{display:flex;justify-content:flex-end;gap:10px}
-.inlineActions button{font-size:11px;color:var(--muted)}
-.inlineActions button:hover:not(:disabled){color:var(--lime)}
-.primaryBtn{color:var(--lime)!important;font-weight:700}
+.inlineActions button{padding:5px 12px;border:1px solid var(--line);border-radius:5px;background:transparent;color:var(--muted);font-size:11px;font-weight:600;cursor:pointer}
+.inlineActions button:hover:not(:disabled){border-color:var(--lime);color:var(--lime);background:#1c231c}
+.inlineActions button:disabled{opacity:.5;cursor:not-allowed}
+.primaryBtn{background:var(--lime)!important;border-color:var(--lime)!important;color:#0c120f!important;font-weight:700}
+.primaryBtn:hover:not(:disabled){opacity:.88}
 .checkRow{display:flex;gap:8px}
 .checkRow input{flex:1;min-width:0}
 .checkButton{padding:0 10px;border:1px solid var(--line);border-radius:5px;color:var(--lime);font-size:11px;white-space:nowrap}

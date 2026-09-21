@@ -88,6 +88,29 @@ export function updateProfile(body: UpdateProfileRequestBody, accessToken: strin
   return request<UserDto>("me", { method: "PATCH", body: JSON.stringify(body), accessToken });
 }
 
+export async function uploadProfileImage(file: File, accessToken: string): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch("/api/uploads/images", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: formData,
+    cache: "no-store",
+  });
+
+  const newAccessToken = response.headers.get("New-Access-Token");
+  if (newAccessToken) onTokenRefreshed?.(newAccessToken);
+
+  const payload = (await response.json()) as ApiResponse<string>;
+
+  if (!response.ok) {
+    throw new AuthApiError(payload.msg || "이미지 업로드에 실패했습니다.", response.status, payload.resultCode);
+  }
+
+  return payload.data;
+}
+
 export function completeOnboarding(accessToken: string) {
   return request<UserDto>("me/onboarding", { method: "PATCH", accessToken });
 }
