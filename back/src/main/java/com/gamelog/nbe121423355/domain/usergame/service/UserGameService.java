@@ -48,6 +48,22 @@ public class UserGameService {
                 .map(UserGameListResponse::new);
     }
 
+    @Transactional(readOnly = true)
+    public Page<UserGameListResponse> getUserGameList(Long userId, UserGameSearchRequest request) {
+        String keyword = request.getKeyword();
+        String pattern = keyword == null || keyword.isBlank() ? null
+                : "%" + keyword.strip().replace("!", "!!").replace("%", "!%")
+                        .replace("_", "!_") + "%";
+        boolean platforms = request.getPlatformIds() != null && !request.getPlatformIds().isEmpty();
+        boolean genres = request.getGenreIds() != null && !request.getGenreIds().isEmpty();
+        return userGameRepository.findByLibraryFilters(userId, request.getStatus().name(), pattern,
+                        platforms, platforms ? request.getPlatformIds() : List.of(0L),
+                        genres, genres ? request.getGenreIds() : List.of(0L),
+                        request.getSort().name(),
+                        org.springframework.data.domain.PageRequest.of(request.getPage(), request.getSize()))
+                .map(UserGameListResponse::new);
+    }
+
     //생성 또는 수정
     @Transactional
     public UserGameSaveResult addOrUpdateGameToLibrary(

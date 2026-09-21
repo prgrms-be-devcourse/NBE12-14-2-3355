@@ -16,6 +16,42 @@ public interface UserGameRepository extends JpaRepository<UserGame, Long> {
     Optional<UserGame> findByUser_IdAndGame_Id(Long userId, Long gameId);
     Page<UserGame> findAllByUser_IdAndInLibraryTrue(Long userId, Pageable pageable);
 
+    // EXISTS prevents multi-genre games from duplicating rows and corrupting pagination.
+    String LIBRARY_FILTERS = """
+            FROM UserGame ug
+            JOIN ug.game g
+            LEFT JOIN Review r ON r.userGame = ug
+            WHERE ug.user.id = :userId AND ug.inLibrary = true
+              AND (:status = 'ALL'
+                OR (:status = 'PLAYED' AND ug.playStatus IS NOT NULL)
+                OR (:status = 'PLAYING' AND ug.playing = true)
+                OR (:status = 'BACKLOG' AND ug.backlog = true)
+                OR (:status = 'WISHLIST' AND ug.wishlist = true))
+              AND (:keyword IS NULL OR LOWER(g.title) LIKE LOWER(:keyword) ESCAPE '!')
+              AND (:filterPlatforms = false OR ug.platform.id IN :platformIds)
+              AND (:filterGenres = false OR EXISTS (
+                SELECT 1 FROM GameGenre gg WHERE gg.game = g AND gg.genre.id IN :genreIds))
+            """;
+
+    @Query(value = "SELECT ug " + LIBRARY_FILTERS + """
+            ORDER BY
+              CASE WHEN :sort = 'RECENT_PLAYED' AND ug.lastPlayedAt IS NULL THEN 1 ELSE 0 END,
+              CASE WHEN :sort = 'RECENT_PLAYED' THEN ug.lastPlayedAt END DESC,
+              CASE WHEN :sort = 'RATING' AND r.rating IS NULL THEN 1 ELSE 0 END,
+              CASE WHEN :sort = 'RATING' THEN r.rating END DESC,
+              CASE WHEN :sort = 'TITLE' THEN g.title END ASC,
+              CASE WHEN :sort = 'PLAY_TIME' AND ug.playTimeHours IS NULL THEN 1 ELSE 0 END,
+              CASE WHEN :sort = 'PLAY_TIME' THEN ug.playTimeHours END DESC,
+              ug.id DESC
+            """, countQuery = "SELECT COUNT(ug) " + LIBRARY_FILTERS)
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = "game")
+    Page<UserGame> findByLibraryFilters(
+            @Param("userId") Long userId, @Param("status") String status,
+            @Param("keyword") String keyword,
+            @Param("filterPlatforms") boolean filterPlatforms, @Param("platformIds") List<Long> platformIds,
+            @Param("filterGenres") boolean filterGenres, @Param("genreIds") List<Long> genreIds,
+            @Param("sort") String sort, Pageable pageable);
+
     @Query("""
     SELECT ug
     FROM UserGame ug
