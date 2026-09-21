@@ -35,8 +35,1134 @@
 .success{font-size:12px;color:var(--lime)}
 
 .content{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:32px 28px;min-height:300px}
-.eyebrow{color:var(--lime);font-size:10px;font-weight:700;letter-spacing:1.8px}
-.contentTitle{font-size:22px;font-weight:700;margin:10px 0 10px;color:var(--text)}
+.eyebrow{color:var(--lime);font-size:20px;font-weight:700;letter-spacing:1.8px}
+.contentTitle{font-size:21px;font-weight:700;margin:25px 0 10px;color:var(--text)}
 .contentBody{font-size:13px;color:var(--muted);line-height:1.7}
 
 .loading{color:var(--muted);font-size:13px;padding:40px 0}
+
+/* =========================================================
+   PROFILE GAME LOG
+   [ADD] 기존 스타일 아래에 추가
+   ========================================================= */
+/* =========================================================
+ * 공통 섹션
+ * ========================================================= */
+
+ .sectionHeading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  
+    padding-bottom: 13px;
+    margin-bottom: 18px;
+    margin-top: 10px;
+  
+    border-bottom: 1px solid var(--line);
+  }
+  
+  .sectionHeading h3 {
+    margin: 0;
+  
+    font-size: 15px;
+    font-weight: 650;
+    color: var(--text);
+  }
+  
+  .sectionHeading p {
+    margin: 5px 0 0;
+  
+    font-size: 11px;
+    color: var(--muted);
+  }
+  
+  .emptyBox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    min-height: 130px;
+  
+    border: 1px dashed var(--line);
+    border-radius: 7px;
+  
+    color: var(--muted);
+    font-size: 12px;
+  }
+  
+  /* =========================================================
+   * 인생게임
+   * ========================================================= */
+  
+   .favoriteSection {
+    margin-top: 0;
+  }
+  
+  .favoriteHeaderActions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .favoriteEditButton {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  
+  .favoriteEditButton:hover {
+    color: var(--lime);
+  }
+  
+  .favoriteAddButton {
+    font-size: 11px;
+    color: var(--lime);
+    font-weight: 600;
+  }
+  
+  .favoriteAddButton:hover:not(:disabled) {
+    text-decoration: underline;
+  }
+  
+  .favoriteAddButton:disabled {
+    opacity: 0.4;
+  }
+  
+  .favoriteActions {
+    display: flex;
+    gap: 12px;
+  }
+  
+  .favoriteActions button {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  
+  .favoriteActions button:hover {
+    color: var(--lime);
+  }
+  
+  .favoriteSaveButton {
+    color: var(--lime) !important;
+    font-weight: 700;
+  }
+  
+  .favoriteGrid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+  }
+  
+  .favoriteCard {
+    position: relative;
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+  
+    border: 1px solid var(--line);
+    border-radius: 7px;
+  
+    background: #232b29;
+  
+    transition:
+      border-color 0.15s ease,
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+  
+  .favoriteCard:hover {
+    border-color: var(--lime);
+    box-shadow: 0 0 0 1px var(--lime);
+    transform: translateY(-2px);
+  }
+
+  .favoriteCard[draggable="true"] {
+    cursor: grab;
+  }
+  
+  .favoriteCard[draggable="true"]:active {
+    cursor: grabbing;
+  }
+  
+  .favoriteLink {
+    display: block;
+    width: 100%;
+    height: 100%;
+    color: inherit;
+    text-decoration: none;
+  }
+  
+  .favoriteLink > img,
+  .favoriteLink > .gameCoverFallback {
+    width: 100%;
+    height: 100%;
+    display: block;
+  
+    object-fit: cover;
+  }
+  
+  .favoriteRemove {
+    position: absolute;
+  
+    top: 7px;
+    right: 7px;
+  
+    width: 24px;
+    height: 24px;
+  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    border-radius: 50%;
+  
+    background: rgba(10, 15, 12, 0.88);
+    color: #fff;
+  
+    font-size: 18px;
+    line-height: 1;
+  
+    z-index: 3;
+  }
+  
+  .favoriteRemove:hover {
+    background: var(--lime);
+    color: #182110;
+  }
+  
+  .favoriteTitle {
+    position: absolute;
+  
+    left: 0;
+    right: 0;
+    bottom: 0;
+  
+    padding: 28px 10px 10px;
+  
+    background: linear-gradient(
+      transparent,
+      rgba(5, 10, 7, 0.92)
+    );
+  
+    font-size: 11px;
+    color: var(--text);
+  
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .emptyAddButton {
+    display: block;
+  
+    margin-top: 10px;
+  
+    color: var(--lime);
+    font-size: 11px;
+  }
+  
+  /* =========================================================
+   * 게임 이미지
+   * ========================================================= */
+  
+  .gameCoverFallback {
+    width: 100%;
+    height: 100%;
+    min-height: 100px;
+  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    background: #232b29;
+    color: var(--lime);
+  }
+  
+  .gameCoverFallback span {
+    font-size: 28px;
+  }
+
+  .modalBackdrop {
+    position: fixed;
+    inset: 0;
+  
+    z-index: 1000;
+  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    padding: 20px;
+  
+    background: rgba(5, 8, 6, 0.78);
+    backdrop-filter: blur(4px);
+  }
+  
+  .favoriteModal {
+    width: min(560px, 100%);
+    max-height: min(720px, 90vh);
+  
+    display: flex;
+    flex-direction: column;
+  
+    border: 1px solid var(--line);
+    border-radius: 10px;
+  
+    background: var(--panel);
+  
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  
+    overflow: hidden;
+  }
+  
+  .modalHeader {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+  
+    padding: 22px 24px 18px;
+  
+    border-bottom: 1px solid var(--line);
+  }
+  
+  .modalEyebrow {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--lime);
+  }
+  
+  .modalHeader h3 {
+    margin: 5px 0 4px;
+  
+    font-size: 18px;
+    color: var(--text);
+  }
+  
+  .modalHeader p {
+    margin: 0;
+  
+    font-size: 10px;
+    color: var(--muted);
+  }
+  
+  .modalClose {
+    width: 28px;
+    height: 28px;
+  
+    flex: 0 0 auto;
+  
+    color: var(--muted);
+    font-size: 22px;
+  }
+  
+  .modalClose:hover {
+    color: var(--text);
+  }
+  
+  .favoriteSearch {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  
+    margin: 18px 24px 12px;
+    padding: 10px 12px;
+  
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  
+    background: #101512;
+  
+    color: var(--muted);
+  }
+  
+  .favoriteSearch:focus-within {
+    border-color: var(--lime);
+  }
+  
+  .favoriteSearch input {
+    flex: 1;
+    min-width: 0;
+  
+    border: 0;
+    outline: 0;
+  
+    background: transparent;
+    color: var(--text);
+  
+    font-size: 12px;
+    font-family: inherit;
+  }
+  
+  .favoriteSearchResult {
+    min-height: 220px;
+    max-height: 460px;
+  
+    overflow-y: auto;
+  
+    padding: 0 24px 18px;
+  }
+  
+  .modalEmpty,
+  .modalError {
+    min-height: 200px;
+  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    font-size: 11px;
+    color: var(--muted);
+  }
+  
+  .modalError {
+    color: #f0bfa8;
+  }
+  
+  .searchGameList {
+    display: flex;
+    flex-direction: column;
+  
+    border-top: 1px solid var(--line);
+  }
+  
+  .searchGameItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  
+    padding: 10px 0;
+  
+    border-bottom: 1px solid var(--line);
+  }
+  
+  .searchGameInfo {
+    flex: 1;
+    min-width: 0;
+  
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  
+    text-align: left;
+  }
+  
+  .searchGameInfo:hover strong {
+    color: var(--lime);
+  }
+  
+  .searchGameCover {
+    width: 42px;
+    height: 58px;
+  
+    flex: 0 0 auto;
+  
+    border-radius: 4px;
+  
+    object-fit: cover;
+  }
+  
+  .searchGameInfo > span {
+    min-width: 0;
+  
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .searchGameInfo strong {
+    color: var(--text);
+  
+    font-size: 12px;
+  
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .searchGameInfo small {
+    color: var(--muted);
+    font-size: 9px;
+  }
+  
+  .searchGameAdd {
+    flex: 0 0 auto;
+  
+    padding: 7px 12px;
+  
+    border: 1px solid var(--line);
+    border-radius: 5px;
+  
+    color: var(--lime);
+  
+    font-size: 10px;
+    font-weight: 600;
+  }
+  
+  .searchGameAdd:hover:not(:disabled) {
+    border-color: var(--lime);
+    background: #1c231c;
+  }
+  
+  .searchGameAdd:disabled {
+    color: var(--muted);
+    opacity: 0.6;
+  }
+  
+  .modalNotice {
+    margin: 0;
+    padding: 12px 24px;
+  
+    border-top: 1px solid var(--line);
+  
+    font-size: 9px;
+    color: var(--muted);
+  }
+  
+  /* =========================================================
+   * 활동 통계
+   * ========================================================= */
+  
+  .statsSection {
+    margin-top: 15px;
+  }
+  
+  .statsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+  
+  .statCard {
+    min-height: 110px;
+  
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  
+    padding: 18px;
+  
+    border: 1px solid var(--lime);
+    border-radius: 7px;
+  
+    background: #101512;
+  }
+  
+  .statLabel {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 7px;
+  }
+  
+  .statValue {
+    font-size: 25px;
+    line-height: 1;
+    color: var(--text);
+  }
+  
+  .statUnit {
+    margin-top: 6px;
+  
+    font-size: 11px;
+    color: var(--muted);
+  }
+  
+  /* =========================================================
+   * 산점도
+   * ========================================================= */
+  
+  .scatterSection {
+    margin-top: 32px;
+    width: 100%;
+  }
+  
+  .scatterChart {
+    position: relative;
+    width: 100%;
+    min-height: 520px;
+  
+    border: 1px solid var(--lime);
+    border-radius: 7px;
+  
+    background: #101512;
+  
+    overflow: hidden;
+  }
+  
+  .scatterSvg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  
+  .scatterAxis {
+    stroke: #39433e;
+    stroke-width: 1;
+    stroke-dasharray: 4 5;
+  }
+  
+  .scatterMainAxis {
+    stroke: #69736d;
+    stroke-width: 1;
+  }
+  
+  .scatterTick {
+    fill: var(--muted);
+    font-size: 10px;
+  }
+  
+  .averageLabel {
+    fill: var(--lime);
+    font-size: 9px;
+  }
+  
+  .scatterPoint {
+    cursor: pointer;
+  }
+  
+  .scatterPointBg {
+    fill: var(--lime);
+    stroke: #101512;
+    stroke-width: 1.5;
+    transition: r 0.12s ease;
+  }
+  
+  .scatterTooltip {
+    pointer-events: none;
+  }
+  
+  .scatterTooltipBox {
+    fill: #18201b;
+    stroke: var(--lime);
+    stroke-width: 1;
+  }
+  
+  .scatterTooltipTitle {
+    fill: var(--text);
+    font-size: 11px;
+    font-weight: 700;
+  }
+  
+  .scatterTooltipText {
+    fill: var(--muted);
+    font-size: 9px;
+  }
+  
+  .scatterPoint:hover .scatterPointBg {
+    r: 6;
+  }
+  
+  .quadrantLabels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  
+    gap: 20px;
+  
+    padding: 18px 24px 0;
+  }
+  
+  .quadrantLabels:last-child {
+    padding-top: 6px;
+    padding-bottom: 18px;
+  }
+  
+  .quadrantLabel {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .quadrantLabel strong {
+    font-size: 15px;
+    color: var(--text);
+    letter-spacing: 0.3px;
+  }
+  
+  .quadrantLabel span {
+    max-width: 180px;
+  
+    font-size: 12px;
+    line-height: 1.45;
+  
+    color: var(--muted);
+  }
+  
+  .quadrantRight {
+    align-items: flex-end;
+    text-align: right;
+  }
+  
+  .scatterSvg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  
+  /* =========================================================
+   * 취향 + 장르
+   * ========================================================= */
+  
+  .preferenceGrid {
+    display: grid;
+  
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(280px, 0.8fr);
+  
+    gap: 24px;
+  
+    margin-top: 32px;
+  
+    align-items: stretch;
+  }
+  
+  .tasteSection,
+  .genreSection {
+    min-width: 0;
+  
+    border: 1px solid var(--lime);
+    border-radius: 7px;
+  
+    padding: 20px;
+  
+    background: #101512;
+  }
+  
+  .tasteSection .sectionHeading,
+  .genreSection .sectionHeading {
+    margin-bottom: 20px;
+  }
+  
+  .tasteList {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .tasteRow {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  
+  .tasteHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .tasteHeader strong {
+    font-size: 11px;
+    color: var(--text);
+  }
+  
+  .tasteHeader span {
+    font-size: 10px;
+    color: var(--lime);
+  }
+  
+  .tasteBar {
+    height: 6px;
+  
+    overflow: hidden;
+  
+    border-radius: 999px;
+  
+    background: #252d29;
+  }
+  
+  .tasteBarValue {
+    height: 100%;
+  
+    border-radius: inherit;
+  
+    background: var(--lime);
+  }
+  
+  .tasteMessage {
+    font-size: 11px;
+    color: var(--text);
+  }
+  
+  .tasteRow p {
+    margin: 0;
+  
+    font-size: 9px;
+    line-height: 1.5;
+  
+    color: var(--muted);
+  }
+  
+  /* =========================================================
+   * 장르 분포
+   * ========================================================= */
+  
+   .genreLayout {
+    min-height: 270px;
+  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    gap: 32px;
+  }
+  
+  .genreChart {
+    width: 150px;
+    height: 150px;
+  
+    flex: 0 0 auto;
+  
+    border-radius: 50%;
+  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .genreChartInner {
+    width: 72px;
+    height: 72px;
+  
+    border-radius: 50%;
+  
+    background: #101512;
+  
+    border: 1px solid var(--line);
+  }
+  
+  .genreLegend {
+    width: auto;
+  
+    display: flex;
+    flex-direction: column;
+  
+    gap: 12px;
+  
+    min-width: 130px;
+  }
+  
+  .genreItem {
+    display: grid;
+  
+    grid-template-columns:
+      8px
+      minmax(0, 1fr)
+      auto;
+  
+    gap: 8px;
+  
+    align-items: center;
+  
+    font-size: 10px;
+  }
+  
+  .genreDot {
+    width: 7px;
+    height: 7px;
+  
+    border-radius: 50%;
+  }
+  
+  .genreName {
+    min-width: 0;
+  
+    color: var(--text);
+  
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .genrePercent {
+    color: var(--muted);
+  }
+  
+  /* =========================================================
+   * 최근 플레이
+   * ========================================================= */
+  
+   .recentSection {
+    margin-top: 32px;
+  }
+  
+  .recentGames {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+  }
+  
+  .recentGame {
+    position: relative;
+    display: block;
+    overflow: hidden;
+  
+    aspect-ratio: 2 / 3;
+  
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: #232b29;
+  
+    text-decoration: none;
+  
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease,
+      transform 0.15s ease;
+  }
+  
+  .recentGame:hover {
+    border-color: var(--lime);
+    box-shadow: 0 0 0 1px var(--lime);
+    transform: translateY(-2px);
+  }
+  
+  .recentGame > .gameCoverFallback,
+  .recentGame > img {
+    width: 100%;
+    height: 100%;
+  
+    display: block;
+  
+    object-fit: cover;
+  }
+  
+  /* 게임 제목을 이미지 위에 표시 */
+  .recentGame > span {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  
+    padding: 24px 8px 8px;
+  
+    font-size: 10px;
+    line-height: 1.4;
+    color: var(--text);
+  
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  
+    background: linear-gradient(
+      transparent,
+      rgba(0, 0, 0, 0.8)
+    );
+  
+    transition: color 0.15s ease;
+  }
+  
+  .recentGame:hover > span {
+    color: var(--lime);
+  }
+  
+  /* =========================================================
+   * 최근 리뷰
+   * ========================================================= */
+  
+  .reviewList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .reviewCard {
+    display: grid;
+  
+    grid-template-columns: 64px minmax(0, 1fr);
+  
+    gap: 14px;
+  
+    padding: 14px;
+  
+    border: 1px solid var(--line);
+    border-radius: 7px;
+  
+    background: #101512;
+  
+    text-decoration: none;
+  
+    transition:
+      border-color 0.15s ease,
+      background 0.15s ease;
+  }
+  
+  .reviewCard:hover {
+    border-color: var(--lime);
+    background: #141b16;
+  }
+  
+  .reviewCover {
+    width: 64px;
+    height: 88px;
+  
+    border-radius: 5px;
+  
+    object-fit: cover;
+  }
+  
+  .reviewBody {
+    min-width: 0;
+  
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .reviewHeader {
+    display: flex;
+  
+    justify-content: space-between;
+  
+    gap: 12px;
+  }
+  
+  .reviewHeader > div:first-child {
+    min-width: 0;
+  
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .reviewHeader strong {
+    font-size: 12px;
+    color: var(--text);
+  
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .reviewHeader span {
+    font-size: 9px;
+    color: var(--muted);
+  }
+  
+  .reviewRating {
+    display: flex;
+    align-items: center;
+  
+    gap: 7px;
+  
+    white-space: nowrap;
+  }
+  
+  .reviewRating span {
+    color: var(--lime);
+    letter-spacing: -1px;
+  }
+  
+  .reviewRating strong {
+    font-size: 10px;
+    color: var(--text);
+  }
+  
+  .reviewBody p {
+    margin: 12px 0;
+  
+    font-size: 11px;
+    line-height: 1.6;
+  
+    color: var(--text);
+  
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  
+    overflow: hidden;
+  }
+  
+  .reviewBody time {
+    font-size: 9px;
+    color: var(--muted);
+  }
+  
+  /* =========================================================
+   * Responsive
+   * ========================================================= */
+  
+  @media (max-width: 1000px) {
+    .favoriteGrid {
+      grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+    }
+  
+    .recentGames {
+      grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+    }
+  
+    .preferenceGrid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  @media (max-width: 760px) {
+    .content {
+      padding: 24px 18px;
+    }
+  
+    .statsGrid {
+      grid-template-columns: 1fr;
+    }
+  
+    .favoriteGrid {
+      grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+    }
+  
+    .recentGames {
+      grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+    }
+  
+    .scatterChart {
+      min-height: 420px;
+    }
+  
+    .quadrantLabel span {
+      max-width: 110px;
+      font-size: 8px;
+    }
+  
+    .genreLayout {
+        flex-direction: column;
+        gap: 22px;
+      }
+      
+      .genreLegend {
+        width: min(100%, 220px);
+      }
+  }
+  
+  @media (max-width: 480px) {
+    .favoriteGrid {
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    }
+  
+    .recentGames {
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    }
+  
+    .reviewCard {
+      grid-template-columns: 52px minmax(0, 1fr);
+    }
+  
+    .reviewCover {
+      width: 52px;
+      height: 72px;
+    }
+  
+    .reviewHeader {
+      flex-direction: column;
+      gap: 6px;
+    }
+  
+    .hiddenGems,
+    .myFavorites,
+    .notForMe,
+    .timeSink {
+      max-width: 100px;
+    }
+  }
