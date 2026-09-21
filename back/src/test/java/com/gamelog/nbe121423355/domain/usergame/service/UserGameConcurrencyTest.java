@@ -8,6 +8,7 @@ import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
 import com.gamelog.nbe121423355.domain.usergame.dto.UserGameReqBody;
 import com.gamelog.nbe121423355.domain.usergame.entity.PlayStatus;
 import com.gamelog.nbe121423355.domain.usergame.repository.UserGameRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -147,5 +148,11 @@ class UserGameConcurrencyTest {
         assertThat(
                 userGameRepository.findByUser_IdAndGame_Id(userId, gameId)
         ).isPresent();
+    }
+    @AfterEach
+    void tearDown() {
+        userGameRepository.deleteAll();
+        userRepository.deleteAll();
+        gameRepository.deleteAll();
     }
 }

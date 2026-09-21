@@ -57,7 +57,7 @@ class JwtAuthenticationFilterTest {
         MvcResult loginResult = mockMvc.perform(post("/api/v1/users/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"email": "test@test.com", "password": "password123"}
+                                {"email": "autorefresh-test@test.com", "password": "password123"}
                                 """))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -93,7 +93,7 @@ class JwtAuthenticationFilterTest {
     @Test
     @DisplayName("accessToken 만료 + 유효한 refreshToken 쿠키 → 자동 재발급 성공, New-Access-Token 헤더 포함")
     void autoReissue_success() throws Exception {
-        User user = saveUser("test@test.com", "nickname", "password123");
+        User user = saveUser("autorefresh-test@test.com", "nickname", "password123");
         Cookie refreshTokenCookie = loginAndGetRefreshTokenCookie();
 
         mockMvc.perform(get("/api/v1/users/me")
@@ -106,7 +106,7 @@ class JwtAuthenticationFilterTest {
     @Test
     @DisplayName("accessToken 만료 + refreshToken 쿠키 없음 → 재발급 안 되고 401")
     void autoReissue_fail_noRefreshCookie() throws Exception {
-        User user = saveUser("test@test.com", "nickname", "password123");
+        User user = saveUser("autorefresh-test@test.com", "nickname", "password123");
 
         mockMvc.perform(get("/api/v1/users/me")
                         .header("Authorization", "Bearer " + expiredAccessToken(user.getId(), user.getRole())))
@@ -117,7 +117,7 @@ class JwtAuthenticationFilterTest {
     @Test
     @DisplayName("accessToken 만료 + refreshToken이 DB에 없음(로그인 거치지 않고 직접 생성한 토큰) → 재발급 안 되고 401")
     void autoReissue_fail_refreshTokenNotInDb() throws Exception {
-        User user = saveUser("test@test.com", "nickname", "password123");
+        User user = saveUser("autorefresh-test@test.com", "nickname", "password123");
         String refreshToken = jwtProvider.generateRefreshToken(user.getId());
 
         mockMvc.perform(get("/api/v1/users/me")
@@ -130,7 +130,7 @@ class JwtAuthenticationFilterTest {
     @Test
     @DisplayName("accessToken 서명 위조(만료 아님) + 유효한 refreshToken 쿠키 → 재발급 시도 자체를 안 하고 401")
     void autoReissue_fail_tamperedAccessToken() throws Exception {
-        User user = saveUser("test@test.com", "nickname", "password123");
+        User user = saveUser("autorefresh-test@test.com", "nickname", "password123");
         Cookie refreshTokenCookie = loginAndGetRefreshTokenCookie();
 
         mockMvc.perform(get("/api/v1/users/me")
