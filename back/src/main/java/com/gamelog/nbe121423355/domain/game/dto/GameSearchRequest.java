@@ -4,8 +4,9 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import java.util.List;
 
-public record PageRequest(
+public record GameSearchRequest(
         @Min(0)
         Integer page,
 
@@ -13,9 +14,12 @@ public record PageRequest(
         @Max(100)
         Integer size,
 
-        GameSort sort
+        GameSort sort,
+        String keyword,
+        List<Long> genreIds,
+        List<Long> platformIds
 ) {
-    public PageRequest {
+    public GameSearchRequest {
         page = page == null ? 0 : page;
         size = size == null ? 20 : size;
     }

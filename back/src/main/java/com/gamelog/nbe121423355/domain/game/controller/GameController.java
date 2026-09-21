@@ -1,7 +1,7 @@
 package com.gamelog.nbe121423355.domain.game.controller;
 
 import com.gamelog.nbe121423355.domain.game.dto.GameListResponse;
-import com.gamelog.nbe121423355.domain.game.dto.PageRequest;
+import com.gamelog.nbe121423355.domain.game.dto.GameSearchRequest;
 import com.gamelog.nbe121423355.domain.game.service.GameService;
 import com.gamelog.nbe121423355.global.dto.RsData;
 import jakarta.validation.Valid;
@@ -33,25 +33,10 @@ public class GameController {
     // 페이징 목록 조회
     @GetMapping("/page")
     public RsData<Page<GameListResponse>> page(
-            @Valid @ModelAttribute PageRequest request,
-
-            @RequestParam(name = "keyword", required = false)
-            String keyword,
-
-            @RequestParam(name = "genreIds", required = false)
-            List<Long> genreIds,
-
-            @RequestParam(name = "platformIds", required = false)
-            List<Long> platformIds
+            @Valid @ModelAttribute GameSearchRequest request
     ) {
         Page<GameListResponse> responsePage =
-                gameService.getGamesPage(
-                        keyword,
-                        genreIds,
-                        platformIds,
-                        request.toPageable(),
-                        request.sort()
-                );
+                gameService.getGamesPage(request);
 
         return new RsData<>(
                 "200-1",
