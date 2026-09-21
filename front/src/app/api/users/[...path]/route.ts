@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import {relayAuthHeaders} from "@/lib/proxy";
 
 type RouteContext = { params: Promise<{ path: string[] }> };
 
@@ -31,7 +32,7 @@ async function proxy(request: NextRequest, context: RouteContext) {
     });
     const body = await upstream.text();
     const responseHeaders = new Headers({ "Content-Type": upstream.headers.get("content-type") || "application/json" });
-    for (const setCookie of upstream.headers.getSetCookie()) responseHeaders.append("Set-Cookie", setCookie);
+    relayAuthHeaders(upstream, responseHeaders);
     return new Response(body, { status: upstream.status, headers: responseHeaders });
   } catch {
     return Response.json(
