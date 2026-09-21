@@ -56,6 +56,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    // 백엔드 자동 재발급 필터가 응답 헤더로 새 accessToken을 내려주면 여기서 받아서 갱신
+    authApi.setTokenRefreshedListener((newToken) => {
+      setAccessToken(newToken);
+    });
+    return () => authApi.setTokenRefreshedListener(null);
+  }, []);
+
   const login = useCallback(async (body: LoginRequestBody) => {
     const result = await authApi.login(body);
     setAccessToken(result.accessToken);

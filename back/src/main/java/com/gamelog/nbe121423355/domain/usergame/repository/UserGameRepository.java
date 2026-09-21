@@ -15,6 +15,10 @@ import java.util.Optional;
 public interface UserGameRepository extends JpaRepository<UserGame, Long> {
     Optional<UserGame> findByUser_IdAndGame_Id(Long userId, Long gameId);
     Page<UserGame> findAllByUser_IdAndInLibraryTrue(Long userId, Pageable pageable);
+    List<UserGame> findAllByUserIdAndGameIdIn(
+            Long userId,
+            List<Long> gameIds
+    );
 
     // EXISTS prevents multi-genre games from duplicating rows and corrupting pagination.
     String LIBRARY_FILTERS = """
@@ -109,5 +113,19 @@ public interface UserGameRepository extends JpaRepository<UserGame, Long> {
     """)
     List<UserGameGenreDTO> findGenreDistribution(
             @Param("userId") Long userId
+    );
+
+    @Query("""
+    SELECT ug
+    FROM UserGame ug
+    JOIN FETCH ug.game
+    WHERE ug.user.id = :userId
+      AND ug.inLibrary = true
+      AND ug.lastPlayedAt IS NOT NULL
+    ORDER BY ug.lastPlayedAt DESC
+""")
+    List<UserGame> findRecentPlayedGames(
+            @Param("userId") Long userId,
+            Pageable pageable
     );
 }

@@ -6,6 +6,8 @@ import com.gamelog.nbe121423355.domain.game.repository.GameRepository;
 import com.gamelog.nbe121423355.domain.game.repository.PlatformRepository;
 import com.gamelog.nbe121423355.domain.review.repository.ReviewRepository;
 import com.gamelog.nbe121423355.domain.user.entity.User;
+import com.gamelog.nbe121423355.domain.user.entity.UserFavoriteGame;
+import com.gamelog.nbe121423355.domain.user.repository.UserFavoriteGameRepository;
 import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
 import com.gamelog.nbe121423355.domain.usergame.dto.*;
 import com.gamelog.nbe121423355.domain.usergame.entity.PlayStatus;
@@ -14,6 +16,7 @@ import com.gamelog.nbe121423355.domain.usergame.repository.UserGameRepository;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,8 +24,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +39,7 @@ public class UserGameService {
     private final GameRepository gameRepository;
     private final PlatformRepository platformRepository;
     private final ReviewRepository reviewRepository;
+    private final UserFavoriteGameRepository userFavoriteGameRepository;
     private static final BigDecimal LONG_PLAY_HOURS = BigDecimal.valueOf(30);
     private static final BigDecimal HIGH_RATIO = BigDecimal.valueOf(0.7);
     private static final BigDecimal MEDIUM_RATIO = BigDecimal.valueOf(0.4);
@@ -310,6 +317,10 @@ public class UserGameService {
         List<BigDecimal> ratings =
                 reviewRepository.findPlayedGameRatings(userId);
 
+        //인생게임
+        List<UserFavoriteGameResponse> favoriteGames =
+                getFavoriteGames(userId);
+
         //플레이 요약 카운터
         long playedGameCount = playedGames.size();
         BigDecimal averageRating = reviewRepository.findAverageRating(userId);
@@ -327,14 +338,23 @@ public class UserGameService {
         TasteMetricDto longPlay =
                 calculateLongPlay(playedGames);
 
+        //별점 기반
         TasteMetricDto rating =
                 calculateRating(ratings);
 
+        //완료율 기반
         TasteMetricDto completion =
                 calculateCompletion(playedGames);
 
+        //장르 분포
         List<UserGameGenreDistributionResponse> genreDistribution =
                 getGenreDistribution(userId);
+
+        //최근 플레이 게임
+        List<UserGameListResponse> RecentPlayedGames = getRecentPlayedGames(userId);
+
+        //최근 리뷰
+        List<RecentReviewResponse> recentReviews = getRecentReviews(userId);
 
         ProfileStatsDto statsResponse = new ProfileStatsDto(playedGameCount,averageRating,totalPlayTime);
         UserGameTasteDto tasteResponse = new UserGameTasteDto(
@@ -342,7 +362,84 @@ public class UserGameService {
                 rating,
                 completion
         );
-        return new UserProfileResponse(statsResponse, scatterData, tasteResponse, genreDistribution);
+        return new UserProfileResponse(favoriteGames, statsResponse, scatterData, tasteResponse, genreDistribution, RecentPlayedGames, recentReviews);
+    }
+
+    public List<UserFavoriteGameResponse> getFavoriteGames(Long userId) {
+        return userFavoriteGameRepository
+                .findAllByUserIdOrderByDisplayOrderAsc(userId)
+                .stream()
+                .map(UserFavoriteGameResponse::new)
+                .toList();
+    }
+
+    @Transactional
+    public List<UserFavoriteGameResponse> updateFavoriteGames(
+            Long userId,
+            List<Long> gameIds
+    ) {
+        // 1. 최대 5개 검증
+        if (gameIds == null || gameIds.size() > 5) {
+            throw new IllegalArgumentException(
+                    "인생게임은 최대 5개까지 등록할 수 있습니다."
+            );
+        }
+
+        // 2. 중복 게임 검증
+        if (gameIds.stream().distinct().count() != gameIds.size()) {
+            throw new IllegalArgumentException(
+                    "같은 게임을 중복해서 등록할 수 없습니다."
+            );
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("사용자를 찾을 수 없습니다.")
+                );
+
+        // 3. 사용자의 UserGame 조회
+        List<UserGame> userGames =
+                userGameRepository.findAllByUserIdAndGameIdIn(
+                        userId,
+                        gameIds
+                );
+
+        // 4. 모든 게임이 사용자의 라이브러리에 있는지 검증
+        if (userGames.size() != gameIds.size()) {
+            throw new IllegalArgumentException(
+                    "내 라이브러리에 등록된 게임만 인생게임으로 선택할 수 있습니다."
+            );
+        }
+
+        // 5. gameId -> Game 매핑
+        Map<Long, Game> gameMap = userGames.stream()
+                .collect(Collectors.toMap(
+                        ug -> ug.getGame().getId(),
+                        UserGame::getGame
+                ));
+
+        // 6. 기존 인생게임 목록 삭제
+        userFavoriteGameRepository.deleteAllByUserId(userId);
+
+        // 7. 요청 순서대로 새 인생게임 생성
+        List<UserFavoriteGame> favoriteGames =
+                IntStream.range(0, gameIds.size())
+                        .mapToObj(index -> {
+                            Long gameId = gameIds.get(index);
+
+                            return new UserFavoriteGame(
+                                    user,
+                                    gameMap.get(gameId),
+                                    index + 1
+                            );
+                        })
+                        .toList();
+
+        userFavoriteGameRepository.saveAll(favoriteGames);
+
+        return favoriteGames.stream()
+                .map(UserFavoriteGameResponse::new)
+                .toList();
     }
 
     private TasteMetricDto calculateLongPlay(
@@ -603,6 +700,28 @@ public class UserGameService {
                             ratio
                     );
                 })
+                .toList();
+    }
+
+    public List<UserGameListResponse> getRecentPlayedGames(Long userId) {
+
+        Pageable pageable = PageRequest.of(0, 5);
+
+        return userGameRepository
+                .findRecentPlayedGames(userId, pageable)
+                .stream()
+                .map(UserGameListResponse::new)
+                .toList();
+    }
+
+    public List<RecentReviewResponse> getRecentReviews(Long userId) {
+
+        Pageable pageable = PageRequest.of(0, 3);
+
+        return reviewRepository
+                .findRecentReviews(userId, pageable)
+                .stream()
+                .map(RecentReviewResponse::new)
                 .toList();
     }
 }

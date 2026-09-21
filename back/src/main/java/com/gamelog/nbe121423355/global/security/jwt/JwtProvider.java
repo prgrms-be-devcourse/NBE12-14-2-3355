@@ -1,6 +1,7 @@
 package com.gamelog.nbe121423355.global.security.jwt;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -74,6 +75,18 @@ public class JwtProvider {
                     .verifyWith(secretKey)
                     .build() // 시크릿키로 서명 검증
                     .parseSignedClaims(token); // 토큰을 파싱하면서 서명검증까지 수행, 서명이 안맞거나 만료되었으면 여기서 예외를 던지기
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    // 서명은 유효하지만 시간이 지나 만료된 토큰인지 판별
+    public boolean isExpired(String token) {
+        try {
+            parseClaims(token);
+            return false;
+        } catch (ExpiredJwtException e) {
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             return false;
