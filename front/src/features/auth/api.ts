@@ -24,6 +24,13 @@ export class AuthApiError extends Error {
   }
 }
 
+// 백엔드 자동 재발급 필터가 응답 헤더로 새 accessToken을 보내주면, auth-context가 여기 등록해서 받아감.
+let onTokenRefreshed: ((accessToken: string) => void) | null = null;
+
+export function setTokenRefreshedListener(listener: ((accessToken: string) => void) | null) {
+  onTokenRefreshed = listener;
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { accessToken, ...requestInit } = options;
   const headers = new Headers();
@@ -35,6 +42,10 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     headers,
     cache: "no-store",
   });
+
+  const newAccessToken = response.headers.get("New-Access-Token");
+  if (newAccessToken) onTokenRefreshed?.(newAccessToken);
+
   const payload = (await response.json()) as ApiResponse<T>;
 
   if (!response.ok) {
