@@ -13,11 +13,15 @@
 .quickStatuses button:hover:not(:disabled){border-color:#718268;color:#fff}
 .quickStatuses .quickSelected{border-color:#7fa65f;background:#4b7042;color:#fff}
 .quickStatuses button:disabled{cursor:wait;opacity:.6}
+.quickLikeRow{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding:11px 4px 0;border-top:1px solid var(--line);color:#c4cdc7;font-size:12px;font-weight:600}
+.quickLikeRow button{display:flex;width:36px;height:32px;align-items:center;justify-content:center;border:1px solid #3e4941;border-radius:5px;background:#282f36;color:#727d76;font-size:21px;line-height:1;transition:.15s ease}
+.quickLikeRow button:hover:not(:disabled){border-color:#879d78;color:#b7e879;transform:translateY(-1px)}
+.quickLikeRow .quickLikeSelected{border-color:#7fa65f;background:#4b7042;color:#d2ff91}
+.quickLikeRow button:disabled{cursor:wait;opacity:.6}
 .quickProgress{margin-top:9px;color:var(--lime);font-size:10px;text-align:center}
 .summary{min-height:34px;margin-top:10px;color:#b8c2b5;font-size:12px;line-height:1.6}
 .editButton{width:100%;margin-top:12px;padding:12px 14px;border:1px solid #617a50;border-radius:5px;background:#314029;color:var(--lime);font-size:13px;font-weight:700}
 .editButton:hover:not(:disabled){background:#3d5032}.editButton:disabled{opacity:.55}
-.tokenForm{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:13px}.tokenForm label{grid-column:1/-1;color:var(--muted);font-size:10px}.tokenForm input{min-width:0;padding:10px;border:1px solid #3e4b40;border-radius:4px;background:#101512;color:var(--text);font-size:11px;outline:none}.tokenForm input:focus{border-color:var(--lime)}.tokenForm button,.tokenDisconnect{padding:10px;border:1px solid #4d6046;border-radius:4px;color:var(--lime);font-size:11px}.tokenDisconnect{width:100%;margin-top:10px;color:var(--muted)}
 .message{margin-top:11px;color:#c8d4c2;font-size:11px;line-height:1.6}
 .dialogMessage{margin:-10px 0 22px;padding:11px 13px;border:1px solid #784a4a;border-radius:5px;background:#392525;color:#ffc0c0;font-size:12px;line-height:1.5}
 .backdrop{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:22px;background:#050706d9;overflow:auto}
