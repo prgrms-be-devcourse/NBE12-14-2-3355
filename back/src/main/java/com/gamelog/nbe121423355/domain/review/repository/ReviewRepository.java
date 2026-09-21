@@ -107,5 +107,19 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<BigDecimal> findPlayedGameRatings(
             @Param("userId") Long userId
     );
+
+    @Query("""
+    SELECT r
+    FROM Review r
+    JOIN FETCH r.userGame ug
+    JOIN FETCH ug.game g
+    LEFT JOIN FETCH ug.platform p
+    WHERE ug.user.id = :userId
+    ORDER BY r.lastModifiedDate DESC
+""")
+    List<Review> findRecentReviews(
+            @Param("userId") Long userId,
+            Pageable pageable
+    );
 }
 

@@ -27,7 +27,7 @@ public class UserFavoriteGame {
     @Min(1)
     @Max(5)
     @Column(nullable=false)
-    private int displayOrder;
+    private Integer displayOrder;
 
     public UserFavoriteGame(User user, Game game, Integer displayOrder) {
         validateDisplayOrder(displayOrder);
@@ -45,7 +45,7 @@ public class UserFavoriteGame {
 
     public void validateDisplayOrder(Integer displayOrder) {
         if (displayOrder == null || displayOrder < 1 || displayOrder > 5) {
-            //1~5만 가능
+            throw new IllegalArgumentException("인생게임 순서는 1~5만 가능합니다.");
         }
     }
 }
