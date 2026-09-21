@@ -1,6 +1,6 @@
 package com.gamelog.nbe121423355.domain.game.init;
 
-import com.gamelog.nbe121423355.domain.game.service.GameService;
+import com.gamelog.nbe121423355.domain.game.service.GameCollectionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -19,11 +19,11 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class GameImportRunner implements CommandLineRunner {
 
-    private final GameService gameService;
+    private final GameCollectionService gameCollectionService;
 
     @Override
     public void run(String... args) {
-        int count = gameService.importGames();
+        int count = gameCollectionService.importGames();
 
         log.info("IGDB 게임 수집 완료: {}개 처리", count);
     }
