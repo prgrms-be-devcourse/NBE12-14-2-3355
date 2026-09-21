@@ -67,7 +67,7 @@ function GameStats({ statistics }: { statistics: GameStatistics }) {
         <div className={styles.ratingSummary}>
           <span className={styles.cardLabel}>GAMELOG RATING</span>
           <div className={styles.ratingValue}>{statistics.averageRating.toFixed(1)}<small>/ 5.0</small></div>
-          <p className={styles.cardHint}>{statistics.reviewCount === 0 ? "아직 평가 없음" : `${numberFormat.format(statistics.reviewCount)}개 리뷰 기준`}</p>
+          <p className={styles.cardHint}>{statistics.ratingCount === 0 ? "아직 평가 없음" : `${numberFormat.format(statistics.ratingCount)}개 평가 기준`}</p>
         </div>
         <div className={styles.distribution} role="img" aria-label={distribution.map(item => `${item.rating}점 ${item.count}명`).join(", ") || "평점 데이터 없음"}>
           {distribution.map(item => <div className={styles.distributionItem} key={item.rating} aria-hidden="true">
