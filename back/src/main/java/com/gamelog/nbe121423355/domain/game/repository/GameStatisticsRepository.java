@@ -1,5 +1,9 @@
 package com.gamelog.nbe121423355.domain.game.repository;
 
+import com.gamelog.nbe121423355.domain.game.repository.projection.GamePlayTimeStatisticsProjection;
+import com.gamelog.nbe121423355.domain.game.repository.projection.GameRatingDistributionProjection;
+import com.gamelog.nbe121423355.domain.game.repository.projection.GameRatingStatisticsProjection;
+import com.gamelog.nbe121423355.domain.game.repository.projection.GameStatusStatisticsProjection;
 import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;

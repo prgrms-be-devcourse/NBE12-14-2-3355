@@ -4,8 +4,10 @@ import com.gamelog.nbe121423355.domain.game.entity.Game;
 import com.gamelog.nbe121423355.domain.game.entity.Platform;
 import com.gamelog.nbe121423355.domain.game.repository.GameRepository;
 import com.gamelog.nbe121423355.domain.game.repository.PlatformRepository;
+import com.gamelog.nbe121423355.domain.review.entity.Review;
 import com.gamelog.nbe121423355.domain.review.repository.ReviewRepository;
 import com.gamelog.nbe121423355.domain.user.entity.User;
+import com.gamelog.nbe121423355.domain.user.repository.UserFavoriteGameRepository;
 import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
 import com.gamelog.nbe121423355.domain.usergame.dto.*;
 import com.gamelog.nbe121423355.domain.usergame.entity.PlayStatus;
@@ -57,6 +59,9 @@ class UserGameServiceTest {
 
     @Mock
     private ReviewRepository reviewRepository;
+
+    @Mock
+    private UserFavoriteGameRepository userFavoriteGameRepository;
 
     @Test
     @DisplayName("라이브러리에_게임을_등록")
@@ -1123,4 +1128,238 @@ class UserGameServiceTest {
 
         return games;
     }
+
+    @Test
+    @DisplayName("인생게임을 등록할 수 있다")
+    void t31() {
+        // given
+        Long userId = 1L;
+
+        User user = mock(User.class);
+
+        Game game1 = mock(Game.class);
+        Game game2 = mock(Game.class);
+
+        when(userRepository.findById(userId))
+                .thenReturn(Optional.of(user));
+
+        when(game1.getId()).thenReturn(10L);
+        when(game2.getId()).thenReturn(20L);
+
+        UserGame userGame1 = mock(UserGame.class);
+        UserGame userGame2 = mock(UserGame.class);
+
+        when(userGame1.getGame()).thenReturn(game1);
+        when(userGame2.getGame()).thenReturn(game2);
+
+        when(userGameRepository
+                .findAllByUserIdAndGameIdIn(userId, List.of(10L, 20L)))
+                .thenReturn(List.of(userGame1, userGame2));
+
+        // when
+        List<UserFavoriteGameResponse> result =
+                userGameService.updateFavoriteGames(
+                        userId,
+                        List.of(10L, 20L)
+                );
+
+        // then
+        verify(userFavoriteGameRepository)
+                .deleteAllByUserId(userId);
+
+        verify(userFavoriteGameRepository)
+                .saveAll(anyList());
+
+        assertThat(result).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("인생게임은 최대 5개까지 등록할 수 있다")
+    void t32() {
+        // given
+        Long userId = 1L;
+
+        List<Long> gameIds = List.of(
+                1L, 2L, 3L, 4L, 5L, 6L
+        );
+
+        // when & then
+        assertThatThrownBy(() ->
+                userGameService.updateFavoriteGames(userId, gameIds)
+        )
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("인생게임에는 같은 게임을 중복 등록할 수 없다")
+    void t33() {
+        // given
+        Long userId = 1L;
+
+        List<Long> gameIds = List.of(
+                10L, 20L, 10L
+        );
+
+        // when & then
+        assertThatThrownBy(() ->
+                userGameService.updateFavoriteGames(userId, gameIds)
+        )
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("최근 플레이한 게임을 최대 5개 조회한다")
+    void t34() {
+        // given
+        Long userId = 1L;
+
+        UserGame userGame1 = mock(UserGame.class);
+        UserGame userGame2 = mock(UserGame.class);
+
+        Game game1 = mock(Game.class);
+        Game game2 = mock(Game.class);
+
+        when(userGame1.getGame()).thenReturn(game1);
+        when(userGame2.getGame()).thenReturn(game2);
+
+        when(game1.getId()).thenReturn(1L);
+        when(game2.getId()).thenReturn(2L);
+
+        when(game1.getTitle()).thenReturn("Game 1");
+        when(game2.getTitle()).thenReturn("Game 2");
+
+        when(game1.getCoverImageUrl()).thenReturn("cover1");
+        when(game2.getCoverImageUrl()).thenReturn("cover2");
+
+        when(userGameRepository.findRecentPlayedGames(
+                eq(userId),
+                any(Pageable.class)
+        )).thenReturn(List.of(userGame1, userGame2));
+
+        // when
+        List<UserGameListResponse> result =
+                userGameService.getRecentPlayedGames(userId);
+
+        // then
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).gameId()).isEqualTo(1L);
+        assertThat(result.get(1).gameId()).isEqualTo(2L);
+
+        verify(userGameRepository)
+                .findRecentPlayedGames(eq(userId), any(Pageable.class));
+    }
+
+    @Test
+    @DisplayName("최근 플레이 게임은 최대 5개를 요청한다")
+    void t35() {
+        // given
+        Long userId = 1L;
+
+        when(userGameRepository.findRecentPlayedGames(
+                eq(userId),
+                any(Pageable.class)
+        )).thenReturn(List.of());
+
+        // when
+        userGameService.getRecentPlayedGames(userId);
+
+        // then
+        ArgumentCaptor<Pageable> captor =
+                ArgumentCaptor.forClass(Pageable.class);
+
+        verify(userGameRepository)
+                .findRecentPlayedGames(eq(userId), captor.capture());
+
+        Pageable pageable = captor.getValue();
+
+        assertThat(pageable.getPageNumber()).isZero();
+        assertThat(pageable.getPageSize()).isEqualTo(5);
+    }
+
+    @Test
+    @DisplayName("최근 작성한 리뷰를 최대 3개 조회한다")
+    void t36() {
+        // given
+        Long userId = 1L;
+
+        Review review1 = mock(Review.class);
+        Review review2 = mock(Review.class);
+
+        UserGame userGame1 = mock(UserGame.class);
+        UserGame userGame2 = mock(UserGame.class);
+
+        Game game1 = mock(Game.class);
+        Game game2 = mock(Game.class);
+
+        when(review1.getId()).thenReturn(1L);
+        when(review2.getId()).thenReturn(2L);
+
+        when(review1.getUserGame()).thenReturn(userGame1);
+        when(review2.getUserGame()).thenReturn(userGame2);
+
+        when(userGame1.getGame()).thenReturn(game1);
+        when(userGame2.getGame()).thenReturn(game2);
+
+        when(game1.getId()).thenReturn(10L);
+        when(game2.getId()).thenReturn(20L);
+
+        when(game1.getTitle()).thenReturn("Game 1");
+        when(game2.getTitle()).thenReturn("Game 2");
+
+        when(game1.getCoverImageUrl()).thenReturn("cover1");
+        when(game2.getCoverImageUrl()).thenReturn("cover2");
+
+        when(reviewRepository.findRecentReviews(
+                eq(userId),
+                any(Pageable.class)
+        )).thenReturn(List.of(review1, review2));
+
+        // when
+        List<RecentReviewResponse> result =
+                userGameService.getRecentReviews(userId);
+
+        // then
+        assertThat(result).hasSize(2);
+
+        assertThat(result.get(0).reviewId())
+                .isEqualTo(1L);
+
+        assertThat(result.get(0).gameId())
+                .isEqualTo(10L);
+
+        assertThat(result.get(1).reviewId())
+                .isEqualTo(2L);
+
+        assertThat(result.get(1).gameId())
+                .isEqualTo(20L);
+    }
+
+    @Test
+    @DisplayName("최근 리뷰는 최대 3개를 요청한다")
+    void t37() {
+        // given
+        Long userId = 1L;
+
+        when(reviewRepository.findRecentReviews(
+                eq(userId),
+                any(Pageable.class)
+        )).thenReturn(List.of());
+
+        // when
+        userGameService.getRecentReviews(userId);
+
+        // then
+        ArgumentCaptor<Pageable> captor =
+                ArgumentCaptor.forClass(Pageable.class);
+
+        verify(reviewRepository)
+                .findRecentReviews(eq(userId), captor.capture());
+
+        Pageable pageable = captor.getValue();
+
+        assertThat(pageable.getPageNumber()).isZero();
+        assertThat(pageable.getPageSize()).isEqualTo(3);
+    }
+
+
 }
