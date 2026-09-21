@@ -26,7 +26,7 @@ public interface UserGameRepository extends JpaRepository<UserGame, Long> {
     WHERE ug.user.id = :userId
       AND ug.inLibrary = true
       AND (
-          ug.playStatus IS NOT NULL정
+          ug.playStatus IS NOT NULL
           OR ug.playing = true
       )
 """)
@@ -77,5 +77,19 @@ public interface UserGameRepository extends JpaRepository<UserGame, Long> {
     """)
     List<UserGameGenreDTO> findGenreDistribution(
             @Param("userId") Long userId
+    );
+
+    @Query("""
+    SELECT ug
+    FROM UserGame ug
+    JOIN FETCH ug.game
+    WHERE ug.user.id = :userId
+      AND ug.inLibrary = true
+      AND ug.lastPlayedAt IS NOT NULL
+    ORDER BY ug.lastPlayedAt DESC
+""")
+    List<UserGame> findRecentPlayedGames(
+            @Param("userId") Long userId,
+            Pageable pageable
     );
 }

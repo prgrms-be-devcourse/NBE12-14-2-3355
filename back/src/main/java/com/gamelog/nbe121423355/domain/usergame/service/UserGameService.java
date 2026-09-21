@@ -16,6 +16,7 @@ import com.gamelog.nbe121423355.domain.usergame.repository.UserGameRepository;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -333,13 +334,19 @@ public class UserGameService {
         List<UserGameGenreDistributionResponse> genreDistribution =
                 getGenreDistribution(userId);
 
+        //최근 플레이 게임
+        List<UserGameListResponse> RecentPlayedGames = getRecentPlayedGames(userId);
+
+        //최근 리뷰
+        List<RecentReviewResponse> recentReviews = getRecentReviews(userId);
+
         ProfileStatsDto statsResponse = new ProfileStatsDto(playedGameCount,averageRating,totalPlayTime);
         UserGameTasteDto tasteResponse = new UserGameTasteDto(
                 longPlay,
                 rating,
                 completion
         );
-        return new UserProfileResponse(favoriteGames, statsResponse, scatterData, tasteResponse, genreDistribution);
+        return new UserProfileResponse(favoriteGames, statsResponse, scatterData, tasteResponse, genreDistribution, RecentPlayedGames, recentReviews);
     }
 
     public List<UserFavoriteGameResponse> getFavoriteGames(Long userId) {
@@ -677,6 +684,28 @@ public class UserGameService {
                             ratio
                     );
                 })
+                .toList();
+    }
+
+    public List<UserGameListResponse> getRecentPlayedGames(Long userId) {
+
+        Pageable pageable = PageRequest.of(0, 5);
+
+        return userGameRepository
+                .findRecentPlayedGames(userId, pageable)
+                .stream()
+                .map(UserGameListResponse::new)
+                .toList();
+    }
+
+    public List<RecentReviewResponse> getRecentReviews(Long userId) {
+
+        Pageable pageable = PageRequest.of(0, 3);
+
+        return reviewRepository
+                .findRecentReviews(userId, pageable)
+                .stream()
+                .map(RecentReviewResponse::new)
                 .toList();
     }
 }

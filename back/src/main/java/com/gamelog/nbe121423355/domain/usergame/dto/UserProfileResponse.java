@@ -7,6 +7,8 @@ public record UserProfileResponse(
         ProfileStatsDto stats,
         List<UserGameScatterDto> scatterData,
         UserGameTasteDto tasteResponse,
-        List<UserGameGenreDistributionResponse> genreDistribution
+        List<UserGameGenreDistributionResponse> genreDistribution,
+        List<UserGameListResponse> recentGames,
+        List<RecentReviewResponse> recentReviews
 ) {
 }

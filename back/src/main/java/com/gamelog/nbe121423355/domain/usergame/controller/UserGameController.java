@@ -195,4 +195,19 @@ public class UserGameController {
                 response
         );
     }
+
+    @GetMapping("/recentGames")
+    public RsData<List<UserGameListResponse>> recentGameList(
+            @AuthenticationPrincipal SecurityUser user
+    ){
+        List<UserGameListResponse> response = userGameService.getRecentPlayedGames(
+                user.getId()
+        );
+
+        return new RsData<>(
+                "200-1",
+                "최근 플레이한 게임을 불러왔습니다",
+                response
+        );
+    }
 }
