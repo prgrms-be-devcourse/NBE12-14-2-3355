@@ -25,6 +25,13 @@ igdb:
   client-id: ${IGDB_CLIENT_ID}
   client-secret: ${IGDB_CLIENT_SECRET}
 
+# === cloudinary ===
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}
+
 ---
 # ===== 로컬 개발 (Docker MySQL) =====
 spring:
@@ -53,6 +60,11 @@ igdb:
   client-secret: test-client-secret
   import:
     enabled: false
+
+cloudinary:
+  cloud-name: test-cloud-name
+  api-key: test-api-key
+  api-secret: test-api-secret
 
 spring:
   config:
