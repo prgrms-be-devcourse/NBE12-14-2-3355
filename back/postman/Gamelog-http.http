@@ -235,3 +235,13 @@ Content-Type: application/x-www-form-urlencoded
 # @name 프로필 탭
 GET {{baseUrl}}/api/v1/library/games/profile
 Authorization: Bearer {{accessToken}}
+
+###
+# @name 인생게임 수정
+PUT {{baseUrl}}/api/v1/library/games/favorite-games
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "gameIds": [2, 1]
+}
