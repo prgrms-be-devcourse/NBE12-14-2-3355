@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/features/auth/auth-context";
 import { completeOnboarding, setPreferredGames, setPreferredGenres, skipOnboarding } from "@/features/auth/api";
 import { isOnboarded } from "@/features/auth/onboarding-status";
-import { coverUrl, type Game, type Option } from "@/lib/games";
+import { coverUrl, type Game, type Option } from "@/features/games/model";
 import styles from "./onboarding-client.module.css";
 
 const MAX_GENRES = 3;
