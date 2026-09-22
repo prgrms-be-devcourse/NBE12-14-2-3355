@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="72" viewBox="0 0 360 72" role="img" aria-labelledby="title">
+  <title id="title">GameLog 로고 시안 4: Pixel Trail</title>
+  <path d="M14 18h34v8H22v22h26V38H36v-8h20v26H14Z" fill="#C3ED79"/>
+  <rect x="52" y="12" width="8" height="8" rx="1" fill="#C3ED79"/>
+  <rect x="60" y="20" width="6" height="6" rx="1" fill="#C3ED79" opacity=".72"/>
+  <text x="79" y="47" fill="#EFF1EA" font-family="Inter, Arial, Helvetica, sans-serif" font-size="36" font-weight="700" letter-spacing="-1.8">game<tspan fill="#C3ED79">log</tspan></text>
+</svg>
