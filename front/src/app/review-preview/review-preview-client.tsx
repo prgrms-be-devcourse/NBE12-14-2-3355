@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import GameReviewSection from "@/components/reviews/game-review-section";
+import GameReviewSection from "@/features/reviews/components/game-review-section";
 import styles from "./page.module.css";
 
 export default function ReviewPreviewClient({ gameId }: { gameId: number }) {

@@ -1,7 +1,0 @@
-.section { margin: 0 0 40px; }
-.debugScore { margin-top: 10px; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
-.action { display: inline-flex; padding: 10px 15px; border: 1px solid #64764c; border-radius: 5px; background: #303e29; color: var(--lime); font-size: 12px; }
-.refresh { display: block; margin: 16px 0 0 auto; color: var(--muted); font-size: 12px; }
-.refresh:hover { color: var(--lime); }
-.action:focus-visible, .refresh:focus-visible { outline: 2px solid var(--lime); outline-offset: 4px; }
-@media (max-width: 760px) { .section { margin-bottom: 30px; } }
