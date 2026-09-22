@@ -70,3 +70,19 @@ export type ProfileResponse = {
   recentGames: RecentGame[];
   recentReviews: RecentReview[];
 };
+
+export type UserGame = {
+  gameId: number;
+  title: string;
+  coverImageUrl: string | null;
+  playStatus: string | null;
+  playing: boolean;
+  backlog: boolean;
+  wishlist: boolean;
+  liked: boolean;
+};
+
+export type UserGameLibraryResponse = {
+  totalPages: number;
+  userGames: UserGame[];
+};
