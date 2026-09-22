@@ -1,10 +1,8 @@
 package com.gamelog.nbe121423355.domain.game.repository;
 
-import com.gamelog.nbe121423355.domain.game.repository.projection.GamePlayTimeStatisticsProjection;
-import com.gamelog.nbe121423355.domain.game.repository.projection.GameRatingDistributionProjection;
-import com.gamelog.nbe121423355.domain.game.repository.projection.GameRatingStatisticsProjection;
-import com.gamelog.nbe121423355.domain.game.repository.projection.GameStatusStatisticsProjection;
+import com.gamelog.nbe121423355.domain.game.repository.projection.*;
 import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
@@ -95,5 +93,20 @@ public interface GameStatisticsRepository extends Repository<UserGame, Long> {
     GamePlayTimeStatisticsProjection findPlayTimeStatisticsByGameId(
             @Param("gameId") Long gameId
     );
+
+    // 전체 사용자 좋아요 수를 기준으로 인기 게임 조회
+    @Query("""
+            SELECT
+                game.id AS gameId,
+                game.title AS title,
+                game.coverImageUrl AS coverImageUrl,
+                COUNT(userGame.id) AS likeCount
+            FROM UserGame userGame
+            JOIN userGame.game game
+            WHERE userGame.liked = true
+            GROUP BY game.id, game.title, game.coverImageUrl
+            ORDER BY COUNT(userGame.id) DESC, game.id DESC
+            """)
+    List<PopularGameProjection> findPopularGames(Pageable pageable);
 
 }
