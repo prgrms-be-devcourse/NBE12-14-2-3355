@@ -484,6 +484,10 @@ function FavoriteGames({
 
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    setDraftFavorites(favorites);
+  }, [favorites]);
+
   async function handleSave() {
     try {
       setSaving(true);
@@ -1152,18 +1156,21 @@ function GenreDistribution({
     0,
   );
 
-  const gradient = chartData.reduce<{ segments: string[]; accumulated: number }>(
-    (result, genre, index) => {
-      const start = (result.accumulated / total) * 100;
-      const accumulated = result.accumulated + genre.ratio;
-      const end = (accumulated / total) * 100;
-      return {
-        accumulated,
-        segments: [...result.segments, `${GENRE_COLORS[index % GENRE_COLORS.length]} ${start}% ${end}%`],
-      };
-    },
-    { segments: [], accumulated: 0 },
-  ).segments.join(", ");
+  let accumulated = 0;
+
+  const gradient = chartData
+    .map((genre, index) => {
+      const start =
+        (accumulated / total) * 100;
+
+      accumulated += genre.ratio;
+
+      const end =
+        (accumulated / total) * 100;
+
+      return `${GENRE_COLORS[index % GENRE_COLORS.length]} ${start}% ${end}%`;
+    })
+    .join(", ");
 
   return (
     <section className={styles.genreSection}>
@@ -1348,7 +1355,7 @@ function RecentReviews({
   );
 }
 
-export default function ProfilePage({ section = "profile", page = 0 }: { section?: ProfileSection; page?: number }) {
+export default function ProfileClient({ section = "profile", page = 0 }: { section?: ProfileSection; page?: number }) {
   const router = useRouter();
   const auth = useAuth();
   const activeTab = section;

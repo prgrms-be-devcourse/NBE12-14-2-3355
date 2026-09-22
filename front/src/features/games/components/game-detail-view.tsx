@@ -129,7 +129,7 @@ export default function GameDetailView({ gameId }: { gameId: string }) {
     return () => controller.abort();
   }, [gameId, retry]);
 
-  return <>
+  return (
     <main className={styles.main} aria-busy={loading}>
       <Link className={styles.backLink} href="/games">← 전체 게임으로 돌아가기</Link>
 
@@ -188,5 +188,5 @@ export default function GameDetailView({ gameId }: { gameId: string }) {
       </>
     )}
     </main>
-  </>;
+  );
 }

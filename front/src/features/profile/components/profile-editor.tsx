@@ -10,10 +10,12 @@ export default function ProfileEditor({ user, accessToken, onSaved, onClose }: {
   user: UserDto; accessToken: string; onSaved: (user: UserDto) => void; onClose: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
   const [nickname, setNickname] = useState(user.nickname);
   const [bio, setBio] = useState(user.bio ?? "");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState(user.profileImageUrl ?? "");
+  const [removeImage, setRemoveImage] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   useEffect(() => { dialog.current?.showModal(); }, []);
@@ -35,7 +37,7 @@ export default function ProfileEditor({ user, accessToken, onSaved, onClose }: {
       setSaving(true); setError("");
       try {
         if (value !== user.nickname && await checkNicknameDuplicate(value)) throw new Error("이미 사용 중인 닉네임입니다.");
-        const profileImageUrl = file ? await uploadProfileImage(file, accessToken) : user.profileImageUrl;
+        const profileImageUrl = file ? await uploadProfileImage(file, accessToken) : removeImage ? null : user.profileImageUrl;
         const updated = await updateProfile({ nickname: value, bio: bio.trim() || null, profileImageUrl: profileImageUrl || null }, accessToken);
         onSaved(updated); onClose();
       } catch (reason) { setError(reason instanceof Error ? reason.message : "프로필 저장에 실패했어요."); }
@@ -43,13 +45,35 @@ export default function ProfileEditor({ user, accessToken, onSaved, onClose }: {
     }}>
       <h2 id="profile-editor-title">프로필 수정</h2>
       <fieldset disabled={saving} className={styles.editorFields}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        {preview ? <img src={preview} alt="프로필 이미지 미리보기" className={styles.avatar} /> : <div className={styles.avatarFallback}>{nickname.slice(0, 1)}</div>}
-        <label>이미지 변경<input type="file" accept="image/*" onChange={event => {
-          const selected = event.target.files?.[0];
-          if (selected && !selected.type.startsWith("image/")) { setError("이미지 파일을 선택해 주세요."); return; }
-          if (selected) { setFile(selected); setPreview(URL.createObjectURL(selected)); setError(""); }
-        }} /></label>
+        <div className={styles.editorAvatarRow}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {preview ? <img src={preview} alt="프로필 이미지 미리보기" className={styles.avatar} /> : <div className={styles.avatarFallback}>{nickname.slice(0, 1)}</div>}
+          <input ref={fileInput} type="file" accept="image/*" className={styles.hiddenFileInput} onChange={event => {
+            const selected = event.target.files?.[0];
+            if (selected && !selected.type.startsWith("image/")) { setError("이미지 파일을 선택해 주세요."); return; }
+            if (selected) { setFile(selected); setPreview(URL.createObjectURL(selected)); setRemoveImage(false); setError(""); }
+          }} />
+          <div className={styles.editorAvatarActions}>
+            <button type="button" className={styles.linkBtn} onClick={() => fileInput.current?.click()}>업로드</button>
+            {preview && (
+              <button
+                type="button"
+                className={styles.iconBtn}
+                title="사진 삭제"
+                aria-label="사진 삭제"
+                onClick={() => { setFile(null); setPreview(""); setRemoveImage(true); setError(""); }}
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                  <path d="M10 11v6" />
+                  <path d="M14 11v6" />
+                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
         <label>닉네임<input autoComplete="nickname" required value={nickname} onChange={event => setNickname(event.target.value)} /></label>
         <label>한줄 소개<input value={bio} onChange={event => setBio(event.target.value)} placeholder="나를 한 줄로 소개해 보세요" /></label>
       </fieldset>

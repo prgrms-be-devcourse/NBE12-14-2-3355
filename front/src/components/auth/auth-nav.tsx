@@ -12,12 +12,17 @@ export default function AuthNav() {
     const isAdmin = auth.user?.role === "ADMIN";
     return (
       <div className="auth-nav">
-        <span className="auth-nav-user">{auth.user?.nickname}</span>
 {isAdmin && (
   <Link href="/admin/reports">신고 관리</Link>
 )}
-<Link href="/profile">프로필</Link>
-        <button type="button" className="auth-nav-logout" onClick={() => { void auth.logout(); }}>로그아웃</button>
+<Link href="/profile" className="auth-nav-avatar-link" aria-label="프로필">
+  {auth.user?.profileImageUrl ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={auth.user.profileImageUrl} alt="" className="auth-nav-avatar" />
+  ) : (
+    <span className="auth-nav-avatar-fallback">{auth.user?.nickname?.slice(0, 1).toUpperCase()}</span>
+  )}
+</Link>
       </div>
     );
   }
