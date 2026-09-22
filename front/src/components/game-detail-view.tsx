@@ -135,7 +135,7 @@ export default function GameDetailView({ gameId }: { gameId: string }) {
       <Link className="logo" href="/" aria-label="GameLog 홈">GameLog<span className="lime">.</span></Link>
       <nav aria-label="현재 위치"><Link href="/">게임 탐색</Link><span className={styles.currentNav} aria-current="page">게임 상세</span></nav>
       <AuthNav/>
-      <span className={`header-note ${styles.headerNote}`}>PLAY. RECORD. DISCOVER.</span>
+      <span className="header-note">PLAY. RECORD. DISCOVER.</span>
     </div></header>
 
     <main className={styles.main} aria-busy={loading}>
