@@ -28,73 +28,9 @@ public interface GameRepository extends JpaRepository<Game,Long> {
 
     Optional<Game> findByIgdbId(Long igdbId);
 
-    Page<Game> findByTitleContainingIgnoreCase(
-            String keyword,
-            Pageable pageable
-    );
-
     @Query(
-            value = """
-                SELECT g
-                FROM Game g
-                WHERE (
-                    :keyword IS NULL
-                    OR LOWER(g.title) LIKE LOWER(:keyword) ESCAPE '!'
-                )
-                AND (
-                    :filterGenres = false
-                    OR EXISTS (
-                        SELECT gg
-                        FROM GameGenre gg
-                        WHERE gg.game = g
-                          AND gg.genre.id IN :genreIds
-                    )
-                )
-                AND (
-                    :filterPlatforms = false
-                    OR EXISTS (
-                        SELECT gp
-                        FROM GamePlatform gp
-                        WHERE gp.game = g
-                          AND gp.platform.id IN :platformIds
-                    )
-                )
-                ORDER BY CASE
-                    WHEN :metric = 'RATING' THEN
-                        (SELECT COALESCE(AVG(r.rating), 0.0) FROM Review r WHERE r.userGame.game = g)
-                    WHEN :metric = 'LIBRARY' THEN
-                        (SELECT COUNT(ug.id) FROM UserGame ug WHERE ug.game = g AND ug.inLibrary = true)
-                    WHEN :metric = 'PLAY_TIME' THEN
-                        (SELECT COALESCE(AVG(ug.playTimeHours), 0.0) FROM UserGame ug WHERE ug.game = g)
-                    ELSE 0.0
-                END DESC
-                """,
-            countQuery = """
-                SELECT COUNT(g)
-                FROM Game g
-                WHERE (
-                    :keyword IS NULL
-                    OR LOWER(g.title) LIKE LOWER(:keyword) ESCAPE '!'
-                )
-                AND (
-                    :filterGenres = false
-                    OR EXISTS (
-                        SELECT gg
-                        FROM GameGenre gg
-                        WHERE gg.game = g
-                          AND gg.genre.id IN :genreIds
-                    )
-                )
-                AND (
-                    :filterPlatforms = false
-                    OR EXISTS (
-                        SELECT gp
-                        FROM GamePlatform gp
-                        WHERE gp.game = g
-                          AND gp.platform.id IN :platformIds
-                    )
-                )
-                """
+            value = "SELECT g " + GameSearchQuery.FROM_AND_FILTERS + GameSearchQuery.COMMUNITY_ORDER,
+            countQuery = "SELECT COUNT(g) " + GameSearchQuery.FROM_AND_FILTERS
     )
     Page<Game> findByFilters(
             @Param("keyword") String keyword,

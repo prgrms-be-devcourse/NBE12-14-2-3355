@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState} from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
 import { useAuth } from "@/features/auth/auth-context";
-import { checkNicknameDuplicate, updateProfile } from "@/features/auth/api";
+import { checkNicknameDuplicate, updateProfile, uploadProfileImage } from "@/features/auth/api";
 import type { UserDto } from "@/features/auth/types";
 import AuthNav from "@/components/auth/auth-nav";
 
@@ -131,8 +130,8 @@ function ProfileSidebar({
   const [editingBio, setEditingBio] = useState(false);
   const [bioDraft, setBioDraft] = useState("");
 
-  const [editingImage, setEditingImage] = useState(false);
-  const [imageDraft, setImageDraft] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -193,13 +192,31 @@ function ProfileSidebar({
     if (ok) { setBio(bioDraft.trim()); setEditingBio(false); }
   }
 
-  function openImageEdit() { setImageDraft(profileImageUrl); setError(""); setEditingImage(true); }
-  async function saveImage() {
-    const ok = await persist({ nickname, bio, profileImageUrl: imageDraft.trim() });
-    if (ok) { setProfileImageUrl(imageDraft.trim()); setEditingImage(false); }
+  function openImagePicker() {
+    setError("");
+    fileInputRef.current?.click();
   }
 
-  const anyEditing = editingNickname || editingBio || editingImage;
+  async function handleImageSelected(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setError("");
+    setMessage("");
+    setUploadingImage(true);
+    try {
+      const url = await uploadProfileImage(file, accessToken);
+      const ok = await persist({ nickname, bio, profileImageUrl: url });
+      if (ok) setProfileImageUrl(url);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "이미지 업로드에 실패했어요.");
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
+  const anyEditing = editingNickname || editingBio;
 
   return (
     <aside className={styles.sidebar}>
@@ -208,17 +225,16 @@ function ProfileSidebar({
           // eslint-disable-next-line @next/next/no-img-element
           ? <img className={styles.avatar} src={profileImageUrl} alt="" />
           : <div className={styles.avatarFallback}>{nickname.slice(0, 1).toUpperCase()}</div>}
-        {editingImage ? (
-          <div className={styles.inlineEdit}>
-            <input value={imageDraft} onChange={(event) => setImageDraft(event.target.value)} placeholder="https://..." />
-            <div className={styles.inlineActions}>
-              <button type="button" onClick={() => setEditingImage(false)} disabled={saving}>취소</button>
-              <button type="button" className={styles.primaryBtn} onClick={saveImage} disabled={saving}>저장</button>
-            </div>
-          </div>
-        ) : (
-          <button type="button" className={styles.linkBtn} onClick={openImageEdit}>이미지 변경</button>
-        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: "none" }}
+          onChange={handleImageSelected}
+        />
+        <button type="button" className={styles.linkBtn} onClick={openImagePicker} disabled={uploadingImage}>
+          {uploadingImage ? "업로드 중…" : "이미지 변경"}
+        </button>
       </div>
 
       <div className={styles.block}>
@@ -425,7 +441,7 @@ function FavoriteGameSearchModal({
     if (favoriteIds.has(game.id)) {
       return;
     }
-  
+
     onAdd(game);
   }
 
@@ -619,7 +635,7 @@ function FavoriteGames({
       );
       return;
     }
-  
+
     if (
       draftFavorites.some(
         (item) => item.gameId === game.id,
@@ -627,7 +643,7 @@ function FavoriteGames({
     ) {
       return;
     }
-  
+
     setDraftFavorites((prev) => [
       ...prev,
       {
@@ -649,50 +665,50 @@ function FavoriteGames({
       String(gameId),
     );
   }
-    
+
   function handleDragOver(
     event: React.DragEvent<HTMLDivElement>,
   ) {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
   }
-    
+
   function handleDrop(
     event: React.DragEvent<HTMLDivElement>,
     targetGameId: number,
   ) {
     event.preventDefault();
-  
+
     const draggedGameId = Number(
       event.dataTransfer.getData("text/plain"),
     );
-  
+
     if (
       !draggedGameId ||
       draggedGameId === targetGameId
     ) {
       return;
     }
-  
+
     setDraftFavorites((prev) => {
       const fromIndex = prev.findIndex(
         (game) => game.gameId === draggedGameId,
       );
-  
+
       const toIndex = prev.findIndex(
         (game) => game.gameId === targetGameId,
       );
-  
+
       if (fromIndex === -1 || toIndex === -1) {
         return prev;
       }
-  
+
       const next = [...prev];
-  
+
       const [moved] = next.splice(fromIndex, 1);
-  
+
       next.splice(toIndex, 0, moved);
-  
+
       return next.map((game, index) => ({
         ...game,
         displayOrder: index + 1,
@@ -878,7 +894,7 @@ function ScatterPlot({
   const [activeGameId, setActiveGameId] =
   useState<number | null>(null);
   const router = useRouter();
-  
+
   const width = 760;
   const height = 500;
 
@@ -1342,7 +1358,7 @@ function RecentGames({
               src={game.coverImageUrl}
               alt={game.title}
             />
-          
+
             <span>{game.title}</span>
           </Link>
         ))}
@@ -1447,9 +1463,7 @@ export default function ProfileClient() {
     useState("");
 
   useEffect(() => {
-    if (auth.status === "unauthenticated") {
-      router.replace("/login?next=/profile");
-    }
+    if (auth.status === "unauthenticated") router.replace("/login?next=/profile");
   }, [auth.status, router]);
 
   useEffect(() => {
@@ -1508,7 +1522,7 @@ export default function ProfileClient() {
         : prev,
     );
   };
-  
+
   return (
     <>
       <header className="header"><div className="header-inner">

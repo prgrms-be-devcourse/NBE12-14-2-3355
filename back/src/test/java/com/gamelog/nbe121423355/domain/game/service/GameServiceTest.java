@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import com.gamelog.nbe121423355.domain.game.dto.GameSearchRequest;
+
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,7 +45,7 @@ class GameServiceTest {
         );
 
         // when
-        List<GameListResponse> responses = gameService.getGamesPage(PageRequest.of(0, 20, Sort.by("id"))).getContent();
+        List<GameListResponse> responses = gameService.getGamesPage(new GameSearchRequest(0, 20, null, null, null, null)).getContent();
 
         // then
         assertThat(responses)
@@ -81,7 +81,7 @@ class GameServiceTest {
         assertThat(gameRepository.count()).isZero();
 
         // when
-        List<GameListResponse> responses = gameService.getGamesPage(PageRequest.of(0, 20, Sort.by("id"))).getContent();
+        List<GameListResponse> responses = gameService.getGamesPage(new GameSearchRequest(0, 20, null, null, null, null)).getContent();
 
         // then
         assertThat(responses).isEmpty();
@@ -99,11 +99,11 @@ class GameServiceTest {
 
         // when
         Page<GameListResponse> firstPage = gameService.getGamesPage(
-                PageRequest.of(0, 2, Sort.by("id"))
+                new GameSearchRequest(0, 2, null, null, null, null)
         );
 
         Page<GameListResponse> secondPage = gameService.getGamesPage(
-                PageRequest.of(1, 2, Sort.by("id"))
+                new GameSearchRequest(1, 2, null, null, null, null)
         );
 
         // then
@@ -135,11 +135,11 @@ class GameServiceTest {
         // given
         assertThat(gameRepository.count()).isZero();
 
-        PageRequest pageable = PageRequest.of(0, 20, Sort.by("id"));
+        GameSearchRequest request = new GameSearchRequest(0, 20, null, null, null, null);
 
         // when
         Page<GameListResponse> responses =
-                gameService.getGamesPage(pageable);
+                gameService.getGamesPage(request);
 
         // then
         assertThat(responses.getContent()).isEmpty();
@@ -160,7 +160,7 @@ class GameServiceTest {
 
         // when
         Page<GameListResponse> responses = gameService.getGamesPage(
-                PageRequest.of(2, 2, Sort.by("id"))
+                new GameSearchRequest(2, 2, null, null, null, null)
         );
 
         // then
@@ -180,10 +180,10 @@ class GameServiceTest {
         gameRepository.save(createGame(1003L, "Super Mario"));
 
         Page<GameListResponse> firstPage = gameService.getGamesPage(
-                " zelda ", PageRequest.of(0, 1, Sort.by("id"))
+                new GameSearchRequest(0, 1, null, " zelda ", null, null)
         );
         Page<GameListResponse> secondPage = gameService.getGamesPage(
-                " zelda ", PageRequest.of(1, 1, Sort.by("id"))
+                new GameSearchRequest(1, 1, null, " zelda ", null, null)
         );
 
         assertThat(firstPage.getContent()).extracting(GameListResponse::title)
@@ -203,7 +203,7 @@ class GameServiceTest {
         gameRepository.save(createGame(1002L, "Super Mario"));
 
         Page<GameListResponse> result = gameService.getGamesPage(
-                "   ", PageRequest.of(0, 20, Sort.by("id"))
+                new GameSearchRequest(0, 20, null, "   ", null, null)
         );
 
         assertThat(result.getContent()).extracting(GameListResponse::title)
@@ -218,7 +218,7 @@ class GameServiceTest {
         gameRepository.save(createGame(1001L, "Super Mario"));
 
         Page<GameListResponse> result = gameService.getGamesPage(
-                "zelda", PageRequest.of(0, 20, Sort.by("id"))
+                new GameSearchRequest(0, 20, null, "zelda", null, null)
         );
 
         assertThat(result.getContent()).isEmpty();
