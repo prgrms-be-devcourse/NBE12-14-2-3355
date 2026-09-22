@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="392" height="80" viewBox="0 0 392 80" role="img" aria-labelledby="title desc">
+  <title id="title">GameLog</title>
+  <desc id="desc">게임패드와 기록을 결합한 라임색 심볼 옆에 GameLog 글자</desc>
+  <rect x="3" y="3" width="74" height="74" rx="20" fill="#C3ED79"/>
+  <path d="M19 46.5 22.5 31c.8-3.5 3.5-6 7.3-6h20.4c3.8 0 6.5 2.5 7.3 6L61 46.5c1.1 5-2.8 8.4-6.6 6.4l-8.1-5.2H33.7l-8.1 5.2c-3.8 2-7.7-1.4-6.6-6.4Z" fill="#182018"/>
+  <path d="M29 36v10m-5-5h10" stroke="#C3ED79" stroke-width="3.2" stroke-linecap="round"/>
+  <circle cx="49" cy="37" r="2.2" fill="#C3ED79"/>
+  <circle cx="54" cy="43" r="2.2" fill="#C3ED79"/>
+  <path d="M35 56h11" stroke="#182018" stroke-width="3" stroke-linecap="round"/>
+  <path d="M35 62h17" stroke="#182018" stroke-width="3" stroke-linecap="round"/>
+  <text x="94" y="53" fill="#EFF1EA" font-family="Arial, Helvetica, sans-serif" font-size="43" font-weight="800" letter-spacing="-2.2">GameLog<tspan fill="#C3ED79">.</tspan></text>
+</svg>

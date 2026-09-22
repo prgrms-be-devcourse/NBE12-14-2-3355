@@ -1,16 +1,16 @@
-# Gamelog - Game Detail API
+# Gamelog - Game Detail & Recommendation API
 # IntelliJ IDEA HTTP Client에서 각 요청 왼쪽의 실행 버튼(▶)을 눌러 테스트합니다.
 
 @baseUrl = http://localhost:8080
 @gameId = 6
 @invalidGameId = 9999999
 
+
 ###
 # @name getGameDetail
 # 1. Gamelog 게임 상세 정보 조회
 # GameLog DB ID를 기준으로 게임의 상세 정보를 조회합니다.
 GET {{baseUrl}}/api/v1/games/{{gameId}}
-
 
 
 ###
@@ -20,15 +20,52 @@ GET {{baseUrl}}/api/v1/games/{{gameId}}
 GET {{baseUrl}}/api/v1/games/{{gameId}}/related
 
 
-
 ###
 # @name getGameDetailNotFound
-# 3. [실패 검증] Gamelog 존재하지 않는 게임 상세 조회 시 404 응답
+# 3. [실패 검증] 존재하지 않는 게임 상세 조회 시 404 응답
 GET {{baseUrl}}/api/v1/games/{{invalidGameId}}
-
 
 
 ###
 # @name getRelatedGamesNotFound
-# 4. [실패 검증] Gamelog 존재하지 않는 게임의 연관 추천 조회 시 404 응답
+# 4. [실패 검증] 존재하지 않는 게임의 연관 추천 조회 시 404 응답
 GET {{baseUrl}}/api/v1/games/{{invalidGameId}}/related
+
+
+###
+# @name loginForPersonalizedRecommendations
+# 5. 맞춤 추천 API 테스트용 로그인
+# 로그인 성공 시 accessToken을 HTTP Client 전역 변수에 저장합니다.
+POST {{baseUrl}}/api/v1/users/login
+Content-Type: application/json
+
+{
+  "email": "test1@test.com",
+  "password": "12345678"
+}
+
+> {%
+    if (response.status === 200) {
+        client.global.set(
+            "accessToken",
+            response.body.data.accessToken
+        );
+        client.log("accessToken 저장 완료");
+    } else {
+        client.log("로그인 실패: " + response.status);
+    }
+%}
+
+
+###
+# @name getPersonalizedGameRecommendations
+# 6. 로그인 사용자의 게임 기록 또는 온보딩 선택을 기준으로 맞춤 추천 게임 조회
+# 위의 로그인 요청을 먼저 실행해 accessToken을 저장해야 합니다.
+GET {{baseUrl}}/api/v1/games/recommendations/personalized
+Authorization: Bearer {{accessToken}}
+
+
+###
+# @name getPersonalizedGameRecommendationsUnauthorized
+# 7. [실패 검증] 인증 토큰 없이 맞춤 추천 게임 조회 시 401 응답
+GET {{baseUrl}}/api/v1/games/recommendations/personalized

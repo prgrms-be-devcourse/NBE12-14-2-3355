@@ -7,7 +7,7 @@ Content-Type: application/json
 
 {
   "nickname": "테스트",
-  "email": "test3@test.com",
+  "email": "test@test.com",
   "password": "12345678"
 }
 
@@ -245,3 +245,17 @@ Content-Type: application/json
 {
   "gameIds": [2, 1]
 }
+
+### 이미지 업로드 api
+###
+# @name 이미지 업로드
+POST {{baseUrl}}/api/v1/uploads/images
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="test.jpg"
+Content-Type: image/jpeg
+
+< ./test.jpg
+--WebAppBoundary--

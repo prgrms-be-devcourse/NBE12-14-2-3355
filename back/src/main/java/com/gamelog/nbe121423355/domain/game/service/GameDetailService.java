@@ -3,6 +3,10 @@ package com.gamelog.nbe121423355.domain.game.service;
 import com.gamelog.nbe121423355.domain.game.dto.*;
 import com.gamelog.nbe121423355.domain.game.entity.Game;
 import com.gamelog.nbe121423355.domain.game.repository.*;
+import com.gamelog.nbe121423355.domain.game.repository.projection.GamePlayTimeStatisticsProjection;
+import com.gamelog.nbe121423355.domain.game.repository.projection.GameRatingDistributionProjection;
+import com.gamelog.nbe121423355.domain.game.repository.projection.GameRatingStatisticsProjection;
+import com.gamelog.nbe121423355.domain.game.repository.projection.GameStatusStatisticsProjection;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -84,6 +88,7 @@ public class GameDetailService {
                 statusStatistics.getWishlistCount(),
                 likeCount,
                 ratingStatistics.averageRating(),
+                ratingStatistics.ratingCount(),
                 ratingStatistics.reviewCount(),
                 ratingStatistics.ratingDistribution(),
                 playTimeStatistics.averagePlayTimeHours(),
@@ -140,7 +145,7 @@ public class GameDetailService {
                 .toList();
     }
 
-    // 평균 평점, 리뷰 수와 모든 0.5점 단위의 평점 분포를 구성
+    // 평균 평점, 평가 수, 내용이 있는 리뷰 수와 모든 0.5점 단위의 평점 분포를 구성
     private GameRatingStatisticsResponse getRatingStatistics(Long gameId) {
         GameRatingStatisticsProjection ratingStatistics = gameStatisticsRepository
                 .findRatingStatisticsByGameId(gameId);
@@ -164,6 +169,7 @@ public class GameDetailService {
 
         return new GameRatingStatisticsResponse(
                 BigDecimal.valueOf(ratingStatistics.getAverageRating()),
+                ratingStatistics.getRatingCount(),
                 ratingStatistics.getReviewCount(),
                 distribution
         );

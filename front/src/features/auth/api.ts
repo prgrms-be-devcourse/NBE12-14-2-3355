@@ -31,6 +31,12 @@ export function setTokenRefreshedListener(listener: ((accessToken: string) => vo
   onTokenRefreshed = listener;
 }
 
+// 인증이 필요한 다른 API에서도 재발급된 토큰을 기존 인증 상태에 반영
+export function acceptRefreshedToken(response: Response) {
+  const token = response.headers.get("New-Access-Token");
+  if (token) onTokenRefreshed?.(token);
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { accessToken, ...requestInit } = options;
   const headers = new Headers();
@@ -43,8 +49,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     cache: "no-store",
   });
 
-  const newAccessToken = response.headers.get("New-Access-Token");
-  if (newAccessToken) onTokenRefreshed?.(newAccessToken);
+  acceptRefreshedToken(response);
 
   const payload = (await response.json()) as ApiResponse<T>;
 
@@ -81,6 +86,29 @@ export function getMe(accessToken: string) {
 
 export function updateProfile(body: UpdateProfileRequestBody, accessToken: string) {
   return request<UserDto>("me", { method: "PATCH", body: JSON.stringify(body), accessToken });
+}
+
+export async function uploadProfileImage(file: File, accessToken: string): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch("/api/uploads/images", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: formData,
+    cache: "no-store",
+  });
+
+  const newAccessToken = response.headers.get("New-Access-Token");
+  if (newAccessToken) onTokenRefreshed?.(newAccessToken);
+
+  const payload = (await response.json()) as ApiResponse<string>;
+
+  if (!response.ok) {
+    throw new AuthApiError(payload.msg || "이미지 업로드에 실패했습니다.", response.status, payload.resultCode);
+  }
+
+  return payload.data;
 }
 
 export function completeOnboarding(accessToken: string) {

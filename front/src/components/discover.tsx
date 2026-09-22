@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import GameSearch from "@/components/game-search";
 import AuthNav from "@/components/auth/auth-nav";
+import PersonalizedGames from "@/components/personalized-games";
 import { coverUrl, demoGames, demoOptions, emptyFilters, type Filters, type Game, type GamePage, type Option } from "@/lib/games";
 
 function Icon({ name, size = 20 }: { name: "search" | "game" | "filter" | "arrow" | "close"; size?: number }) {
@@ -139,6 +140,7 @@ export default function Discover() {
 
     <main id="discover" className="main">
       <section className="intro"><div><span className="eyebrow"><span className="dot"/> YOUR NEXT FAVORITE</span><h1>다음에 빠져들 <span>게임을 발견하세요.</span></h1><p>익숙한 취향부터 새로운 세계까지, 나만의 다음 플레이를 찾아보세요.</p></div><div className="intro-mark" aria-hidden="true"><Icon name="game" size={68}/><span>FIND YOUR<br/>NEXT WORLD ↗</span></div></section>
+      {!demo && <PersonalizedGames />}
       <div className="section-line"><span>EXPLORE THE COLLECTION</span><span>한 게임의 기록이, 다음 인생 게임을 찾는다.</span></div>
       <div className="workspace">
         <aside className={`filter-panel ${mobileFilters ? "is-open" : ""}`} id="filters">

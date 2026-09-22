@@ -1,4 +1,4 @@
-package com.gamelog.nbe121423355.domain.game.repository;
+package com.gamelog.nbe121423355.domain.game.repository.projection;
 
 import java.math.BigDecimal;
 

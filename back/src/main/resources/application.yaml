@@ -3,6 +3,10 @@ spring:
     name: gamelog
   profiles:
     active: local
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
 # ===== jwt 토큰 =====
 jwt:
   secret: 2yFvv+amd1bJKWDQ/picSaxbhQ+VKrMIjFqIqbBqib8=
@@ -24,6 +28,13 @@ app:
 igdb:
   client-id: ${IGDB_CLIENT_ID}
   client-secret: ${IGDB_CLIENT_SECRET}
+
+# === cloudinary ===
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}
 
 ---
 # ===== 로컬 개발 (Docker MySQL) =====
@@ -53,6 +64,11 @@ igdb:
   client-secret: test-client-secret
   import:
     enabled: false
+
+cloudinary:
+  cloud-name: test-cloud-name
+  api-key: test-api-key
+  api-secret: test-api-secret
 
 spring:
   config:
@@ -100,3 +116,4 @@ app:
   cookie:
     same-site: None
     secure: true
+

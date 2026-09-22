@@ -1,13 +1,11 @@
 package com.gamelog.nbe121423355.domain.game.service;
 
-import com.gamelog.nbe121423355.domain.game.client.IgdbClient;
 import com.gamelog.nbe121423355.domain.game.dto.GameListResponse;
-import com.gamelog.nbe121423355.domain.game.dto.GameSort;
-import com.gamelog.nbe121423355.domain.game.dto.IgdbGameResponse;
+import com.gamelog.nbe121423355.domain.game.dto.GameSearchRequest;
 import com.gamelog.nbe121423355.domain.game.repository.GameRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,56 +14,13 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class GameService {
-    private final IgdbClient igdbClient;
-    private final GameImportService gameImportService;
     private final GameRepository gameRepository;
 
-    public List<IgdbGameResponse> fetchGamesFromIgdb() {
-        return igdbClient.fetchGames();
-    }
-
-    public int importGames() {
-        List<IgdbGameResponse> games = fetchGamesFromIgdb();
-
-        return gameImportService.saveGames(games);
-    }
-
-    // 기존 페이징 호출 유지
     @Transactional(readOnly = true)
-    public Page<GameListResponse> getGamesPage(Pageable pageable) {
-        return getGamesPage(null, null, null, pageable);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<GameListResponse> getGamesPage(
-            String keyword,
-            Pageable pageable
-    ) {
-        return getGamesPage(keyword, null, null, pageable);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<GameListResponse> getGamesPage(
-            String keyword,
-            List<Long> genreIds,
-            Pageable pageable
-    ) {
-        return getGamesPage(keyword, genreIds, null, pageable);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<GameListResponse> getGamesPage(
-            String keyword,
-            List<Long> genreIds,
-            List<Long> platformIds,
-            Pageable pageable
-    ) {
-        return getGamesPage(keyword, genreIds, platformIds, pageable, null);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<GameListResponse> getGamesPage(String keyword, List<Long> genreIds,
-            List<Long> platformIds, Pageable pageable, GameSort sort) {
+    public Page<GameListResponse> getGamesPage(GameSearchRequest request) {
+        String keyword = request.keyword();
+        List<Long> genreIds = request.genreIds();
+        List<Long> platformIds = request.platformIds();
         String keywordPattern =
                 keyword == null || keyword.isBlank()
                         ? null
@@ -91,8 +46,8 @@ public class GameService {
                         queryGenreIds,
                         filterPlatforms,
                         queryPlatformIds,
-                        sort == null ? "" : sort.name(),
-                        pageable
+                        request.sort() == null ? "" : request.sort().name(),
+                        request.toPageable()
                 )
                 .map(GameListResponse::new);
     }

@@ -7,6 +7,7 @@ import com.gamelog.nbe121423355.domain.user.repository.RefreshTokenRepository;
 import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import com.gamelog.nbe121423355.global.security.jwt.JwtProvider;
+import com.gamelog.nbe121423355.global.upload.ImageUploadService;
 import io.jsonwebtoken.Claims;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final ImageUploadService imageUploadService;
 
     // 로그인 결과를 Controller에 전달하기 위한 내부 운반용 record
     public record LoginResult(UserDto user, String accessToken, String refreshToken) {}
@@ -131,7 +133,11 @@ public class UserService {
         if(!user.getNickname().equals(updateProfileRequestDto.nickname()) && userRepository.existsByNickname(updateProfileRequestDto.nickname())) {
             throw new ServiceException("409-2", "이미 존재하는 닉네임 입니다.");
         }
+        String oldProfileImageUrl = user.getProfileImageUrl();
         user.updateProfile(updateProfileRequestDto.nickname(), updateProfileRequestDto.profileImageUrl(), updateProfileRequestDto.bio());
+        if(oldProfileImageUrl != null && !oldProfileImageUrl.equals(updateProfileRequestDto.profileImageUrl())) {
+            imageUploadService.deleteImage(oldProfileImageUrl);
+        }
         return new UserDto(user);
     }
 }

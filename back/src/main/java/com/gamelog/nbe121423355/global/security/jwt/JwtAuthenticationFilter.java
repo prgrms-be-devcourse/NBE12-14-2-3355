@@ -55,10 +55,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     // accessToken 유효성 검증 후 인증정보 등록
     private void authenticate(String token) {
-        Claims claims = jwtProvider.parseClaims(token);
-        Long userId = Long.parseLong(claims.getSubject());
-        String role = claims.get("role", String.class);
-        setSecurityContext(userId, role);
+        try {
+            Claims claims = jwtProvider.parseClaims(token);
+            Long userId = Long.parseLong(claims.getSubject());
+            String role = claims.get("role", String.class);
+            setSecurityContext(userId, role);
+        }catch (Exception e) {
+            // 인증 정보 세팅 실패시 무시(필터는 예외를 던지지 않는다)
+        }
     }
 
     // accessToken이 만룐된 경우 refreshToken 쿠키로 조용히 재발급 시도

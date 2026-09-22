@@ -10,6 +10,7 @@ public record GameStatisticsResponse(
         long wishlistCount,
         long likeCount,
         BigDecimal averageRating,
+        long ratingCount,
         long reviewCount,
         List<GameRatingDistributionResponse> ratingDistribution,
         BigDecimal averagePlayTimeHours,

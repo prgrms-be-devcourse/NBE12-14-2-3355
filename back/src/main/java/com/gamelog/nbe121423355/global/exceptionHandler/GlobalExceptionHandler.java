@@ -3,12 +3,14 @@ package com.gamelog.nbe121423355.global.exceptionHandler;
 import com.gamelog.nbe121423355.global.dto.RsData;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.Comparator;
 import java.util.NoSuchElementException;
@@ -53,6 +55,27 @@ public class GlobalExceptionHandler {
         return new RsData<Void>(
                 "400-2",
                 "잘못된 형식의 요청 데이터입니다."
+        );
+    }
+
+    // 이미지 파일 크기 초과시 예외사항
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    @ResponseBody
+    public RsData<Void> handleException(MaxUploadSizeExceededException e) {
+        return new RsData<Void>(
+                "400-3",
+                "파일 크기가 너무 큽니다. 5MB 이하 파일만 업로드할 수 있습니다."
+        );
+    }
+
+    // 동시 요청으로 인한 DB 유니크 제약조건 위반 (중복확인 직후 동시 가입 경합)
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ResponseBody
+    public RsData<Void> handleException(DataIntegrityViolationException e) {
+        log.warn("DB 제약조건 위반", e);
+        return new RsData<Void>(
+                "409-3",
+                "이미 존재하거나 처리 중인 데이터입니다. 잠시 후 다시 시도해 주세요."
         );
     }
 

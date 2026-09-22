@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="520" viewBox="0 0 820 520" role="img" aria-labelledby="title">
+  <title id="title">GameLog 로고 시안 4종 비교</title>
+  <rect width="820" height="520" rx="24" fill="#111414"/>
+  <g fill="#929B95" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" letter-spacing="2">
+    <text x="35" y="45">01 / ORBIT</text><text x="35" y="165">02 / BOOKMARK</text>
+    <text x="35" y="285">03 / MONOGRAM</text><text x="35" y="405">04 / PIXEL TRAIL</text>
+  </g>
+  <g fill="#191D1D" stroke="#2B3130">
+    <rect x="28" y="56" width="764" height="83" rx="12"/><rect x="28" y="176" width="764" height="83" rx="12"/>
+    <rect x="28" y="296" width="764" height="83" rx="12"/><rect x="28" y="416" width="764" height="83" rx="12"/>
+  </g>
+  <image href="gamelog-logo-orbit.svg" x="49" y="62" width="360" height="72"/>
+  <image href="gamelog-logo-bookmark.svg" x="49" y="182" width="360" height="72"/>
+  <image href="gamelog-logo-monogram.svg" x="49" y="302" width="360" height="72"/>
+  <image href="gamelog-logo-pixel.svg" x="49" y="422" width="360" height="72"/>
+</svg>
