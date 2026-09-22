@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/features/auth/auth-context";
 import ProfileEditor from "./profile-editor";
 import LibraryGames from "./library-games";
+import ProfileReviews from "./profile-reviews";
 import type { UserDto } from "@/features/auth/types";
 import AuthNav from "@/components/auth/auth-nav";
 
@@ -1461,7 +1462,13 @@ export default function ProfileClient() {
               </nav>
             <div className={styles.content}>
               <div hidden={activeTab !== "games"}>{activeTab === "games" && <LibraryGames accessToken={auth.accessToken} />}</div>
-              {activeTab === "reviews" && (profileLoading ? <p className={styles.loading}>리뷰를 불러오는 중…</p> : profileError ? <p role="alert" className={styles.error}>{profileError}</p> : <RecentReviews reviews={profile?.recentReviews ?? []} />)}
+              {activeTab === "reviews" && (
+                <ProfileReviews
+                  userId={auth.user.id}
+                  nickname={auth.user.nickname}
+                  accessToken={auth.accessToken}
+                />
+              )}
               {activeTab === "friends" && <section><h2 className={styles.contentTitle}>Friends</h2><div className={styles.emptyBox}>친구 목록 기능을 준비 중입니다.</div></section>}
               {activeTab === "likes" && <section><h2 className={styles.contentTitle}>Likes</h2><div className={styles.emptyBox}>좋아요 목록 기능을 준비 중입니다.</div></section>}
               <div hidden={activeTab !== "profile"}>

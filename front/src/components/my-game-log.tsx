@@ -16,7 +16,6 @@ type Props = {
   accessToken?: string;
   refreshKey?: number;
   onLoginRequired?: () => void;
-  onTokenChange?: (accessToken?: string) => void;
   onSaved?: () => void;
 };
 
@@ -38,6 +37,18 @@ type FormState = {
   spoiler: boolean;
 };
 
+const playStatusOptions: Array<{ value: PlayStatus; label: string; description: string }> = [
+  { value: "PLAYED", label: "플레이함", description: "구체적인 완료 상태 없이 플레이했어요." },
+  { value: "COMPLETED", label: "플레이 완료", description: "게임의 주요 목표나 엔딩을 완료했어요." },
+  { value: "RETIRED", label: "끝냄", description: "명확한 엔딩이 없는 게임을 충분히 즐겼어요." },
+  { value: "SHELVED", label: "잠시 보류", description: "나중에 다시 플레이할 예정이에요." },
+  { value: "DROPPED", label: "플레이 포기", description: "더 이상 플레이하지 않을 예정이에요." },
+];
+
+const playStatusLabels = Object.fromEntries(
+  playStatusOptions.map((option) => [option.value, option.label]),
+) as Record<PlayStatus, string>;
+
 function textNumber(value: number | null | undefined) {
   return value == null ? "" : String(value);
 }
@@ -46,9 +57,7 @@ function initialForm(detail: DetailedReview | null): FormState {
   const record = detail?.userGame;
   const review = detail?.review;
   return {
-    // 기존 PLAYED 기록도 화면에서는 플레이 완료로 취급하고,
-    // 다음 저장부터 COMPLETED 값으로 통일합니다.
-    playStatus: record?.playStatus === "PLAYED" ? "COMPLETED" : record?.playStatus ?? "",
+    playStatus: record?.playStatus ?? "",
     isPlaying: record?.playing ?? false,
     isBacklog: record?.backlog ?? false,
     isWishlist: record?.wishlist ?? false,
@@ -101,15 +110,13 @@ export default function MyGameLog({
   accessToken,
   refreshKey = 0,
   onLoginRequired,
-  onTokenChange,
   onSaved,
 }: Props) {
-  const [tokenInput, setTokenInput] = useState("");
-  const [temporaryToken, setTemporaryToken] = useState<string>();
   const [tokenVerified, setTokenVerified] = useState(false);
   const [detail, setDetail] = useState<DetailedReview | null>(null);
   const [form, setForm] = useState<FormState>(() => initialForm(null));
   const [editing, setEditing] = useState(false);
+  const [playStatusMenuMode, setPlayStatusMenuMode] = useState<"quick" | "editor" | null>(null);
   const [showDates, setShowDates] = useState(false);
   const [quickRatingHover, setQuickRatingHover] = useState<number | null>(null);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
@@ -118,12 +125,11 @@ export default function MyGameLog({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState("");
-  const effectiveAccessToken = accessToken || temporaryToken;
 
   useEffect(() => {
-    if (!effectiveAccessToken) return;
+    if (!accessToken) return;
 
-    const token = effectiveAccessToken;
+    const token = accessToken;
     let active = true;
 
     async function load() {
@@ -134,15 +140,12 @@ export default function MyGameLog({
         setDetail(result);
         setForm(initialForm(result));
         setTokenVerified(true);
-        onTokenChange?.(token);
         setMessage("");
       } catch (reason) {
         if (!active) return;
         setTokenVerified(false);
-        if (!accessToken) setTemporaryToken(undefined);
-        onTokenChange?.(undefined);
         setMessage(reason instanceof ReviewApiError && reason.status === 401
-          ? "토큰 인증에 실패했습니다. 새 accessToken을 입력해 주세요."
+          ? "로그인 정보가 만료되었습니다. 다시 로그인해 주세요."
           : reason instanceof Error ? reason.message : "내 기록을 불러오지 못했습니다.");
       } finally {
         if (active) setLoading(false);
@@ -152,38 +155,16 @@ export default function MyGameLog({
     void load();
 
     return () => { active = false; };
-  }, [accessToken, effectiveAccessToken, gameId, onTokenChange, refreshKey]);
-
-  function connectTemporaryToken(event: FormEvent) {
-    event.preventDefault();
-    const token = tokenInput.trim().replace(/^Bearer\s+/i, "").replace(/^["']|["']$/g, "");
-    if (!token) {
-      setMessage("Postman에서 발급받은 accessToken을 입력해 주세요.");
-      return;
-    }
-    setTokenVerified(false);
-    setTemporaryToken(token);
-    setTokenInput("");
-    setMessage("토큰을 확인하는 중입니다.");
-  }
-
-  function disconnectTemporaryToken() {
-    setTemporaryToken(undefined);
-    setTokenVerified(false);
-    setDetail(null);
-    setForm(initialForm(null));
-    setEditing(false);
-    onTokenChange?.(undefined);
-    setMessage("임시 토큰 연결을 해제했습니다.");
-  }
+  }, [accessToken, gameId, refreshKey]);
 
   function openEditor() {
-    if (!effectiveAccessToken || !tokenVerified) {
-      setMessage("아래 입력창에 임시 accessToken을 먼저 연결해 주세요.");
+    if (!accessToken || !tokenVerified) {
+      setMessage("게임 기록을 작성하려면 로그인이 필요합니다.");
       onLoginRequired?.();
       return;
     }
     setForm(initialForm(detail));
+    setPlayStatusMenuMode(null);
     setShowDates(Boolean(detail?.userGame?.startedAt || detail?.userGame?.completedAt || detail?.userGame?.lastPlayedAt));
     setEditing(true);
     setMessage("");
@@ -199,8 +180,8 @@ export default function MyGameLog({
   }
 
   async function saveQuickChange(nextForm: FormState, successMessage: string) {
-    if (!effectiveAccessToken || !tokenVerified) {
-      setMessage("아래 입력창에 임시 accessToken을 먼저 연결해 주세요.");
+    if (!accessToken || !tokenVerified) {
+      setMessage("게임 기록을 작성하려면 로그인이 필요합니다.");
       onLoginRequired?.();
       return;
     }
@@ -209,7 +190,7 @@ export default function MyGameLog({
     setQuickSaving(true);
     setMessage("");
     try {
-      const saved = await saveDetailedReview(gameId, toRequest(nextForm), effectiveAccessToken);
+      const saved = await saveDetailedReview(gameId, toRequest(nextForm), accessToken);
       setDetail(saved);
       setForm(initialForm(saved));
       setMessage(successMessage);
@@ -217,8 +198,6 @@ export default function MyGameLog({
     } catch (reason) {
       if (reason instanceof ReviewApiError && reason.status === 401) {
         setTokenVerified(false);
-        if (!accessToken) setTemporaryToken(undefined);
-        onTokenChange?.(undefined);
       }
       setForm(initialForm(detail));
       setMessage(reason instanceof Error ? reason.message : "게임 기록을 저장하지 못했습니다.");
@@ -232,15 +211,40 @@ export default function MyGameLog({
     void saveQuickChange(nextForm, successMessage);
   }
 
+  function openQuickPlayStatusMenu() {
+    if (!accessToken || !tokenVerified) {
+      setMessage("게임 기록을 작성하려면 로그인이 필요합니다.");
+      onLoginRequired?.();
+      return;
+    }
+    setPlayStatusMenuMode("quick");
+  }
+
+  function openEditorPlayStatusMenu() {
+    setPlayStatusMenuMode("editor");
+  }
+
+  function selectPlayStatus(playStatus: PlayStatus | "") {
+    const menuMode = playStatusMenuMode;
+    setPlayStatusMenuMode(null);
+    if (menuMode === "editor") {
+      update("playStatus", playStatus);
+      return;
+    }
+    const successMessage = playStatus
+      ? `${playStatusLabels[playStatus]} 상태로 저장했습니다.`
+      : "플레이 상태를 해제했습니다.";
+    quickUpdate("playStatus", playStatus, successMessage);
+  }
+
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (!effectiveAccessToken || !tokenVerified) return;
-    const token = effectiveAccessToken;
+    if (!accessToken || !tokenVerified) return;
     const hasReview = form.rating !== "" || form.content.trim() !== "";
     setSaving(true);
     setMessage("");
     try {
-      const saved = await saveDetailedReview(gameId, toRequest(form), token);
+      const saved = await saveDetailedReview(gameId, toRequest(form), accessToken);
       setDetail(saved);
       setForm(initialForm(saved));
       setEditing(false);
@@ -249,7 +253,6 @@ export default function MyGameLog({
     } catch (reason) {
       if (reason instanceof ReviewApiError && reason.status === 401) {
         setTokenVerified(false);
-        if (!accessToken) setTemporaryToken(undefined);
       }
       setMessage(reason instanceof Error ? reason.message : "게임 기록을 저장하지 못했습니다.");
     } finally {
@@ -259,13 +262,13 @@ export default function MyGameLog({
 
   async function removeExistingReview() {
     const reviewId = detail?.review?.reviewId;
-    if (!reviewId || !effectiveAccessToken || !tokenVerified || deleting) return;
+    if (!reviewId || !accessToken || !tokenVerified || deleting) return;
     if (!window.confirm("작성한 리뷰를 삭제할까요? 게임 기록은 그대로 유지됩니다.")) return;
 
     setDeleting(true);
     setMessage("");
     try {
-      await deleteReview(reviewId, effectiveAccessToken);
+      await deleteReview(reviewId, accessToken);
       const nextDetail = detail ? { ...detail, review: null } : null;
       setDetail(nextDetail);
       setForm(initialForm(nextDetail));
@@ -275,8 +278,6 @@ export default function MyGameLog({
     } catch (reason) {
       if (reason instanceof ReviewApiError && reason.status === 401) {
         setTokenVerified(false);
-        if (!accessToken) setTemporaryToken(undefined);
-        onTokenChange?.(undefined);
       }
       setMessage(reason instanceof Error ? reason.message : "리뷰를 삭제하지 못했습니다.");
     } finally {
@@ -284,13 +285,18 @@ export default function MyGameLog({
     }
   }
 
-  const visibleDetail = effectiveAccessToken && tokenVerified ? detail : null;
+  const visibleDetail = accessToken && tokenVerified ? detail : null;
+  const isAuthenticated = Boolean(accessToken && tokenVerified);
   const rating = visibleDetail?.review?.rating ?? null;
-  const quickRatingPreview = quickRatingHover ?? (form.rating ? Number(form.rating) : 0);
+  const quickRatingPreview = quickRatingHover ?? (isAuthenticated && form.rating ? Number(form.rating) : 0);
   const ratingPreview = hoverRating ?? (form.rating ? Number(form.rating) : 0);
   const hasReviewInput = form.rating !== "" || form.content.trim() !== "";
   const hasExistingReview = detail?.review != null;
-  const playedSelected = form.playStatus === "PLAYED" || form.playStatus === "COMPLETED";
+  const quickPlayStatus = isAuthenticated ? form.playStatus : "";
+  const quickIsPlaying = isAuthenticated && form.isPlaying;
+  const quickIsBacklog = isAuthenticated && form.isBacklog;
+  const quickIsWishlist = isAuthenticated && form.isWishlist;
+  const quickIsLiked = isAuthenticated && form.isLiked;
 
   return <section className={styles.panel} aria-label="내 게임 기록">
     <span className={styles.eyebrow}>MY GAME LOG</span>
@@ -310,7 +316,7 @@ export default function MyGameLog({
           aria-label={`${score - 0.5}점 또는 ${score}점 바로 저장`}
         >★</button>;
       })}
-      {form.rating && <button
+      {isAuthenticated && form.rating && <button
         type="button"
         className={styles.quickRatingClear}
         onClick={() => quickUpdate("rating", "", "별점을 삭제했습니다.")}
@@ -319,28 +325,62 @@ export default function MyGameLog({
       >↺</button>}
     </div>
     <div className={styles.quickStatuses} aria-label="게임 상태 빠른 설정">
-      <button type="button" className={playedSelected ? styles.quickSelected : undefined} disabled={loading || quickSaving} onClick={() => quickUpdate("playStatus", playedSelected ? "" : "COMPLETED", playedSelected ? "플레이 완료 상태를 해제했습니다." : "플레이 완료로 저장했습니다.")}><span aria-hidden="true">🎮</span>플레이 완료</button>
-      <button type="button" className={form.isPlaying ? styles.quickSelected : undefined} disabled={loading || quickSaving} onClick={() => quickUpdate("isPlaying", !form.isPlaying, form.isPlaying ? "플레이 중 상태를 해제했습니다." : "플레이 중으로 저장했습니다.")}><span aria-hidden="true">▶</span>플레이 중</button>
-      <button type="button" className={form.isBacklog ? styles.quickSelected : undefined} disabled={loading || quickSaving} onClick={() => quickUpdate("isBacklog", !form.isBacklog, form.isBacklog ? "플레이 예정에서 해제했습니다." : "플레이 예정으로 저장했습니다.")}><span aria-hidden="true">▦</span>플레이 예정</button>
-      <button type="button" className={form.isWishlist ? styles.quickSelected : undefined} disabled={loading || quickSaving} onClick={() => quickUpdate("isWishlist", !form.isWishlist, form.isWishlist ? "위시리스트에서 해제했습니다." : "위시리스트에 저장했습니다.")}><span aria-hidden="true">★</span>위시리스트</button>
+      <button type="button" className={quickPlayStatus ? styles.quickSelected : undefined} data-play-status={quickPlayStatus || undefined} disabled={loading || quickSaving} onClick={openQuickPlayStatusMenu}><span aria-hidden="true">🎮</span>{quickPlayStatus ? playStatusLabels[quickPlayStatus] : "플레이함"}</button>
+      <button type="button" className={quickIsPlaying ? styles.quickSelected : undefined} disabled={loading || quickSaving} onClick={() => quickUpdate("isPlaying", !quickIsPlaying, quickIsPlaying ? "플레이 중 상태를 해제했습니다." : "플레이 중으로 저장했습니다.")}><span aria-hidden="true">▶</span>플레이 중</button>
+      <button type="button" className={quickIsBacklog ? styles.quickSelected : undefined} disabled={loading || quickSaving} onClick={() => quickUpdate("isBacklog", !quickIsBacklog, quickIsBacklog ? "플레이 예정에서 해제했습니다." : "플레이 예정으로 저장했습니다.")}><span aria-hidden="true">▦</span>플레이 예정</button>
+      <button type="button" className={quickIsWishlist ? styles.quickSelected : undefined} disabled={loading || quickSaving} onClick={() => quickUpdate("isWishlist", !quickIsWishlist, quickIsWishlist ? "위시리스트에서 해제했습니다." : "위시리스트에 저장했습니다.")}><span aria-hidden="true">★</span>위시리스트</button>
+    </div>
+    <div className={styles.quickLikeRow}>
+      <span>좋아하는 게임</span>
+      <button
+        type="button"
+        className={quickIsLiked ? styles.quickLikeSelected : undefined}
+        disabled={loading || quickSaving}
+        aria-label={quickIsLiked ? "좋아하는 게임에서 해제" : "좋아하는 게임으로 표시"}
+        aria-pressed={quickIsLiked}
+        onClick={() => quickUpdate(
+          "isLiked",
+          !quickIsLiked,
+          quickIsLiked ? "좋아하는 게임에서 해제했습니다." : "좋아하는 게임으로 저장했습니다.",
+        )}
+      >♥</button>
     </div>
     {quickSaving && <p className={styles.quickProgress} role="status">변경 내용을 저장하는 중…</p>}
-    <p className={styles.summary}>{loading && effectiveAccessToken ? "내 기록을 불러오는 중…" : visibleDetail?.review ? `내 별점 ${rating ?? "없음"} · 리뷰 작성됨` : visibleDetail?.userGame ? "게임 기록 저장됨" : "아직 남긴 기록이 없어요."}</p>
+    {loading && accessToken
+      ? <p className={styles.summary}>내 기록을 불러오는 중…</p>
+      : visibleDetail?.review
+        ? <p className={styles.summary}>{`내 별점 ${rating ?? "없음"} · 리뷰 작성됨`}</p>
+        : null}
     <button type="button" className={styles.editButton} onClick={openEditor} disabled={loading}>
-      {loading ? "토큰 확인 중…" : tokenVerified ? (visibleDetail?.userGame ? "기록 · 리뷰 수정" : "기록 · 리뷰 작성") : "임시 토큰으로 기록하기"}
+      {loading && accessToken ? "로그인 확인 중…" : isAuthenticated ? (visibleDetail?.userGame ? "기록 · 리뷰 수정" : "기록 · 리뷰 작성") : "로그인 후 기록하기"}
     </button>
-    {accessToken && onTokenChange
-      ? <button type="button" className={styles.tokenDisconnect} onClick={disconnectTemporaryToken}>임시 토큰 연결 해제</button>
-      : temporaryToken
-        ? <button type="button" className={styles.tokenDisconnect} onClick={disconnectTemporaryToken}>임시 토큰 연결 해제</button>
-        : <form className={styles.tokenForm} onSubmit={connectTemporaryToken}>
-        <label htmlFor={`temporary-token-${gameId}`}>개발 테스트용 accessToken</label>
-        <input id={`temporary-token-${gameId}`} type="password" value={tokenInput} onChange={(event) => setTokenInput(event.target.value)} placeholder="Bearer 없이 토큰 붙여넣기" autoComplete="off" />
-        <button type="submit">연결</button>
-      </form>}
-    {message && !editing && <p className={styles.message} role="status">{message}</p>}
+    {message && !editing && accessToken && <p className={styles.message} role="status">{message}</p>}
 
-    {editing && effectiveAccessToken && tokenVerified && <div className={styles.backdrop} role="presentation" onMouseDown={(event) => {
+    {playStatusMenuMode && <div className={styles.playStatusBackdrop} role="presentation" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) setPlayStatusMenuMode(null);
+    }}>
+      <section className={styles.playStatusDialog} role="dialog" aria-modal="true" aria-labelledby="play-status-title">
+        <div className={styles.playStatusHeader}>
+          <div><span>PLAY STATUS</span><h2 id="play-status-title">플레이 상태 선택</h2></div>
+          <button type="button" onClick={() => setPlayStatusMenuMode(null)} aria-label="닫기">×</button>
+        </div>
+        <div className={styles.playStatusList}>
+          {playStatusOptions.map((option) => <button
+            type="button"
+            key={option.value}
+            className={form.playStatus === option.value ? styles.playStatusSelected : undefined}
+            onClick={() => selectPlayStatus(option.value)}
+          >
+            <i data-status={option.value} aria-hidden="true" />
+            <span><strong>{option.label}</strong><small>{option.description}</small></span>
+            {form.playStatus === option.value && <b aria-label="현재 선택됨">✓</b>}
+          </button>)}
+        </div>
+        <button type="button" className={styles.clearPlayStatus} onClick={() => selectPlayStatus("")} disabled={!form.playStatus}>플레이 상태 해제</button>
+      </section>
+    </div>}
+
+    {editing && accessToken && tokenVerified && <div className={styles.backdrop} role="presentation" onMouseDown={(event) => {
       if (event.target === event.currentTarget) setEditing(false);
     }}>
       <form className={styles.dialog} onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="game-log-title">
@@ -350,12 +390,21 @@ export default function MyGameLog({
         <div className={styles.editorLayout}>
           <aside className={styles.statusColumn} aria-label="게임 상태">
             <span className={styles.columnLabel}>내 게임 상태</span>
-            <button type="button" className={playedSelected ? styles.selectedStatus : undefined} onClick={() => update("playStatus", playedSelected ? "" : "COMPLETED")}>✓ 플레이 완료</button>
+            <button
+              type="button"
+              className={`${styles.playStatusTrigger} ${form.playStatus ? styles.selectedStatus : ""}`}
+              data-play-status={form.playStatus || undefined}
+              aria-haspopup="dialog"
+              aria-expanded={playStatusMenuMode === "editor"}
+              onClick={openEditorPlayStatusMenu}
+            >
+              <span>🎮 {form.playStatus ? playStatusLabels[form.playStatus] : "플레이함"}</span>
+              <b aria-hidden="true">▾</b>
+            </button>
             <button type="button" className={form.isPlaying ? styles.selectedStatus : undefined} onClick={() => update("isPlaying", !form.isPlaying)}>▶ 플레이 중</button>
             <button type="button" className={form.isBacklog ? styles.selectedStatus : undefined} onClick={() => update("isBacklog", !form.isBacklog)}>▦ 플레이 예정</button>
             <button type="button" className={form.isWishlist ? styles.selectedStatus : undefined} onClick={() => update("isWishlist", !form.isWishlist)}>★ 위시리스트</button>
             <button type="button" className={`${styles.likeStatus} ${form.isLiked ? styles.selectedLike : ""}`} onClick={() => update("isLiked", !form.isLiked)}>♥ 좋아하는 게임</button>
-            <label className={styles.otherStatus}>기타 상태<select value={playedSelected ? "" : form.playStatus} onChange={(event) => update("playStatus", event.target.value as PlayStatus | "")}><option value="">선택 안 함</option><option value="RETIRED">중단</option><option value="SHELVED">보류</option><option value="ABANDONED">포기</option></select></label>
           </aside>
 
           <div className={styles.reviewColumn}>

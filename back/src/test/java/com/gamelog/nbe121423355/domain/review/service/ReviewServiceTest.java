@@ -6,6 +6,8 @@ import com.gamelog.nbe121423355.domain.review.dto.request.ReviewSaveRequest;
 import com.gamelog.nbe121423355.domain.review.dto.response.DetailedReviewResponse;
 import com.gamelog.nbe121423355.domain.review.entity.Review;
 import com.gamelog.nbe121423355.domain.review.entity.ReviewStatus;
+import com.gamelog.nbe121423355.domain.review.repository.ReviewLikeCountProjection;
+import com.gamelog.nbe121423355.domain.review.repository.ReviewLikeRepository;
 import com.gamelog.nbe121423355.domain.review.repository.ReviewRepository;
 import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.domain.usergame.dto.UserGameReqBody;
@@ -46,6 +48,9 @@ class ReviewServiceTest {
 
     @Mock
     private ReviewRepository reviewRepository;
+
+    @Mock
+    private ReviewLikeRepository reviewLikeRepository;
 
     @Mock
     private UserGameRepository userGameRepository;
@@ -436,6 +441,9 @@ class ReviewServiceTest {
         PageRequest pageable = PageRequest.of(1, 2);
         when(reviewRepository.findByUserGame_Game_Id(GAME_ID, pageable))
                 .thenReturn(new PageImpl<>(List.of(review), pageable, 5));
+        when(reviewLikeRepository.findLikeCountsByReviewIds(List.of(10L)))
+                .thenReturn(List.of());
+        when(reviewLikeRepository.countVisibleLikesByGameId(GAME_ID)).thenReturn(7L);
 
         var response = reviewService.getGameReviews(GAME_ID, pageable);
 
@@ -445,6 +453,7 @@ class ReviewServiceTest {
         assertThat(response.totalElements()).isEqualTo(5);
         assertThat(response.totalPages()).isEqualTo(3);
         assertThat(response.hasNext()).isTrue();
+        assertThat(response.totalLikes()).isEqualTo(7L);
     }
 
     @DisplayName("사용자별 리뷰 목록을 페이지 정보와 함께 조회한다")
@@ -457,6 +466,12 @@ class ReviewServiceTest {
         PageRequest pageable = PageRequest.of(0, 20);
         when(reviewRepository.findByUserGame_User_Id(USER_ID, pageable))
                 .thenReturn(new PageImpl<>(List.of(review), pageable, 1));
+        ReviewLikeCountProjection likeCount = org.mockito.Mockito.mock(ReviewLikeCountProjection.class);
+        when(likeCount.getReviewId()).thenReturn(10L);
+        when(likeCount.getLikeCount()).thenReturn(3L);
+        when(reviewLikeRepository.findLikeCountsByReviewIds(List.of(10L)))
+                .thenReturn(List.of(likeCount));
+        when(reviewLikeRepository.countVisibleLikesByUserId(USER_ID)).thenReturn(3L);
 
         var response = reviewService.getUserReviews(USER_ID, pageable);
 
@@ -464,6 +479,8 @@ class ReviewServiceTest {
                 .containsExactly(10L);
         assertThat(response.page()).isZero();
         assertThat(response.totalElements()).isEqualTo(1);
+        assertThat(response.reviews().getFirst().likeCount()).isEqualTo(3L);
+        assertThat(response.totalLikes()).isEqualTo(3L);
         assertThat(response.hasNext()).isFalse();
     }
 
@@ -537,6 +554,9 @@ class ReviewServiceTest {
         lenient().when(userGame.getId()).thenReturn(USER_GAME_ID);
         when(userGame.getUser()).thenReturn(user);
         when(user.getId()).thenReturn(USER_ID);
+        lenient().when(userGame.getGame()).thenReturn(game);
+        lenient().when(game.getId()).thenReturn(GAME_ID);
+        lenient().when(game.getTitle()).thenReturn("테스트 게임");
     }
 
     private Review prepareReview() {
