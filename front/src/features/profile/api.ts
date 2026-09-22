@@ -1,4 +1,4 @@
-import type { ApiResponse, FavoriteGame, ProfileResponse } from "./types";
+import type { ApiResponse, FavoriteGame, ProfileResponse, UserGameLibraryResponse } from "./types";
 
 export class ProfileApiError extends Error {
   constructor(message: string, public readonly status: number) {
@@ -30,4 +30,28 @@ export function updateFavoriteGames(gameIds: number[], accessToken: string) {
     method: "PUT",
     body: JSON.stringify({ gameIds }),
   }, accessToken);
+}
+
+export function getMyLibraryGames(
+  accessToken: string,
+  keyword?: string,
+  page = 0,
+  size = 20,
+) {
+  const params = new URLSearchParams({
+    status: "ALL",
+    sort: "RECENT_PLAYED",
+    page: String(page),
+    size: String(size),
+  });
+
+  if (keyword?.trim()) {
+    params.set("keyword", keyword.trim());
+  }
+
+  return request<UserGameLibraryResponse>(
+    `?${params.toString()}`,
+    {},
+    accessToken,
+  );
 }

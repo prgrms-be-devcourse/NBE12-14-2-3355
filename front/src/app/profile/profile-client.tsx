@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/features/auth/auth-context";
@@ -9,8 +9,8 @@ import LibraryGames from "./library-games";
 import type { UserDto } from "@/features/auth/types";
 import AuthNav from "@/components/auth/auth-nav";
 
-import { getProfile, updateFavoriteGames } from "@/features/profile/api";
-import type { FavoriteGame, GenreDistribution, ProfileResponse, ProfileStats, RecentGame, RecentReview, ScatterGame, TasteResponse } from "@/features/profile/types";
+import { getProfile, updateFavoriteGames, getMyLibraryGames } from "@/features/profile/api";
+import type { FavoriteGame, UserGame, GenreDistribution, ProfileResponse, ProfileStats, RecentGame, RecentReview, ScatterGame, TasteResponse } from "@/features/profile/types";
 import { coverUrl, type Game} from "@/lib/games";
 
 import styles from "./profile-client.module.css";
@@ -125,6 +125,11 @@ function ProfileHeader({ user, accessToken, onSaved }: { user: UserDto; accessTo
     {editing && <ProfileEditor user={user} accessToken={accessToken} onSaved={onSaved} onClose={() => setEditing(false)} />}
   </section>;
 }
+
+/* =========================================================
+ * 활동 통계
+ * ========================================================= */
+
 function Stats({ stats }: { stats: ProfileStats }) {
   return (
     <section className={styles.statsSection}>
@@ -188,81 +193,137 @@ function FavoriteGameSearchModal({
   favorites,
   onAdd,
   onClose,
+  accessToken,
 }: {
   favorites: FavoriteGame[];
   onAdd: (game: Game) => void;
   onClose: () => void;
+  accessToken: string;
 }) {
   const router = useRouter();
+  const resultRef = useRef<HTMLDivElement>(null);
 
   const [keyword, setKeyword] = useState("");
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     const value = keyword.trim();
-
-    if (!value) {
-      setGames([]);
-      setError("");
-      return;
-    }
-
-    const controller = new AbortController();
 
     const timer = setTimeout(async () => {
       try {
         setLoading(true);
         setError("");
+        setPage(0);
 
-        const query = new URLSearchParams({
-          keyword: value,
-        });
-
-        const response = await fetch(
-          `/api/games/suggestions?${query}`,
-          {
-            signal: controller.signal,
-          },
+        const response = await getMyLibraryGames(
+          accessToken,
+          value || undefined,
+          0,
+          10,
         );
 
-        const body = await response.json();
+        const libraryGames: Game[] =
+          response.userGames.map((game) => ({
+            id: game.gameId,
+            title: game.title,
+            coverImageUrl: game.coverImageUrl,
+            releaseDate: null,
+            igdbRating: null,
+          }));
 
-        if (!response.ok) {
-          throw new Error(
-            body.msg ||
-              "게임 검색에 실패했습니다.",
-          );
-        }
-
-        setGames(body.data ?? []);
+        setGames(libraryGames);
+        setTotalPages(response.totalPages);
       } catch (reason) {
-        if (
-          reason instanceof Error &&
-          reason.name === "AbortError"
-        ) {
-          return;
-        }
-
         setGames([]);
         setError(
           reason instanceof Error
             ? reason.message
-            : "게임 검색에 실패했습니다.",
+            : "게임 목록을 불러오지 못했습니다.",
         );
       } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     }, 300);
 
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
+    return () => clearTimeout(timer);
+  }, [keyword, accessToken]);
+
+  const loadMoreGames = useCallback(async () => {
+    if (loading || loadingMore) {
+      return;
+    }
+  
+    const nextPage = page + 1;
+  
+    if (nextPage >= totalPages) {
+      return;
+    }
+  
+    try {
+      setLoadingMore(true);
+  
+      const response = await getMyLibraryGames(
+        accessToken,
+        keyword.trim() || undefined,
+        nextPage,
+        10,
+      );
+  
+      const newGames: Game[] = response.userGames.map((game) => ({
+        id: game.gameId,
+        title: game.title,
+        coverImageUrl: game.coverImageUrl,
+        releaseDate: null,
+        igdbRating: null,
+      }));
+  
+      setGames((prev) => [...prev, ...newGames]);
+      setPage(nextPage);
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : "게임을 더 불러오지 못했습니다.",
+      );
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [
+    loading,
+    loadingMore,
+    page,
+    totalPages,
+    accessToken,
+    keyword,
+  ]);
+
+  useEffect(() => {
+    const element = resultRef.current;
+  
+    if (element === null) {
+      return;
+    }
+  
+    const handleScroll = () => {
+      if (
+        element.scrollTop + element.clientHeight >=
+        element.scrollHeight - 100
+      ) {
+        loadMoreGames();
+      }
     };
-  }, [keyword]);
+  
+    element.addEventListener("scroll", handleScroll);
+  
+    return () => {
+      element.removeEventListener("scroll", handleScroll);
+    };
+  }, [loadMoreGames]);
 
   const favoriteIds = new Set(
     favorites.map((game) => game.gameId),
@@ -330,24 +391,23 @@ function FavoriteGameSearchModal({
           />
         </div>
 
-        <div className={styles.favoriteSearchResult}>
-          {!keyword.trim() ? (
-            <div className={styles.modalEmpty}>
-              추가하고 싶은 게임을 검색해보세요.
-            </div>
-          ) : loading ? (
-            <div className={styles.modalEmpty}>
-              검색 중…
-            </div>
-          ) : error ? (
-            <div className={styles.modalError}>
-              {error}
-            </div>
-          ) : !games.length ? (
-            <div className={styles.modalEmpty}>
-              검색 결과가 없어요.
-            </div>
-          ) : (
+        <div ref={resultRef}
+          className={styles.favoriteSearchResult}>
+        {loading ? (
+          <div className={styles.modalEmpty}>
+            불러오는 중…
+          </div>
+        ) : error ? (
+          <div className={styles.modalError}>
+            {error}
+          </div>
+        ) : !games.length ? (
+          <div className={styles.modalEmpty}>
+            {keyword.trim()
+              ? "검색 결과가 없어요."
+              : "기록한 게임이 없어요."}
+          </div>
+        ) : (
             <div className={styles.searchGameList}>
               {games.map((game) => {
                 const alreadyFavorite =
@@ -380,13 +440,6 @@ function FavoriteGameSearchModal({
                           {game.title}
                         </strong>
 
-                        <small>
-                          {game.releaseDate?.slice(
-                            0,
-                            4,
-                          ) ||
-                            "출시일 미정"}
-                        </small>
                       </span>
                     </button>
 
@@ -410,6 +463,12 @@ function FavoriteGameSearchModal({
             </div>
           )}
         </div>
+
+        {loadingMore && (
+          <div className={styles.modalEmpty}>
+            더 불러오는 중…
+          </div>
+        )}
 
         <p className={styles.modalNotice}>
           ※ 내 라이브러리에 등록된 게임만
@@ -705,6 +764,7 @@ function FavoriteGames({
           onClose={() =>
             setShowAddModal(false)
           }
+          accessToken={accessToken}
         />
       )}
     </>
@@ -1076,14 +1136,42 @@ function GenreDistribution({
 }: {
   data: GenreDistribution[];
 }) {
-  const total = data.reduce(
+  // 비율이 높은 순서로 정렬
+  const sortedGenres = [...data].sort(
+    (a, b) => b.ratio - a.ratio,
+  );
+
+  // 상위 7개 장르
+  const topGenres = sortedGenres.slice(0, 7);
+
+  // 나머지 장르를 기타로 합산
+  const otherRatio = sortedGenres
+    .slice(7)
+    .reduce(
+      (sum, genre) => sum + genre.ratio,
+      0,
+    );
+
+  // 최종 차트 데이터
+  const chartData =
+    otherRatio > 0
+      ? [
+          ...topGenres,
+          {
+            genreName: "기타",
+            ratio: otherRatio,
+          },
+        ]
+      : topGenres;
+
+  const total = chartData.reduce(
     (sum, genre) => sum + genre.ratio,
     0,
   );
 
   let accumulated = 0;
 
-  const gradient = data
+  const gradient = chartData
     .map((genre, index) => {
       const start =
         (accumulated / total) * 100;
@@ -1121,7 +1209,7 @@ function GenreDistribution({
           </div>
 
           <div className={styles.genreLegend}>
-            {data.map((genre, index) => (
+            {chartData.map((genre, index) => (
               <div
                 key={genre.genreName}
                 className={styles.genreItem}
@@ -1377,6 +1465,8 @@ export default function ProfileClient() {
               {activeTab === "friends" && <section><h2 className={styles.contentTitle}>Friends</h2><div className={styles.emptyBox}>친구 목록 기능을 준비 중입니다.</div></section>}
               {activeTab === "likes" && <section><h2 className={styles.contentTitle}>Likes</h2><div className={styles.emptyBox}>좋아요 목록 기능을 준비 중입니다.</div></section>}
               <div hidden={activeTab !== "profile"}>
+              <h2 className={styles.contentTitle}>내 게임 라이브러리</h2>
+
               {profileLoading ? (
                 <div className={styles.loading}>
                   게임 기록을 불러오는 중…
@@ -1394,8 +1484,6 @@ export default function ProfileClient() {
                     accessToken={auth.accessToken}
                   />
 
-                  <h2 className={styles.contentTitle}>게임 기록 통계</h2>
-
                   {/* 2. 플레이 통계 */}
                   <Stats
                     stats={profile.stats}
@@ -1403,16 +1491,13 @@ export default function ProfileClient() {
 
                   {/* 3. 산점도 */}
                   <ScatterPlot
-                    data={
-                      profile.scatterData
-                    }
+                    data={profile.scatterData}
                     averagePlayTime={
-                      profile.stats
-                        .playedGameCount > 0
-                        ? profile.stats
-                            .totalPlayTime /
-                          profile.stats
-                            .playedGameCount
+                      profile.scatterData.length > 0
+                        ? profile.scatterData.reduce(
+                            (sum, game) => sum + game.playTime,
+                            0,
+                          ) / profile.scatterData.length
                         : 0
                     }
                   />
