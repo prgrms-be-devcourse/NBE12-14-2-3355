@@ -2,8 +2,8 @@
 .profileHeader{display:flex;align-items:center;gap:28px;padding:8px 0 28px;min-width:0}
 .profileHeader>.avatar,.profileHeader>.avatarFallback{width:152px;height:152px;flex:0 0 152px;font-size:54px}
 .profileIdentity{display:flex;flex-direction:column;align-items:flex-start;gap:12px;min-width:0}
-.profileEyebrow{font-size:15px;letter-spacing:2px;color:var(--lime);font-weight:700}
-.profileIdentity .nickname{font-size:30px;line-height:1.2;margin:0;overflow-wrap:anywhere;display:block}
+.profileEyebrow{font-size:10px;letter-spacing:2px;color:var(--lime);font-weight:700}
+.profileIdentity .nickname{font-size:34px;line-height:1.2;margin:0;overflow-wrap:anywhere;display:block}
 .profileBio{font-size:14px;line-height:1.7;color:var(--muted);margin:0;overflow-wrap:anywhere;max-width:720px}
 .profileEditButton{padding:10px 18px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font-size:12px;font-weight:600}
 .profileEditButton:hover{border-color:var(--lime);color:var(--lime)}
@@ -93,7 +93,7 @@
 .error{font-size:12px;color:#f0bfa8}
 .success{font-size:12px;color:var(--lime)}
 
-.content{width:100%;box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:35px 45px;min-height:300px}
+.content{width:100%;box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:32px 28px;min-height:300px}
 .eyebrow{color:var(--lime);font-size:20px;font-weight:700;letter-spacing:1.8px}
 .contentTitle{font-size:21px;font-weight:700;margin:10px 0 10px;color:var(--text)}
 .contentBody{font-size:13px;color:var(--muted);line-height:1.7}

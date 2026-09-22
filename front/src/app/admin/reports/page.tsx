@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/features/auth/auth-context";
 import { getReviewReports, updateReviewReportStatus } from "@/features/reviews/api";
 import type { ReportStatus, ReviewReportPage } from "@/features/reviews/types";
 import styles from "./page.module.css";
@@ -21,15 +23,11 @@ const reviewStatusLabels = {
   DELETED_BY_USER: "작성자 삭제",
   HIDDEN_BY_ADMIN: "관리자 숨김",
 };
-function getStoredAccessToken() {
-  if (typeof window === "undefined") return "";
-  return window.sessionStorage.getItem("gamelogAccessToken") ?? "";
-}
-
 
 export default function AdminReviewReportsPage() {
-  const [accessToken, setAccessToken] = useState(getStoredAccessToken);
-  const [tokenInput, setTokenInput] = useState(getStoredAccessToken);
+  const auth = useAuth();
+  const router = useRouter();
+  const accessToken = auth.accessToken;
   const [status, setStatus] = useState<ReportStatus | "">("PENDING");
   const [page, setPage] = useState(0);
   const [result, setResult] = useState<ReviewReportPage>(emptyPage);
@@ -38,6 +36,9 @@ export default function AdminReviewReportsPage() {
   const [error, setError] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
 
+  useEffect(() => {
+    if (auth.status === "unauthenticated") router.replace("/login?next=/admin/reports");
+  }, [auth.status, router]);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -56,17 +57,6 @@ export default function AdminReviewReportsPage() {
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [accessToken, page, refreshKey, status]);
-
-  function connectToken(event: FormEvent) {
-    event.preventDefault();
-    const token = tokenInput.trim().replace(/^Bearer\s+/i, "");
-    setAccessToken(token);
-    setPage(0);
-    setError("");
-    if (token) window.sessionStorage.setItem("gamelogAccessToken", token);
-    if (!token) setResult(emptyPage);
-    else window.sessionStorage.removeItem("gamelogAccessToken");
-  }
 
   async function processReport(reportId: number, nextStatus: "APPROVED" | "REJECTED") {
     if (!accessToken || processingId != null) return;
@@ -90,12 +80,6 @@ export default function AdminReviewReportsPage() {
       <Link href="/">게임 목록으로 돌아가기</Link>
     </header>
 
-    <form className={styles.tokenForm} onSubmit={connectToken}>
-      <label htmlFor="admin-token">관리자 accessToken</label>
-      <input id="admin-token" type="password" value={tokenInput} onChange={(event) => setTokenInput(event.target.value)} placeholder="Bearer 없이 관리자 토큰 입력" />
-      <button type="submit">연결</button>
-    </form>
-
     <section className={styles.toolbar} aria-label="신고 필터">
       <strong>총 {result.totalElements.toLocaleString()}건</strong>
       <label>처리 상태
@@ -106,7 +90,7 @@ export default function AdminReviewReportsPage() {
     </section>
 
     {error && <div className={styles.error} role="alert">{error}</div>}
-    {!accessToken ? <div className={styles.empty}>관리자 토큰을 연결해 주세요.</div>
+    {auth.status === "loading" || !accessToken ? <div className={styles.empty}>확인 중…</div>
       : loading ? <div className={styles.empty}>신고 목록을 불러오는 중…</div>
       : result.reports.length === 0 ? <div className={styles.empty}>조건에 맞는 신고가 없습니다.</div>
       : <div className={styles.list}>{result.reports.map((report) => <article className={styles.card} key={report.reportId}>

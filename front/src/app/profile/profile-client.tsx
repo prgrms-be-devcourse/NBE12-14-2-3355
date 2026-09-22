@@ -1459,7 +1459,7 @@ export default function ProfileClient() {
               {activeTab === "friends" && <section><h2 className={styles.contentTitle}>Friends</h2><div className={styles.emptyBox}>친구 목록 기능을 준비 중입니다.</div></section>}
               {activeTab === "likes" && <section><h2 className={styles.contentTitle}>Likes</h2><div className={styles.emptyBox}>좋아요 목록 기능을 준비 중입니다.</div></section>}
               <div hidden={activeTab !== "profile"}>
-              <h2 className={styles.contentTitle}>내 게임 기록</h2>
+              <h2 className={styles.contentTitle}>내 게임 라이브러리</h2>
 
               {profileLoading ? (
                 <div className={styles.loading}>

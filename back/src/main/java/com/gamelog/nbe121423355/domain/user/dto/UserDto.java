@@ -9,7 +9,8 @@ public record UserDto(
         String email,
         String profileImageUrl,
         String bio,
-        boolean onboardingCompleted
+        boolean onboardingCompleted,
+        String role
 ) {
     public UserDto(User user) {
         this(
@@ -18,7 +19,8 @@ public record UserDto(
                 user.getEmail(),
                 user.getProfileImageUrl(),
                 user.getBio(),
-                user.isOnboardingCompleted()
+                user.isOnboardingCompleted(),
+                user.getRole()
         );
     }
 }
