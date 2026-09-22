@@ -1,0 +1,122 @@
+# GameLog - Admin API
+# IntelliJ IDEA HTTP Client에서 각 요청 왼쪽의 실행 버튼을 눌러 테스트합니다.
+# 관리자 전용 회원가입 API는 따로 없습니다 - 회원가입은 모두 동일한 signup 엔드포인트를 쓰고,
+# ADMIN 여부는 가입 후 DB에서 role 컬럼을 SQL로 바꿔야만 부여됩니다 (승격 API는 이미 ADMIN인
+# 사람만 호출 가능하므로, 최초 1명은 반드시 이 수동 SQL 단계를 거쳐야 합니다).
+#
+# 순서: 1~2번(회원가입) -> DB에서 adminEmail 계정만 SQL로 role='ADMIN' 변경 -> 3번(로그인)부터 순서대로 실행
+#   UPDATE users SET role='ADMIN' WHERE email='{{adminEmail}}';
+# targetUserId는 승격 테스트 대상으로 쓸 일반 USER 계정의 id로 맞춰주세요 (userEmail로 가입한 계정의 id).
+
+@baseUrl = http://localhost:8080
+@adminEmail = admintest@test.com
+@adminPassword = test1234!
+@userEmail = usertest@test.com
+@userPassword = test1234!
+@targetUserId = 2
+
+###
+# @name signupAdminCandidate
+# 1. admin으로 승격시킬 계정 회원가입 (일반 signup과 동일한 API) - 가입 직후 role은 USER
+POST {{baseUrl}}/api/v1/users/signup
+Content-Type: application/json
+
+{
+  "nickname": "admintest",
+  "email": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+###
+# @name signupTargetUser
+# 2. 승격 테스트 대상이 될 일반 USER 계정 회원가입
+POST {{baseUrl}}/api/v1/users/signup
+Content-Type: application/json
+
+{
+  "nickname": "usertest",
+  "email": "{{userEmail}}",
+  "password": "{{userPassword}}"
+}
+
+> {%
+    if (response.status === 200) {
+        client.global.set("targetUserId", response.body.data.id);
+        client.log("targetUserId 저장 완료: " + response.body.data.id);
+    }
+%}
+
+###
+# @name loginAsAdmin
+# 3. admin 계정 로그인 및 accessToken 저장 (사전에 role='ADMIN'으로 세팅되어 있어야 함)
+POST {{baseUrl}}/api/v1/users/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+> {%
+    if (response.status === 200) {
+        client.global.set("adminAccessToken", response.body.data.accessToken);
+        client.log("adminAccessToken 저장 완료");
+    } else {
+        client.log("admin 로그인 실패: " + response.status);
+    }
+%}
+
+###
+# @name loginAsUser
+# 4. 일반 USER 계정 로그인 및 accessToken 저장 (권한 없는 호출 검증용)
+POST {{baseUrl}}/api/v1/users/login
+Content-Type: application/json
+
+{
+  "email": "{{userEmail}}",
+  "password": "{{userPassword}}"
+}
+
+> {%
+    if (response.status === 200) {
+        client.global.set("userAccessToken", response.body.data.accessToken);
+        client.log("userAccessToken 저장 완료");
+    } else {
+        client.log("user 로그인 실패: " + response.status);
+    }
+%}
+
+###
+# @name promoteToAdmin
+# 5. admin 토큰으로 targetUserId를 ADMIN으로 승격 - 200 기대
+PATCH {{baseUrl}}/api/v1/admin/users/{{targetUserId}}/role
+Authorization: Bearer {{adminAccessToken}}
+
+###
+# @name rejectPromoteWithoutAdminRole
+# 6. [실패 검증] 일반 USER 토큰으로 승격 시도 - 403 기대
+PATCH {{baseUrl}}/api/v1/admin/users/{{targetUserId}}/role
+Authorization: Bearer {{userAccessToken}}
+
+###
+# @name rejectPromoteWithoutToken
+# 7. [실패 검증] 토큰 없이 승격 시도 - 401/403 기대
+PATCH {{baseUrl}}/api/v1/admin/users/{{targetUserId}}/role
+
+###
+# @name getReviewReportsAsAdmin
+# 8. admin 토큰으로 리뷰 신고 목록 조회 - 200 기대
+GET {{baseUrl}}/api/v1/admin/review-reports?page=0&size=20
+Authorization: Bearer {{adminAccessToken}}
+
+###
+# @name rejectReviewReportsAsUser
+# 9. [실패 검증] 일반 USER 토큰으로 리뷰 신고 목록 조회 - 403 기대
+GET {{baseUrl}}/api/v1/admin/review-reports?page=0&size=20
+Authorization: Bearer {{userAccessToken}}
+
+###
+# @name promotedUserMustReloginNote
+# 10. 참고: targetUserId 계정이 방금 승격됐다면, 그 계정 자신의 기존 access token은
+# 여전히 role=USER 클레임을 갖고 있습니다. targetUserId로 admin 기능을 테스트하려면
+# targetUserId 계정으로 재로그인(재발급)해서 새 accessToken을 받은 뒤 테스트하세요.

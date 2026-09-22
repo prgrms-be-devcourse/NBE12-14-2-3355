@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="72" viewBox="0 0 360 72" role="img" aria-labelledby="title">
+  <title id="title">GameLog 로고 시안 1: Orbit</title>
+  <g fill="none" stroke="#C3ED79" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M33 9a27 27 0 1 0 27 27" stroke-width="3.5"/>
+    <path d="M61 17v18H44" stroke-width="3.5"/>
+    <path d="M22 39c2-8 7-12 14-12s12 4 14 12" stroke-width="2.6"/>
+    <path d="M25 38h6m-3-3v6" stroke-width="2.4"/>
+    <circle cx="41" cy="36" r="1.8" fill="#C3ED79" stroke="none"/>
+    <circle cx="46" cy="40" r="1.8" fill="#C3ED79" stroke="none"/>
+  </g>
+  <text x="78" y="47" fill="#EFF1EA" font-family="Inter, Arial, Helvetica, sans-serif" font-size="36" font-weight="700" letter-spacing="-1.7">gamelog<tspan fill="#C3ED79">.</tspan></text>
+</svg>

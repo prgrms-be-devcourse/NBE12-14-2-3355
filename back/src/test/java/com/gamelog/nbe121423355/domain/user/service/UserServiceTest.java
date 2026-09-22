@@ -382,4 +382,35 @@ class UserServiceTest {
 
         verify(imageUploadService, never()).deleteImage(anyString());
     }
+
+    @Test
+    @DisplayName("관리자 승격 성공 - role이 ADMIN으로 바뀜")
+    void promoteToAdmin_success() {
+        User user = saveUser("test@test.com", "nickname", "password123");
+
+        UserDto userDto = userService.promoteToAdmin(user.getId());
+
+        assertThat(userDto.id()).isEqualTo(user.getId());
+        assertThat(userRepository.findById(user.getId()).orElseThrow().getRole()).isEqualTo("ADMIN");
+    }
+
+    @Test
+    @DisplayName("관리자 승격 성공 - 로그인 시 발급되는 accessToken의 role 클레임에도 ADMIN이 반영됨")
+    void promoteToAdmin_success_reflectedInNewAccessToken() {
+        User user = saveUser("test@test.com", "nickname", "password123");
+        userService.promoteToAdmin(user.getId());
+
+        UserService.LoginResult result = userService.login(new LoginRequestDto("test@test.com", "password123"));
+        Claims claims = jwtProvider.parseClaims(result.accessToken());
+
+        assertThat(claims.get("role", String.class)).isEqualTo("ADMIN");
+    }
+
+    @Test
+    @DisplayName("관리자 승격 실패 - 존재하지 않는 유저")
+    void promoteToAdmin_fail_userNotFound() {
+        assertThatThrownBy(() -> userService.promoteToAdmin(999_999L))
+                .isInstanceOf(ServiceException.class)
+                .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("404-1"));
+    }
 }
