@@ -4,6 +4,9 @@
 @baseUrl = http://localhost:8080
 
 
+# Popular Games
+
+
 ###
 # @name getPopularGames
 # 1. Popular Games 기본 5개 조회
@@ -38,3 +41,43 @@ GET {{baseUrl}}/api/v1/games/popular?size=0
 # @name getPopularGamesOverMaximumSize
 # 6. [실패 검증] 조회 개수가 50을 초과하면 400-9 응답
 GET {{baseUrl}}/api/v1/games/popular?size=51
+
+
+# Popular Reviews
+
+
+###
+# @name getPopularReviews
+# 1. Popular Reviews 기본 5개 조회
+# 인증 헤더 없이 조회할 수 있어야 합니다.
+GET {{baseUrl}}/api/v1/reviews/popular
+
+
+###
+# @name getPopularReviewsWithSize
+# 2. Popular Reviews 조회 개수 지정
+GET {{baseUrl}}/api/v1/reviews/popular?size=3
+
+
+###
+# @name getPopularReviewsWithMinimumSize
+# 3. Popular Reviews 최소 허용 개수 조회
+GET {{baseUrl}}/api/v1/reviews/popular?size=1
+
+
+###
+# @name getPopularReviewsWithMaximumSize
+# 4. Popular Reviews 최대 허용 개수 조회
+GET {{baseUrl}}/api/v1/reviews/popular?size=50
+
+
+###
+# @name getPopularReviewsWithZeroSize
+# 5. [실패 검증] 조회 개수가 0이면 400-10 응답
+GET {{baseUrl}}/api/v1/reviews/popular?size=0
+
+
+###
+# @name getPopularReviewsOverMaximumSize
+# 6. [실패 검증] 조회 개수가 50을 초과하면 400-10 응답
+GET {{baseUrl}}/api/v1/reviews/popular?size=51
