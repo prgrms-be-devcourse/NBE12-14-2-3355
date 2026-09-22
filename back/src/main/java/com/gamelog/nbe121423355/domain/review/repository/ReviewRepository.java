@@ -40,7 +40,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             """)
     Optional<Review> findActiveById(@Param("reviewId") Long reviewId);
 
-    @EntityGraph(attributePaths = {"userGame.user", "userGame.platform"})
+    @EntityGraph(attributePaths = {"userGame.user", "userGame.game", "userGame.platform"})
     @Query("""
             SELECT review
             FROM Review review
@@ -57,7 +57,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             Pageable pageable
     );
 
-    @EntityGraph(attributePaths = {"userGame.user", "userGame.platform"})
+    @EntityGraph(attributePaths = {"userGame.user", "userGame.game", "userGame.platform"})
     @Query("""
             SELECT review
             FROM Review review

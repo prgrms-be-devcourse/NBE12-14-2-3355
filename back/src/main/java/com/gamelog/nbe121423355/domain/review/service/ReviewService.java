@@ -6,6 +6,8 @@ import com.gamelog.nbe121423355.domain.review.dto.response.DetailedReviewRespons
 import com.gamelog.nbe121423355.domain.review.dto.response.ReviewPageResponse;
 import com.gamelog.nbe121423355.domain.review.dto.response.ReviewResponse;
 import com.gamelog.nbe121423355.domain.review.entity.Review;
+import com.gamelog.nbe121423355.domain.review.repository.ReviewLikeCountProjection;
+import com.gamelog.nbe121423355.domain.review.repository.ReviewLikeRepository;
 import com.gamelog.nbe121423355.domain.review.repository.ReviewRepository;
 import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
 import com.gamelog.nbe121423355.domain.usergame.dto.UserGameDto;
@@ -14,11 +16,15 @@ import com.gamelog.nbe121423355.domain.usergame.repository.UserGameRepository;
 import com.gamelog.nbe121423355.domain.usergame.service.UserGameService;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +32,7 @@ import java.util.Objects;
 public class ReviewService {
 
     private final ReviewRepository reviewRepository;
+    private final ReviewLikeRepository reviewLikeRepository;
     private final UserGameRepository userGameRepository;
     private final UserGameService userGameService;
 
@@ -38,7 +45,7 @@ public class ReviewService {
         }
 
         ReviewResponse review = reviewRepository.findByUserGame_Id(userGame.getId())
-                .map(ReviewResponse::from)
+                .map(this::toReviewResponse)
                 .orElse(null);
 
         return new DetailedReviewResponse(
@@ -93,7 +100,7 @@ public class ReviewService {
                 review.edit(request.rating(), request.content(), request.spoiler());
             }
             reviewRepository.flush();
-            return ReviewResponse.from(review);
+            return toReviewResponse(review);
         }
 
         Review newReview = new Review(
@@ -103,22 +110,26 @@ public class ReviewService {
                 request.spoiler()
         );
 
-        return ReviewResponse.from(reviewRepository.save(newReview));
+        return toReviewResponse(reviewRepository.save(newReview));
     }
 
     public ReviewResponse getReview(Long reviewId) {
-        return ReviewResponse.from(getReviewEntity(reviewId));
+        return toReviewResponse(getReviewEntity(reviewId));
     }
 
     public ReviewPageResponse getGameReviews(Long gameId, Pageable pageable) {
-        return ReviewPageResponse.from(
-                reviewRepository.findByUserGame_Game_Id(gameId, pageable)
+        Page<Review> reviews = reviewRepository.findByUserGame_Game_Id(gameId, pageable);
+        return toReviewPageResponse(
+                reviews,
+                reviewLikeRepository.countVisibleLikesByGameId(gameId)
         );
     }
 
     public ReviewPageResponse getUserReviews(Long userId, Pageable pageable) {
-        return ReviewPageResponse.from(
-                reviewRepository.findByUserGame_User_Id(userId, pageable)
+        Page<Review> reviews = reviewRepository.findByUserGame_User_Id(userId, pageable);
+        return toReviewPageResponse(
+                reviews,
+                reviewLikeRepository.countVisibleLikesByUserId(userId)
         );
     }
 
@@ -133,7 +144,7 @@ public class ReviewService {
         review.edit(request.rating(), request.content(), request.spoiler());
         reviewRepository.flush();
 
-        return ReviewResponse.from(review);
+        return toReviewResponse(review);
     }
 
     @Transactional
@@ -157,8 +168,29 @@ public class ReviewService {
 
     private ReviewResponse findReviewResponse(Long userGameId) {
         return reviewRepository.findByUserGame_Id(userGameId)
-                .map(ReviewResponse::from)
+                .map(this::toReviewResponse)
                 .orElse(null);
+    }
+
+    private ReviewResponse toReviewResponse(Review review) {
+        return ReviewResponse.from(
+                review,
+                reviewLikeRepository.countByReview_Id(review.getId())
+        );
+    }
+
+    private ReviewPageResponse toReviewPageResponse(Page<Review> reviews, long totalLikes) {
+        List<Long> reviewIds = reviews.getContent().stream()
+                .map(Review::getId)
+                .toList();
+        Map<Long, Long> likeCounts = reviewIds.isEmpty()
+                ? Map.of()
+                : reviewLikeRepository.findLikeCountsByReviewIds(reviewIds).stream()
+                        .collect(Collectors.toMap(
+                                ReviewLikeCountProjection::getReviewId,
+                                ReviewLikeCountProjection::getLikeCount
+                        ));
+        return ReviewPageResponse.from(reviews, likeCounts, totalLikes);
     }
 
     private void validateReviewContent(ReviewSaveRequest request) {

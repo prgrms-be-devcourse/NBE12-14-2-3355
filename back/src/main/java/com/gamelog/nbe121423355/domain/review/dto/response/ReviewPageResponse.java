@@ -4,6 +4,7 @@ import com.gamelog.nbe121423355.domain.review.entity.Review;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
+import java.util.Map;
 
 public record ReviewPageResponse(
         List<ReviewResponse> reviews,
@@ -11,13 +12,21 @@ public record ReviewPageResponse(
         int size,
         long totalElements,
         int totalPages,
-        boolean hasNext
+        boolean hasNext,
+        long totalLikes
 ) {
 
-    public static ReviewPageResponse from(Page<Review> reviewPage) {
+    public static ReviewPageResponse from(
+            Page<Review> reviewPage,
+            Map<Long, Long> likeCounts,
+            long totalLikes
+    ) {
         List<ReviewResponse> reviews = reviewPage.getContent()
                 .stream()
-                .map(ReviewResponse::from)
+                .map(review -> ReviewResponse.from(
+                        review,
+                        likeCounts.getOrDefault(review.getId(), 0L)
+                ))
                 .toList();
 
         return new ReviewPageResponse(
@@ -26,7 +35,8 @@ public record ReviewPageResponse(
                 reviewPage.getSize(),
                 reviewPage.getTotalElements(),
                 reviewPage.getTotalPages(),
-                reviewPage.hasNext()
+                reviewPage.hasNext(),
+                totalLikes
         );
     }
 }

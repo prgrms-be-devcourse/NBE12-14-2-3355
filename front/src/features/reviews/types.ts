@@ -7,6 +7,10 @@ export type ApiResponse<T> = {
 export type Review = {
   reviewId: number;
   userGameId: number;
+  gameId: number;
+  gameTitle: string;
+  gameCoverImageUrl: string | null;
+  gameReleaseDate: string | null;
   userId: number;
   nickname: string | null;
   profileImageUrl: string | null;
@@ -18,6 +22,7 @@ export type Review = {
   rating: number | null;
   content: string | null;
   spoiler: boolean;
+  likeCount: number;
   createdDate: string;
   lastModifiedDate: string;
 };
@@ -29,6 +34,7 @@ export type ReviewPage = {
   totalElements: number;
   totalPages: number;
   hasNext: boolean;
+  totalLikes: number;
 };
 
 export type PlayStatus = "PLAYED" | "COMPLETED" | "RETIRED" | "SHELVED" | "DROPPED";

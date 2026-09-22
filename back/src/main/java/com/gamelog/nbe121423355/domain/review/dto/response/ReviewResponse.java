@@ -4,11 +4,16 @@ import com.gamelog.nbe121423355.domain.review.entity.Review;
 import com.gamelog.nbe121423355.domain.usergame.entity.PlayStatus;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public record ReviewResponse(
         Long reviewId,
         Long userGameId,
+        Long gameId,
+        String gameTitle,
+        String gameCoverImageUrl,
+        LocalDate gameReleaseDate,
         Long userId,
         String nickname,
         String profileImageUrl,
@@ -20,14 +25,23 @@ public record ReviewResponse(
         BigDecimal rating,
         String content,
         boolean spoiler,
+        long likeCount,
         LocalDateTime createdDate,
         LocalDateTime lastModifiedDate
 ) {
 
     public static ReviewResponse from(Review review) {
+        return from(review, 0L);
+    }
+
+    public static ReviewResponse from(Review review, long likeCount) {
         return new ReviewResponse(
                 review.getId(),
                 review.getUserGame().getId(),
+                review.getUserGame().getGame().getId(),
+                review.getUserGame().getGame().getTitle(),
+                review.getUserGame().getGame().getCoverImageUrl(),
+                review.getUserGame().getGame().getReleaseDate(),
                 review.getUserGame().getUser().getId(),
                 review.getUserGame().getUser().getNickname(),
                 review.getUserGame().getUser().getProfileImageUrl(),
@@ -41,6 +55,7 @@ public record ReviewResponse(
                 review.getRating(),
                 review.getContent(),
                 review.isSpoiler(),
+                likeCount,
                 review.getCreatedDate(),
                 review.getLastModifiedDate()
         );

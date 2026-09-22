@@ -33,6 +33,7 @@ const emptyPage: ReviewPage = {
   totalElements: 0,
   totalPages: 0,
   hasNext: false,
+  totalLikes: 0,
 };
 
 function reviewBody(detail: DetailedReview | null, review: ReviewDraft): DetailedReviewSaveBody {

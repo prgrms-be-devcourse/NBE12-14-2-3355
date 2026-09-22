@@ -56,6 +56,21 @@ export function getGameReviews(gameId: number, page: number, size = 5) {
   return request<ReviewPage>(`games/${gameId}/reviews?${query}`);
 }
 
+export function getUserReviews(
+  userId: number,
+  page: number,
+  size: number,
+  sort: "lastModifiedDate,desc" | "lastModifiedDate,asc",
+  accessToken: string,
+) {
+  const query = new URLSearchParams({
+    page: String(page),
+    size: String(size),
+    sort,
+  });
+  return request<ReviewPage>(`users/${userId}/reviews?${query}`, { accessToken });
+}
+
 export function getMyDetailedReview(gameId: number, accessToken: string) {
   return request<DetailedReview>(`games/${gameId}/reviews/me`, { accessToken });
 }
