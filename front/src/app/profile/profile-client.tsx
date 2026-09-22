@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/features/auth/auth-context";
@@ -253,36 +253,35 @@ function FavoriteGameSearchModal({
     return () => clearTimeout(timer);
   }, [keyword, accessToken]);
 
-  async function loadMoreGames() {
+  const loadMoreGames = useCallback(async () => {
     if (loading || loadingMore) {
       return;
     }
-
+  
     const nextPage = page + 1;
-
+  
     if (nextPage >= totalPages) {
       return;
     }
-
+  
     try {
       setLoadingMore(true);
-
+  
       const response = await getMyLibraryGames(
         accessToken,
         keyword.trim() || undefined,
         nextPage,
         10,
       );
-
-      const newGames: Game[] =
-        response.userGames.map((game) => ({
-          id: game.gameId,
-          title: game.title,
-          coverImageUrl: game.coverImageUrl,
-          releaseDate: null,
-          igdbRating: null,
-        }));
-
+  
+      const newGames: Game[] = response.userGames.map((game) => ({
+        id: game.gameId,
+        title: game.title,
+        coverImageUrl: game.coverImageUrl,
+        releaseDate: null,
+        igdbRating: null,
+      }));
+  
       setGames((prev) => [...prev, ...newGames]);
       setPage(nextPage);
     } catch (reason) {
@@ -294,30 +293,37 @@ function FavoriteGameSearchModal({
     } finally {
       setLoadingMore(false);
     }
-  }
+  }, [
+    loading,
+    loadingMore,
+    page,
+    totalPages,
+    accessToken,
+    keyword,
+  ]);
 
   useEffect(() => {
     const element = resultRef.current;
-
-    if (!element) {
+  
+    if (element === null) {
       return;
     }
-
-    function handleScroll() {
+  
+    const handleScroll = () => {
       if (
         element.scrollTop + element.clientHeight >=
         element.scrollHeight - 100
       ) {
         loadMoreGames();
       }
-    }
-
+    };
+  
     element.addEventListener("scroll", handleScroll);
-
+  
     return () => {
       element.removeEventListener("scroll", handleScroll);
     };
-  }, [page, totalPages, keyword, loading, loadingMore]);
+  }, [loadMoreGames]);
 
   const favoriteIds = new Set(
     favorites.map((game) => game.gameId),
