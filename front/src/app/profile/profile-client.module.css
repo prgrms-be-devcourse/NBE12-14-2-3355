@@ -64,7 +64,7 @@
   .sectionHeading h3 {
     margin: 0;
   
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 650;
     color: var(--text);
   }
@@ -72,7 +72,7 @@
   .sectionHeading p {
     margin: 5px 0 0;
   
-    font-size: 11px;
+    font-size: 13px;
     color: var(--muted);
   }
   
@@ -672,7 +672,7 @@
   }
   
   .quadrantLabel strong {
-    font-size: 15px;
+    font-size: 16px;
     color: var(--text);
     letter-spacing: 0.3px;
   }
@@ -751,12 +751,12 @@
   }
   
   .tasteHeader strong {
-    font-size: 11px;
+    font-size: 16px;
     color: var(--text);
   }
   
   .tasteHeader span {
-    font-size: 10px;
+    font-size: 12px;
     color: var(--lime);
   }
   
@@ -779,14 +779,14 @@
   }
   
   .tasteMessage {
-    font-size: 11px;
+    font-size: 13px;
     color: var(--text);
   }
   
   .tasteRow p {
     margin: 0;
   
-    font-size: 9px;
+    font-size: 10px;
     line-height: 1.5;
   
     color: var(--muted);
@@ -853,7 +853,7 @@
   
     align-items: center;
   
-    font-size: 10px;
+    font-size: 13px;
   }
   
   .genreDot {

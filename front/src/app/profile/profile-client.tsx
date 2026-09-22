@@ -877,6 +877,7 @@ function ScatterPlot({
 }) {
   const [activeGameId, setActiveGameId] =
   useState<number | null>(null);
+  const router = useRouter();
   
   const width = 760;
   const height = 500;
@@ -1080,13 +1081,7 @@ function ScatterPlot({
                 onMouseLeave={() =>
                   setActiveGameId(null)
                 }
-                onClick={() =>
-                  setActiveGameId((prev) =>
-                    prev === game.gameId
-                      ? null
-                      : game.gameId,
-                  )
-                }
+                onClick={() => router.push(`/games/${game.gameId}`)}
               >
                 <circle
                   cx={pointX}
