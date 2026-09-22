@@ -11,8 +11,9 @@
 @media(max-width:600px){.layout{padding-top:24px}.profileHeader{gap:18px;align-items:flex-start}.profileHeader>.avatar,.profileHeader>.avatarFallback{width:88px;height:88px;flex-basis:88px;font-size:32px}.profileIdentity .nickname{font-size:25px}.profileBio{font-size:12px}}
 .content{min-width:0}
 .profileTabs{display:flex;gap:30px;overflow-x:auto;border-bottom:1px solid var(--line);margin:0 0 24px;width:100%}
-.profileTabs button{flex-shrink:0;padding:16px 2px;color:var(--muted);border-bottom:3px solid transparent;font-size:14px;font-weight:600}
-.profileTabs button[aria-current]{color:var(--lime);border-bottom-color:var(--lime)}
+.profileTabs a{flex-shrink:0;padding:16px 2px;color:var(--muted);border-bottom:3px solid transparent;font-size:14px;font-weight:600;text-decoration:none}
+.profileTabs a[aria-current]{color:var(--lime);border-bottom-color:var(--lime)}
+.profileTabs a:focus-visible{outline:2px solid var(--lime);outline-offset:-2px}
 .editorDialog{margin:auto;width:min(480px,calc(100% - 32px));max-height:90vh;overflow:auto;padding:28px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text)}
 .editorDialog::backdrop{background:#050a07c9;backdrop-filter:blur(4px)}
 .editorForm,.editorFields{display:flex;flex-direction:column;gap:20px}

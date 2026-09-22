@@ -7,6 +7,8 @@ import { useAuth } from "@/features/auth/auth-context";
 import ProfileEditor from "./profile-editor";
 import LibraryGames from "./library-games";
 import ProfileReviews from "./profile-reviews";
+import ProfileTabs, { type ProfileSection } from "./profile-tabs";
+import FollowList from "./follow-list";
 import type { UserDto } from "@/features/auth/types";
 import AuthNav from "@/components/auth/auth-nav";
 
@@ -1369,10 +1371,11 @@ function RecentReviews({
   );
 }
 
-export default function ProfileClient() {
+export default function ProfileClient({ section = "profile", page = 0 }: { section?: ProfileSection; page?: number }) {
   const router = useRouter();
   const auth = useAuth();
-  const [activeTab, setActiveTab] = useState("profile");
+  const activeTab = section;
+  const isFriends = section === "following" || section === "followers";
 
   const [profile, setProfile] =
     useState<ProfileResponse | null>(null);
@@ -1384,13 +1387,14 @@ export default function ProfileClient() {
     useState("");
 
   useEffect(() => {
-    if (auth.status === "unauthenticated") router.replace("/login?next=/profile");
-  }, [auth.status, router]);
+    const next = section === "profile" ? "/profile" : `/profile/${section}?page=${page}`;
+    if (auth.status === "unauthenticated") router.replace(`/login?next=${encodeURIComponent(next)}`);
+  }, [auth.status, router, section, page]);
 
   useEffect(() => {
     if (
       auth.status !== "authenticated" ||
-      !auth.accessToken
+      !auth.accessToken || isFriends
     ) {
       return;
     }
@@ -1420,6 +1424,7 @@ export default function ProfileClient() {
   }, [
     auth.status,
     auth.accessToken,
+    isFriends,
   ]);
 
 
@@ -1457,9 +1462,7 @@ export default function ProfileClient() {
         {auth.status === "authenticated" && auth.user && auth.accessToken ? (
           <div className={styles.layout}>
             <ProfileHeader key={auth.user.id} user={auth.user} accessToken={auth.accessToken} onSaved={auth.setUser} />
-              <nav className={styles.profileTabs} aria-label="프로필 메뉴">
-                {["profile", "games", "reviews", "friends", "likes"].map(tab => <button key={tab} type="button" aria-current={activeTab === tab ? "page" : undefined} onClick={() => setActiveTab(tab)}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</button>)}
-              </nav>
+            <ProfileTabs section={section} />
             <div className={styles.content}>
               <div hidden={activeTab !== "games"}>{activeTab === "games" && <LibraryGames accessToken={auth.accessToken} />}</div>
               {activeTab === "reviews" && (
@@ -1469,7 +1472,7 @@ export default function ProfileClient() {
                   accessToken={auth.accessToken}
                 />
               )}
-              {activeTab === "friends" && <section><h2 className={styles.contentTitle}>Friends</h2><div className={styles.emptyBox}>친구 목록 기능을 준비 중입니다.</div></section>}
+              {isFriends && <FollowList userId={auth.user.id} kind={section} page={page} basePath="/profile" />}
               {activeTab === "likes" && <section><h2 className={styles.contentTitle}>Likes</h2><div className={styles.emptyBox}>좋아요 목록 기능을 준비 중입니다.</div></section>}
               <div hidden={activeTab !== "profile"}>
               <h2 className={styles.contentTitle}>내 게임 라이브러리</h2>
