@@ -1,5 +1,5 @@
 import { acceptRefreshedToken, AuthApiError } from "@/features/auth/api";
-import type { Option } from "@/lib/games";
+import type { Option } from "@/features/games/model";
 
 export type PersonalizedGame = {
   id: number;
