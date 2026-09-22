@@ -140,4 +140,12 @@ public class UserService {
         }
         return new UserDto(user);
     }
+
+    @Transactional
+    public UserDto promoteToAdmin(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ServiceException("404-1", "존재하지 않는 유저 입니다."));
+        user.promoteToAdmin();
+        return new UserDto(user);
+    }
 }

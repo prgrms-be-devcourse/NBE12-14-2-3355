@@ -53,4 +53,8 @@ public class User extends BaseEntity {
         this.profileImageUrl = profileImageUrl;
         this.bio = bio;
     }
+
+    public void promoteToAdmin() {
+        this.role = "ADMIN";
+    }
 }
