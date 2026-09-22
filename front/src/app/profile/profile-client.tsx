@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/features/auth/auth-context";
-import { checkNicknameDuplicate, updateProfile, uploadProfileImage } from "@/features/auth/api";
+import ProfileEditor from "./profile-editor";
+import LibraryGames from "./library-games";
 import type { UserDto } from "@/features/auth/types";
 import AuthNav from "@/components/auth/auth-nav";
 
@@ -14,7 +15,7 @@ import { coverUrl, type Game} from "@/lib/games";
 
 import styles from "./profile-client.module.css";
 
-type FieldStatus = "idle" | "checking" | "available" | "duplicate" | "error";
+
 
 const GENRE_COLORS = [
   "#B7D77A",
@@ -110,190 +111,20 @@ function GameCover({
   );
 }
 
-function ProfileSidebar({
-  user,
-  accessToken,
-  onSaved,
-}: {
-  user: UserDto;
-  accessToken: string;
-  onSaved: (user: UserDto) => void;
-}) {
-  const [nickname, setNickname] = useState(user.nickname);
-  const [bio, setBio] = useState(user.bio ?? "");
-  const [profileImageUrl, setProfileImageUrl] = useState(user.profileImageUrl ?? "");
-
-  const [editingNickname, setEditingNickname] = useState(false);
-  const [nicknameDraft, setNicknameDraft] = useState(user.nickname);
-  const [nicknameStatus, setNicknameStatus] = useState<FieldStatus>("idle");
-
-  const [editingBio, setEditingBio] = useState(false);
-  const [bioDraft, setBioDraft] = useState("");
-
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-
-  async function persist(next: { nickname: string; bio: string; profileImageUrl: string }) {
-    setError("");
-    setMessage("");
-    setSaving(true);
-    try {
-      const updated = await updateProfile(
-        { nickname: next.nickname, bio: next.bio || null, profileImageUrl: next.profileImageUrl || null },
-        accessToken,
-      );
-      onSaved(updated);
-      setMessage("저장했어요.");
-      return true;
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "저장하지 못했어요.");
-      return false;
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function openNicknameEdit() {
-    setNicknameDraft(nickname);
-    setNicknameStatus("idle");
-    setError("");
-    setEditingNickname(true);
-  }
-
-  async function checkNickname() {
-    const value = nicknameDraft.trim();
-    if (!value) { setError("닉네임을 입력해 주세요."); return; }
-    setError("");
-    setNicknameStatus("checking");
-    try {
-      const duplicate = await checkNicknameDuplicate(value);
-      setNicknameStatus(duplicate ? "duplicate" : "available");
-    } catch {
-      setNicknameStatus("error");
-    }
-  }
-
-  async function saveNickname() {
-    const value = nicknameDraft.trim();
-    if (!value) { setError("닉네임을 입력해 주세요."); return; }
-    const changed = value !== nickname;
-    if (changed && nicknameStatus !== "available") { setError("변경한 닉네임은 중복확인을 먼저 해주세요."); return; }
-    const ok = await persist({ nickname: value, bio, profileImageUrl });
-    if (ok) { setNickname(value); setEditingNickname(false); }
-  }
-
-  function openBioEdit() { setBioDraft(bio); setError(""); setEditingBio(true); }
-  async function saveBio() {
-    const ok = await persist({ nickname, bio: bioDraft.trim(), profileImageUrl });
-    if (ok) { setBio(bioDraft.trim()); setEditingBio(false); }
-  }
-
-  function openImagePicker() {
-    setError("");
-    fileInputRef.current?.click();
-  }
-
-  async function handleImageSelected(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-
-    setError("");
-    setMessage("");
-    setUploadingImage(true);
-    try {
-      const url = await uploadProfileImage(file, accessToken);
-      const ok = await persist({ nickname, bio, profileImageUrl: url });
-      if (ok) setProfileImageUrl(url);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "이미지 업로드에 실패했어요.");
-    } finally {
-      setUploadingImage(false);
-    }
-  }
-
-  const anyEditing = editingNickname || editingBio;
-
-  return (
-    <aside className={styles.sidebar}>
-      <div className={styles.avatarBlock}>
-        {profileImageUrl
-          // eslint-disable-next-line @next/next/no-img-element
-          ? <img className={styles.avatar} src={profileImageUrl} alt="" />
-          : <div className={styles.avatarFallback}>{nickname.slice(0, 1).toUpperCase()}</div>}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          style={{ display: "none" }}
-          onChange={handleImageSelected}
-        />
-        <button type="button" className={styles.linkBtn} onClick={openImagePicker} disabled={uploadingImage}>
-          {uploadingImage ? "업로드 중…" : "이미지 변경"}
-        </button>
-      </div>
-
-      <div className={styles.block}>
-        {editingNickname ? (
-          <div className={styles.inlineEdit}>
-            <div className={styles.checkRow}>
-              <input
-                value={nicknameDraft}
-                onChange={(event) => { setNicknameDraft(event.target.value); setNicknameStatus("idle"); }}
-                autoComplete="nickname"
-              />
-              <button
-                type="button"
-                className={styles.checkButton}
-                onClick={checkNickname}
-                disabled={nicknameDraft.trim() === nickname || nicknameStatus === "checking"}
-              >중복확인</button>
-            </div>
-            {nicknameDraft.trim() !== nickname && nicknameStatus === "checking" && <small className={styles.hint}>확인 중…</small>}
-            {nicknameDraft.trim() !== nickname && nicknameStatus === "available" && <small className={styles.hintOk}>사용 가능한 닉네임입니다.</small>}
-            {nicknameDraft.trim() !== nickname && nicknameStatus === "duplicate" && <small className={styles.hintError}>이미 사용 중인 닉네임입니다.</small>}
-            <div className={styles.inlineActions}>
-              <button type="button" onClick={() => setEditingNickname(false)} disabled={saving}>취소</button>
-              <button type="button" className={styles.primaryBtn} onClick={saveNickname} disabled={saving}>저장</button>
-            </div>
-          </div>
-        ) : (
-          <h1 className={styles.nickname}>{nickname} <button type="button" className={styles.linkBtn} onClick={openNicknameEdit}>변경</button></h1>
-        )}
-        <span className={styles.email}>{user.email}</span>
-      </div>
-
-      <div className={styles.block}>
-        <span className={styles.sectionLabel}>Bio</span>
-        {editingBio ? (
-          <div className={styles.inlineEdit}>
-            <textarea rows={3} value={bioDraft} onChange={(event) => setBioDraft(event.target.value)} placeholder="나를 한 줄로 소개해 보세요" />
-            <div className={styles.inlineActions}>
-              <button type="button" onClick={() => setEditingBio(false)} disabled={saving}>취소</button>
-              <button type="button" className={styles.primaryBtn} onClick={saveBio} disabled={saving}>저장</button>
-            </div>
-          </div>
-        ) : bio ? (
-          <p className={styles.bioText}>{bio} <button type="button" className={styles.linkBtn} onClick={openBioEdit}>수정</button></p>
-        ) : (
-          <p className={styles.bioEmpty}>아직 없어요 <button type="button" className={styles.linkBtn} onClick={openBioEdit}>+ 추가</button></p>
-        )}
-      </div>
-
-      {error && <p className={styles.error} role="alert">{error}</p>}
-      {message && !anyEditing && <p className={styles.success} role="status">{message}</p>}
-    </aside>
-  );
+function ProfileHeader({ user, accessToken, onSaved }: { user: UserDto; accessToken: string; onSaved: (user: UserDto) => void }) {
+  const [editing, setEditing] = useState(false);
+  return <section className={styles.profileHeader} aria-label="내 프로필">
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    {user.profileImageUrl ? <img className={styles.avatar} src={user.profileImageUrl} alt={`${user.nickname} 프로필`} /> : <div className={styles.avatarFallback}>{user.nickname.slice(0, 1).toUpperCase()}</div>}
+    <div className={styles.profileIdentity}>
+      <span className={styles.profileEyebrow}>MY GAME LOG</span>
+      <h1 className={styles.nickname}>{user.nickname}</h1>
+      <p className={styles.profileBio}>{user.bio?.trim() || "아직 한줄 소개가 없어요."}</p>
+      <button type="button" className={styles.profileEditButton} onClick={() => setEditing(true)}>프로필 수정</button>
+    </div>
+    {editing && <ProfileEditor user={user} accessToken={accessToken} onSaved={onSaved} onClose={() => setEditing(false)} />}
+  </section>;
 }
-
-/* =========================================================
- * 활동 통계
- * ========================================================= */
-
 function Stats({ stats }: { stats: ProfileStats }) {
   return (
     <section className={styles.statsSection}>
@@ -1452,6 +1283,7 @@ function RecentReviews({
 export default function ProfileClient() {
   const router = useRouter();
   const auth = useAuth();
+  const [activeTab, setActiveTab] = useState("profile");
 
   const [profile, setProfile] =
     useState<ProfileResponse | null>(null);
@@ -1535,9 +1367,16 @@ export default function ProfileClient() {
       <main className="main">
         {auth.status === "authenticated" && auth.user && auth.accessToken ? (
           <div className={styles.layout}>
-            <ProfileSidebar key={auth.user.id} user={auth.user} accessToken={auth.accessToken} onSaved={auth.setUser} />
+            <ProfileHeader key={auth.user.id} user={auth.user} accessToken={auth.accessToken} onSaved={auth.setUser} />
+              <nav className={styles.profileTabs} aria-label="프로필 메뉴">
+                {["profile", "games", "reviews", "friends", "likes"].map(tab => <button key={tab} type="button" aria-current={activeTab === tab ? "page" : undefined} onClick={() => setActiveTab(tab)}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</button>)}
+              </nav>
             <div className={styles.content}>
-              <span className={styles.eyebrow}>MY GAME LOG</span>
+              <div hidden={activeTab !== "games"}>{activeTab === "games" && <LibraryGames accessToken={auth.accessToken} />}</div>
+              {activeTab === "reviews" && (profileLoading ? <p className={styles.loading}>리뷰를 불러오는 중…</p> : profileError ? <p role="alert" className={styles.error}>{profileError}</p> : <RecentReviews reviews={profile?.recentReviews ?? []} />)}
+              {activeTab === "friends" && <section><h2 className={styles.contentTitle}>Friends</h2><div className={styles.emptyBox}>친구 목록 기능을 준비 중입니다.</div></section>}
+              {activeTab === "likes" && <section><h2 className={styles.contentTitle}>Likes</h2><div className={styles.emptyBox}>좋아요 목록 기능을 준비 중입니다.</div></section>}
+              <div hidden={activeTab !== "profile"}>
               {profileLoading ? (
                 <div className={styles.loading}>
                   게임 기록을 불러오는 중…
@@ -1612,6 +1451,7 @@ export default function ProfileClient() {
                   />
                 </>
               ) : null}
+              </div>
             </div>
           </div>
         ) : (
