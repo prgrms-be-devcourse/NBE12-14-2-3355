@@ -31,7 +31,7 @@ export type ReviewPage = {
   hasNext: boolean;
 };
 
-export type PlayStatus = "PLAYED" | "COMPLETED" | "RETIRED" | "SHELVED" | "ABANDONED";
+export type PlayStatus = "PLAYED" | "COMPLETED" | "RETIRED" | "SHELVED" | "DROPPED";
 
 export type UserGame = {
   id: number;
@@ -76,7 +76,9 @@ export type ReviewReport = {
   reportId: number;
   reviewId: number;
   reporterId: number;
+  reporterNickname: string;
   reviewWriterId: number;
+  reviewWriterNickname: string;
   reason: string;
   reviewRating: number | null;
   reviewContent: string | null;

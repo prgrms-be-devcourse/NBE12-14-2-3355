@@ -37,6 +37,18 @@ type FormState = {
   spoiler: boolean;
 };
 
+const playStatusOptions: Array<{ value: PlayStatus; label: string; description: string }> = [
+  { value: "PLAYED", label: "플레이함", description: "구체적인 완료 상태 없이 플레이했어요." },
+  { value: "COMPLETED", label: "플레이 완료", description: "게임의 주요 목표나 엔딩을 완료했어요." },
+  { value: "RETIRED", label: "끝냄", description: "명확한 엔딩이 없는 게임을 충분히 즐겼어요." },
+  { value: "SHELVED", label: "잠시 보류", description: "나중에 다시 플레이할 예정이에요." },
+  { value: "DROPPED", label: "플레이 포기", description: "더 이상 플레이하지 않을 예정이에요." },
+];
+
+const playStatusLabels = Object.fromEntries(
+  playStatusOptions.map((option) => [option.value, option.label]),
+) as Record<PlayStatus, string>;
+
 function textNumber(value: number | null | undefined) {
   return value == null ? "" : String(value);
 }
@@ -45,9 +57,7 @@ function initialForm(detail: DetailedReview | null): FormState {
   const record = detail?.userGame;
   const review = detail?.review;
   return {
-    // 기존 PLAYED 기록도 화면에서는 플레이 완료로 취급하고,
-    // 다음 저장부터 COMPLETED 값으로 통일합니다.
-    playStatus: record?.playStatus === "PLAYED" ? "COMPLETED" : record?.playStatus ?? "",
+    playStatus: record?.playStatus ?? "",
     isPlaying: record?.playing ?? false,
     isBacklog: record?.backlog ?? false,
     isWishlist: record?.wishlist ?? false,
@@ -106,6 +116,7 @@ export default function MyGameLog({
   const [detail, setDetail] = useState<DetailedReview | null>(null);
   const [form, setForm] = useState<FormState>(() => initialForm(null));
   const [editing, setEditing] = useState(false);
+  const [playStatusMenuMode, setPlayStatusMenuMode] = useState<"quick" | "editor" | null>(null);
   const [showDates, setShowDates] = useState(false);
   const [quickRatingHover, setQuickRatingHover] = useState<number | null>(null);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
@@ -153,6 +164,7 @@ export default function MyGameLog({
       return;
     }
     setForm(initialForm(detail));
+    setPlayStatusMenuMode(null);
     setShowDates(Boolean(detail?.userGame?.startedAt || detail?.userGame?.completedAt || detail?.userGame?.lastPlayedAt));
     setEditing(true);
     setMessage("");
@@ -197,6 +209,32 @@ export default function MyGameLog({
   function quickUpdate<K extends keyof FormState>(key: K, value: FormState[K], successMessage: string) {
     const nextForm = { ...form, [key]: value };
     void saveQuickChange(nextForm, successMessage);
+  }
+
+  function openQuickPlayStatusMenu() {
+    if (!accessToken || !tokenVerified) {
+      setMessage("게임 기록을 작성하려면 로그인이 필요합니다.");
+      onLoginRequired?.();
+      return;
+    }
+    setPlayStatusMenuMode("quick");
+  }
+
+  function openEditorPlayStatusMenu() {
+    setPlayStatusMenuMode("editor");
+  }
+
+  function selectPlayStatus(playStatus: PlayStatus | "") {
+    const menuMode = playStatusMenuMode;
+    setPlayStatusMenuMode(null);
+    if (menuMode === "editor") {
+      update("playStatus", playStatus);
+      return;
+    }
+    const successMessage = playStatus
+      ? `${playStatusLabels[playStatus]} 상태로 저장했습니다.`
+      : "플레이 상태를 해제했습니다.";
+    quickUpdate("playStatus", playStatus, successMessage);
   }
 
   async function submit(event: FormEvent) {
@@ -254,8 +292,7 @@ export default function MyGameLog({
   const ratingPreview = hoverRating ?? (form.rating ? Number(form.rating) : 0);
   const hasReviewInput = form.rating !== "" || form.content.trim() !== "";
   const hasExistingReview = detail?.review != null;
-  const playedSelected = form.playStatus === "PLAYED" || form.playStatus === "COMPLETED";
-  const quickPlayedSelected = isAuthenticated && playedSelected;
+  const quickPlayStatus = isAuthenticated ? form.playStatus : "";
   const quickIsPlaying = isAuthenticated && form.isPlaying;
   const quickIsBacklog = isAuthenticated && form.isBacklog;
   const quickIsWishlist = isAuthenticated && form.isWishlist;
@@ -288,7 +325,7 @@ export default function MyGameLog({
       >↺</button>}
     </div>
     <div className={styles.quickStatuses} aria-label="게임 상태 빠른 설정">
-      <button type="button" className={quickPlayedSelected ? styles.quickSelected : undefined} disabled={loading || quickSaving} onClick={() => quickUpdate("playStatus", quickPlayedSelected ? "" : "COMPLETED", quickPlayedSelected ? "플레이 완료 상태를 해제했습니다." : "플레이 완료로 저장했습니다.")}><span aria-hidden="true">🎮</span>플레이 완료</button>
+      <button type="button" className={quickPlayStatus ? styles.quickSelected : undefined} data-play-status={quickPlayStatus || undefined} disabled={loading || quickSaving} onClick={openQuickPlayStatusMenu}><span aria-hidden="true">🎮</span>{quickPlayStatus ? playStatusLabels[quickPlayStatus] : "플레이함"}</button>
       <button type="button" className={quickIsPlaying ? styles.quickSelected : undefined} disabled={loading || quickSaving} onClick={() => quickUpdate("isPlaying", !quickIsPlaying, quickIsPlaying ? "플레이 중 상태를 해제했습니다." : "플레이 중으로 저장했습니다.")}><span aria-hidden="true">▶</span>플레이 중</button>
       <button type="button" className={quickIsBacklog ? styles.quickSelected : undefined} disabled={loading || quickSaving} onClick={() => quickUpdate("isBacklog", !quickIsBacklog, quickIsBacklog ? "플레이 예정에서 해제했습니다." : "플레이 예정으로 저장했습니다.")}><span aria-hidden="true">▦</span>플레이 예정</button>
       <button type="button" className={quickIsWishlist ? styles.quickSelected : undefined} disabled={loading || quickSaving} onClick={() => quickUpdate("isWishlist", !quickIsWishlist, quickIsWishlist ? "위시리스트에서 해제했습니다." : "위시리스트에 저장했습니다.")}><span aria-hidden="true">★</span>위시리스트</button>
@@ -319,6 +356,30 @@ export default function MyGameLog({
     </button>
     {message && !editing && accessToken && <p className={styles.message} role="status">{message}</p>}
 
+    {playStatusMenuMode && <div className={styles.playStatusBackdrop} role="presentation" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) setPlayStatusMenuMode(null);
+    }}>
+      <section className={styles.playStatusDialog} role="dialog" aria-modal="true" aria-labelledby="play-status-title">
+        <div className={styles.playStatusHeader}>
+          <div><span>PLAY STATUS</span><h2 id="play-status-title">플레이 상태 선택</h2></div>
+          <button type="button" onClick={() => setPlayStatusMenuMode(null)} aria-label="닫기">×</button>
+        </div>
+        <div className={styles.playStatusList}>
+          {playStatusOptions.map((option) => <button
+            type="button"
+            key={option.value}
+            className={form.playStatus === option.value ? styles.playStatusSelected : undefined}
+            onClick={() => selectPlayStatus(option.value)}
+          >
+            <i data-status={option.value} aria-hidden="true" />
+            <span><strong>{option.label}</strong><small>{option.description}</small></span>
+            {form.playStatus === option.value && <b aria-label="현재 선택됨">✓</b>}
+          </button>)}
+        </div>
+        <button type="button" className={styles.clearPlayStatus} onClick={() => selectPlayStatus("")} disabled={!form.playStatus}>플레이 상태 해제</button>
+      </section>
+    </div>}
+
     {editing && accessToken && tokenVerified && <div className={styles.backdrop} role="presentation" onMouseDown={(event) => {
       if (event.target === event.currentTarget) setEditing(false);
     }}>
@@ -329,12 +390,21 @@ export default function MyGameLog({
         <div className={styles.editorLayout}>
           <aside className={styles.statusColumn} aria-label="게임 상태">
             <span className={styles.columnLabel}>내 게임 상태</span>
-            <button type="button" className={playedSelected ? styles.selectedStatus : undefined} onClick={() => update("playStatus", playedSelected ? "" : "COMPLETED")}>✓ 플레이 완료</button>
+            <button
+              type="button"
+              className={`${styles.playStatusTrigger} ${form.playStatus ? styles.selectedStatus : ""}`}
+              data-play-status={form.playStatus || undefined}
+              aria-haspopup="dialog"
+              aria-expanded={playStatusMenuMode === "editor"}
+              onClick={openEditorPlayStatusMenu}
+            >
+              <span>🎮 {form.playStatus ? playStatusLabels[form.playStatus] : "플레이함"}</span>
+              <b aria-hidden="true">▾</b>
+            </button>
             <button type="button" className={form.isPlaying ? styles.selectedStatus : undefined} onClick={() => update("isPlaying", !form.isPlaying)}>▶ 플레이 중</button>
             <button type="button" className={form.isBacklog ? styles.selectedStatus : undefined} onClick={() => update("isBacklog", !form.isBacklog)}>▦ 플레이 예정</button>
             <button type="button" className={form.isWishlist ? styles.selectedStatus : undefined} onClick={() => update("isWishlist", !form.isWishlist)}>★ 위시리스트</button>
             <button type="button" className={`${styles.likeStatus} ${form.isLiked ? styles.selectedLike : ""}`} onClick={() => update("isLiked", !form.isLiked)}>♥ 좋아하는 게임</button>
-            <label className={styles.otherStatus}>기타 상태<select value={playedSelected ? "" : form.playStatus} onChange={(event) => update("playStatus", event.target.value as PlayStatus | "")}><option value="">선택 안 함</option><option value="RETIRED">중단</option><option value="SHELVED">보류</option><option value="ABANDONED">포기</option></select></label>
           </aside>
 
           <div className={styles.reviewColumn}>

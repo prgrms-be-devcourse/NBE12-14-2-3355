@@ -11,7 +11,9 @@ public record ReviewReportResponse(
         Long reportId,
         Long reviewId,
         Long reporterId,
+        String reporterNickname,
         Long reviewWriterId,
+        String reviewWriterNickname,
         String reason,
         BigDecimal reviewRating,
         String reviewContent,
@@ -27,7 +29,9 @@ public record ReviewReportResponse(
                 report.getId(),
                 report.getReview().getId(),
                 report.getReporter().getId(),
+                report.getReporter().getNickname(),
                 report.getReview().getUserGame().getUser().getId(),
+                report.getReview().getUserGame().getUser().getNickname(),
                 report.getReason(),
                 report.getReviewRatingSnapshot() != null
                         ? report.getReviewRatingSnapshot()

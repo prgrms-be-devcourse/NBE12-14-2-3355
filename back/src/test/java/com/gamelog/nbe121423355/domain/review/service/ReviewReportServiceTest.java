@@ -47,7 +47,9 @@ class ReviewReportServiceTest {
         reporter = mock(User.class);
         UserGame userGame = mock(UserGame.class);
         lenient().when(writer.getId()).thenReturn(1L);
+        lenient().when(writer.getNickname()).thenReturn("리뷰작성자");
         lenient().when(reporter.getId()).thenReturn(2L);
+        lenient().when(reporter.getNickname()).thenReturn("신고자");
         lenient().when(userGame.getUser()).thenReturn(writer);
         review = new Review(userGame, new BigDecimal("4.5"), "신고 대상 리뷰", false);
     }
@@ -66,6 +68,8 @@ class ReviewReportServiceTest {
         assertThat(response.status()).isEqualTo(ReportStatus.PENDING);
         assertThat(response.reason()).isEqualTo("욕설 포함");
         assertThat(response.reviewContent()).isEqualTo("신고 대상 리뷰");
+        assertThat(response.reviewWriterNickname()).isEqualTo("리뷰작성자");
+        assertThat(response.reporterNickname()).isEqualTo("신고자");
     }
 
     @DisplayName("신고를 승인하면 리뷰를 관리자 숨김 처리한다")

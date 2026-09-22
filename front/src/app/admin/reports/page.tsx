@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/features/auth/auth-context";
 import { getReviewReports, updateReviewReportStatus } from "@/features/reviews/api";
 import type { ReportStatus, ReviewReportPage } from "@/features/reviews/types";
 import styles from "./page.module.css";
@@ -21,15 +23,12 @@ const reviewStatusLabels = {
   DELETED_BY_USER: "작성자 삭제",
   HIDDEN_BY_ADMIN: "관리자 숨김",
 };
-function getStoredAccessToken() {
-  if (typeof window === "undefined") return "";
-  return window.sessionStorage.getItem("gamelogAccessToken") ?? "";
-}
-
 
 export default function AdminReviewReportsPage() {
-  const [accessToken, setAccessToken] = useState(getStoredAccessToken);
-  const [tokenInput, setTokenInput] = useState(getStoredAccessToken);
+  const router = useRouter();
+  const auth = useAuth();
+  const accessToken = auth.accessToken;
+  const isAdmin = auth.status === "authenticated" && auth.user?.role === "ADMIN" && accessToken != null;
   const [status, setStatus] = useState<ReportStatus | "">("PENDING");
   const [page, setPage] = useState(0);
   const [result, setResult] = useState<ReviewReportPage>(emptyPage);
@@ -38,9 +37,18 @@ export default function AdminReviewReportsPage() {
   const [error, setError] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
 
+  useEffect(() => {
+    if (auth.status === "unauthenticated") {
+      router.replace("/login?next=/admin/reports");
+      return;
+    }
+    if (auth.status === "authenticated" && auth.user?.role !== "ADMIN") {
+      router.replace("/");
+    }
+  }, [auth.status, auth.user?.role, router]);
 
   useEffect(() => {
-    if (!accessToken) return;
+    if (!isAdmin || !accessToken) return;
     let active = true;
     void Promise.resolve().then(() => {
       if (active) {
@@ -55,21 +63,10 @@ export default function AdminReviewReportsPage() {
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [accessToken, page, refreshKey, status]);
-
-  function connectToken(event: FormEvent) {
-    event.preventDefault();
-    const token = tokenInput.trim().replace(/^Bearer\s+/i, "");
-    setAccessToken(token);
-    setPage(0);
-    setError("");
-    if (token) window.sessionStorage.setItem("gamelogAccessToken", token);
-    if (!token) setResult(emptyPage);
-    else window.sessionStorage.removeItem("gamelogAccessToken");
-  }
+  }, [accessToken, isAdmin, page, refreshKey, status]);
 
   async function processReport(reportId: number, nextStatus: "APPROVED" | "REJECTED") {
-    if (!accessToken || processingId != null) return;
+    if (!isAdmin || !accessToken || processingId != null) return;
     const action = nextStatus === "APPROVED" ? "승인하고 리뷰를 숨김 처리" : "반려";
     if (!window.confirm(`이 신고를 ${action}할까요?`)) return;
     setProcessingId(reportId);
@@ -90,23 +87,19 @@ export default function AdminReviewReportsPage() {
       <Link href="/">게임 목록으로 돌아가기</Link>
     </header>
 
-    <form className={styles.tokenForm} onSubmit={connectToken}>
-      <label htmlFor="admin-token">관리자 accessToken</label>
-      <input id="admin-token" type="password" value={tokenInput} onChange={(event) => setTokenInput(event.target.value)} placeholder="Bearer 없이 관리자 토큰 입력" />
-      <button type="submit">연결</button>
-    </form>
-
-    <section className={styles.toolbar} aria-label="신고 필터">
+    {isAdmin && <section className={styles.toolbar} aria-label="신고 필터">
       <strong>총 {result.totalElements.toLocaleString()}건</strong>
       <label>처리 상태
         <select value={status} onChange={(event) => { setStatus(event.target.value as ReportStatus | ""); setPage(0); }}>
           <option value="">전체</option><option value="PENDING">처리 대기</option><option value="APPROVED">승인</option><option value="REJECTED">반려</option>
         </select>
       </label>
-    </section>
+    </section>}
 
-    {error && <div className={styles.error} role="alert">{error}</div>}
-    {!accessToken ? <div className={styles.empty}>관리자 토큰을 연결해 주세요.</div>
+    {isAdmin && error && <div className={styles.error} role="alert">{error}</div>}
+    {auth.status === "loading" ? <div className={styles.empty}>로그인 정보를 확인하는 중…</div>
+      : auth.status === "unauthenticated" ? <div className={styles.empty}>로그인 페이지로 이동하는 중…</div>
+      : !isAdmin ? <div className={styles.empty}>관리자만 접근할 수 있습니다.</div>
       : loading ? <div className={styles.empty}>신고 목록을 불러오는 중…</div>
       : result.reports.length === 0 ? <div className={styles.empty}>조건에 맞는 신고가 없습니다.</div>
       : <div className={styles.list}>{result.reports.map((report) => <article className={styles.card} key={report.reportId}>
@@ -115,8 +108,8 @@ export default function AdminReviewReportsPage() {
           <time dateTime={report.createdDate}>{new Date(report.createdDate).toLocaleString("ko-KR")}</time>
         </div>
         <dl className={styles.meta}>
-          <div><dt>리뷰</dt><dd>#{report.reviewId} · 작성자 #{report.reviewWriterId}</dd></div>
-          <div><dt>신고자</dt><dd>#{report.reporterId}</dd></div>
+          <div><dt>리뷰</dt><dd>#{report.reviewId} · 작성자 {report.reviewWriterNickname} (#{report.reviewWriterId})</dd></div>
+          <div><dt>신고자</dt><dd>{report.reporterNickname} (#{report.reporterId})</dd></div>
           <div><dt>현재 상태</dt><dd>{reviewStatusLabels[report.reviewStatus]}</dd></div>
         </dl>
         <div className={styles.reason}><span>신고 사유</span><p>{report.reason}</p></div>
@@ -130,7 +123,7 @@ export default function AdminReviewReportsPage() {
         </div>}
       </article>)}</div>}
 
-    {result.totalPages > 1 && <nav className={styles.pagination} aria-label="신고 목록 페이지 이동">
+    {isAdmin && result.totalPages > 1 && <nav className={styles.pagination} aria-label="신고 목록 페이지 이동">
       <button type="button" disabled={page === 0} onClick={() => setPage((value) => value - 1)}>← 이전</button>
       <span>{page + 1} / {result.totalPages}</span>
       <button type="button" disabled={!result.hasNext} onClick={() => setPage((value) => value + 1)}>다음 →</button>
