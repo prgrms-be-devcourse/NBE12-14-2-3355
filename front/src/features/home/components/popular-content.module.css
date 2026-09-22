@@ -1,0 +1,17 @@
+.section{margin:0 0 40px;padding-top:32px;border-top:1px solid var(--line)}
+.heading{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px}
+.heading span{display:block;margin-bottom:10px;color:var(--lime);font-size:10px;font-weight:700;letter-spacing:2.2px}
+.heading h2{font-size:24px}
+.heading p{color:var(--muted);font-size:12px}
+.gameLike{display:flex;align-items:center;gap:6px;margin-top:10px;color:var(--muted);font-size:11px}.gameLike span{color:var(--lime);font-size:14px}
+.staticLike{cursor:default!important}
+.reviewHeader{display:grid;grid-template-columns:minmax(250px,1fr) minmax(210px,.8fr) auto;align-items:center;gap:24px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+.reviewHeader time{color:#95a092;font-size:12px;white-space:nowrap}
+.reviewGame{display:flex;min-width:0;align-items:center;gap:11px;padding-left:22px;border-left:1px solid var(--line);transition:color .2s}
+.reviewGame:hover{color:var(--lime)}
+.reviewGameCover{display:grid;flex:0 0 38px;width:38px;height:50px;overflow:hidden;place-items:center;border-radius:3px;background:#283229;color:#9fb881;font-size:9px}
+.reviewGameCover img{display:block;width:100%;height:100%;object-fit:cover}
+.reviewGameInfo{min-width:0}.reviewGameInfo small,.reviewGameInfo strong{display:block}.reviewGameInfo small{margin-bottom:5px;color:#839080;font-size:8px;letter-spacing:1.5px}.reviewGameInfo strong{overflow:hidden;font-size:13px;text-overflow:ellipsis;white-space:nowrap}
+.reviewGameArrow{flex:0 0 auto;margin-left:auto;color:#9fbd82;font-size:13px}
+.reviewCopy{position:relative;min-height:80px}
+@media(max-width:760px){.section{margin-bottom:30px}.heading{align-items:flex-start;flex-direction:column;gap:8px}.reviewHeader{grid-template-columns:minmax(0,1fr) auto;gap:16px}.reviewGame{grid-column:1/-1;grid-row:2;padding-top:14px;padding-left:0;border-top:1px solid var(--line);border-left:0}.reviewGameInfo strong{max-width:220px}}

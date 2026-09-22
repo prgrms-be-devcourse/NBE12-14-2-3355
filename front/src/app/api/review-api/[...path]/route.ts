@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 
 type RouteContext = { params: Promise<{ path: string[] }> };
 
-const allowedPath = /^(games\/\d+\/reviews(?:\/me)?|users\/\d+\/reviews|reviews\/\d+(?:\/likes(?:\/count)?|\/reports)?|admin\/review-reports(?:\/\d+\/status)?)$/;
+const allowedPath = /^(games\/\d+\/reviews(?:\/me)?|users\/\d+\/reviews|reviews\/(?:popular|\d+(?:\/likes(?:\/count)?|\/reports)?)|admin\/review-reports(?:\/\d+\/status)?)$/;
 
 async function proxy(request: NextRequest, context: RouteContext) {
   const { path } = await context.params;
