@@ -9,10 +9,15 @@ export default function AuthNav() {
   if (auth.status === "loading") return null;
 
   if (auth.status === "authenticated") {
+    const isAdmin = auth.user?.role === "ADMIN";
     return (
       <div className="auth-nav">
         <span className="auth-nav-user">{auth.user?.nickname}</span>
-        <Link href="/profile">프로필</Link>
+        {isAdmin ? (
+          <Link href="/admin/reports">신고 관리</Link>
+        ) : (
+          <Link href="/profile">프로필</Link>
+        )}
         <button type="button" className="auth-nav-logout" onClick={() => { void auth.logout(); }}>로그아웃</button>
       </div>
     );

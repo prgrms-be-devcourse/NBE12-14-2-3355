@@ -19,8 +19,10 @@ export default function LoginClient() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (auth.status === "authenticated") router.replace(next || "/");
-  }, [auth.status, next, router]);
+    if (auth.status === "authenticated") {
+      router.replace(auth.user?.role === "ADMIN" ? "/admin/reports" : next || "/");
+    }
+  }, [auth.status, auth.user, next, router]);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -30,7 +32,9 @@ export default function LoginClient() {
     setSubmitting(true);
     try {
       const user = await auth.login({ email, password });
-      router.replace(needsOnboarding(user) ? "/onboarding" : next || "/");
+      router.replace(
+        user.role === "ADMIN" ? "/admin/reports" : needsOnboarding(user) ? "/onboarding" : next || "/"
+      );
     } catch (reason) {
       setError(reason instanceof AuthApiError && reason.status === 401
         ? "이메일 또는 비밀번호가 올바르지 않습니다."
