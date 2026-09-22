@@ -3,6 +3,7 @@
 .heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .heading h2{font-size:22px;margin:0}
 .heading>span,.count{font-size:12px;color:var(--muted)}
+.userSearch{width:100%;margin:24px 0 0;z-index:2}
 .tabs{display:flex;justify-content:center;align-items:center;gap:14px;margin:26px 0 8px;font-size:20px;font-weight:700;color:var(--muted)}
 .tabs a{padding:8px 0;text-decoration:none;border-bottom:2px solid transparent}
 .tabs a[aria-current]{color:var(--text);border-bottom-color:var(--lime)}
