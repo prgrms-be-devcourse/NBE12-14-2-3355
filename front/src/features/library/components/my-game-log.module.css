@@ -51,6 +51,7 @@
 .ratingButtons{display:flex;align-items:center;gap:4px;min-height:47px;margin-top:5px}
 .ratingButtons>button{padding:2px;color:#465047;font-size:32px;line-height:1;cursor:pointer}.ratingButtons>.selectedRating{color:#f05a91}.ratingButtons>.halfRating{color:transparent;background:linear-gradient(90deg,#f05a91 50%,#465047 50%);background-clip:text;-webkit-background-clip:text}.ratingButtons>.clearRating{margin-left:5px;color:var(--muted);font-size:22px}.ratingOutput{min-width:62px;margin-left:7px;color:#cbd5c8;font-size:12px;font-weight:600}
 .platformField select{margin-top:8px}.platformField select:disabled{color:#768078;cursor:not-allowed}
+.playTimeField{max-width:260px;margin-top:23px!important}.playTimeField>span:first-child{color:#cbd5c8;font-size:15px;font-weight:600}.playTimeField>span:first-child small{margin-left:5px;color:var(--muted);font-size:11px;font-weight:400}.playTimeInput{display:flex;align-items:center;position:relative}.playTimeInput input{padding-right:48px}.playTimeInput b{position:absolute;right:13px;color:var(--muted);font-size:11px;font-weight:600;pointer-events:none}.playTimeField>small{color:var(--muted);font-size:10px;font-weight:400;line-height:1.5}
 .dateToggle{flex-direction:row!important;align-items:center;margin-top:23px;padding:15px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .dateToggle input{width:18px!important;height:18px;accent-color:var(--lime)}
 .dateGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}

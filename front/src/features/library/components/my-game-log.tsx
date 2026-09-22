@@ -431,6 +431,25 @@ export default function MyGameLog({
               <label className={styles.platformField}>플랫폼<select value={form.platformId} onChange={(event) => update("platformId", event.target.value)} disabled={platforms.length === 0}><option value="">{platforms.length ? "플랫폼 선택" : "등록된 플랫폼 정보 없음"}</option>{platforms.map((platform) => <option key={platform.id} value={platform.id}>{platform.name}</option>)}</select></label>
             </div>
 
+            <label className={styles.playTimeField}>
+              <span>플레이 시간 <small>선택</small></span>
+              <span className={styles.playTimeInput}>
+                <input
+                  type="number"
+                  min="0"
+                  max="999999.99"
+                  step="0.5"
+                  inputMode="decimal"
+                  value={form.playTimeHours}
+                  onChange={(event) => update("playTimeHours", event.target.value)}
+                  placeholder="예: 24.5"
+                  aria-describedby="play-time-description"
+                />
+                <b aria-hidden="true">시간</b>
+              </span>
+              <small id="play-time-description">현재까지 플레이한 총 시간을 입력해 주세요.</small>
+            </label>
+
             <label className={styles.dateToggle}><input type="checkbox" checked={showDates} onChange={(event) => setShowDates(event.target.checked)} />플레이 날짜 기록하기</label>
             {showDates && <div className={styles.dateGrid}>
               <label>시작일<input type="date" value={form.startedAt} onChange={(event) => update("startedAt", event.target.value)} /></label>
