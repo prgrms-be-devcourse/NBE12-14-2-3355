@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/features/auth/auth-context";
 import LibraryGames from "./library-games";
 import ProfileReviews from "./profile-reviews";
+import ProfileLikes from "./profile-likes";
 import ProfileTabs, { type ProfileSection } from "./profile-tabs";
 import ProfileHeader from "./profile-header";
 import ProfileLayout from "./profile-layout";
@@ -1442,7 +1443,7 @@ export default function ProfilePage({ section = "profile", page = 0 }: { section
                 />
               )}
               {isFriends && <FollowList userId={auth.user.id} kind={section} page={page} basePath="/profile" />}
-              {activeTab === "likes" && <section><h2 className={styles.contentTitle}>Likes</h2><div className={styles.emptyBox}>좋아요 목록 기능을 준비 중입니다.</div></section>}
+              {activeTab === "likes" && <ProfileLikes accessToken={auth.accessToken} />}
               <div hidden={activeTab !== "profile"}>
               <h2 className={styles.contentTitle}>내 게임 라이브러리</h2>
 

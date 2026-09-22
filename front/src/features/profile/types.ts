@@ -83,6 +83,7 @@ export type UserGame = {
 };
 
 export type UserGameLibraryResponse = {
+  totalElements: number;
   totalPages: number;
   userGames: UserGame[];
 };

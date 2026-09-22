@@ -25,12 +25,14 @@ public interface UserGameRepository extends JpaRepository<UserGame, Long> {
             FROM UserGame ug
             JOIN ug.game g
             LEFT JOIN Review r ON r.userGame = ug
-            WHERE ug.user.id = :userId AND ug.inLibrary = true
+            WHERE ug.user.id = :userId
+              AND (ug.inLibrary = true OR (:status = 'LIKED' AND ug.liked = true))
               AND (:status = 'ALL'
                 OR (:status = 'PLAYED' AND ug.playStatus IS NOT NULL)
                 OR (:status = 'PLAYING' AND ug.playing = true)
                 OR (:status = 'BACKLOG' AND ug.backlog = true)
-                OR (:status = 'WISHLIST' AND ug.wishlist = true))
+                OR (:status = 'WISHLIST' AND ug.wishlist = true)
+                OR (:status = 'LIKED' AND ug.liked = true))
               AND (:keyword IS NULL OR LOWER(g.title) LIKE LOWER(:keyword) ESCAPE '!')
               AND (:filterPlatforms = false OR ug.platform.id IN :platformIds)
               AND (:filterGenres = false OR EXISTS (
