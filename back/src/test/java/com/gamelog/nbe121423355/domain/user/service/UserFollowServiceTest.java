@@ -313,6 +313,43 @@ class UserFollowServiceTest {
         assertThat(response.users().getFirst().followedByMe()).isFalse();
     }
 
+    @Test
+    void searchUsersReturnsPaginationAndViewerFollowState() {
+        User other = mockUser(LIST_USER_ID, "user1", null);
+        User followed = mockUser(TARGET_USER_ID, "user2", "profile.png");
+        Pageable pageable = PageRequest.of(1, 2, Sort.by("nickname", "id"));
+        when(userRepository.findByNicknameContainingIgnoreCaseAndIdNot("user", LOGIN_USER_ID, pageable))
+                .thenReturn(new PageImpl<>(List.of(other, followed), pageable, 7));
+        when(userFollowRepository.findFolloweeIdsByFollowerIdAndFolloweeIds(
+                LOGIN_USER_ID, List.of(LIST_USER_ID, TARGET_USER_ID)))
+                .thenReturn(List.of(TARGET_USER_ID));
+
+        FollowPageResponseDto result = userFollowService.searchUsers(LOGIN_USER_ID, " user ", 1, 2);
+
+        assertThat(result.page()).isEqualTo(1);
+        assertThat(result.totalElements()).isEqualTo(7);
+        assertThat(result.totalPages()).isEqualTo(4);
+        assertThat(result.hasNext()).isTrue();
+        assertThat(result.users()).noneMatch(user -> user.userId().equals(LOGIN_USER_ID));
+        assertThat(result.users().get(0).me()).isFalse();
+        assertThat(result.users().get(0).followedByMe()).isFalse();
+        assertThat(result.users().get(1).followedByMe()).isTrue();
+        assertThat(result.users().get(1).followedAt()).isNull();
+    }
+
+    @Test
+    void searchUsersRejectsInvalidRequests() {
+        assertThatThrownBy(() -> userFollowService.searchUsers(LOGIN_USER_ID, "   ", 0, 10))
+                .isInstanceOf(ServiceException.class);
+        assertThatThrownBy(() -> userFollowService.searchUsers(LOGIN_USER_ID, "a".repeat(51), 0, 10))
+                .isInstanceOf(ServiceException.class);
+        assertThatThrownBy(() -> userFollowService.searchUsers(LOGIN_USER_ID, "user", -1, 10))
+                .isInstanceOf(ServiceException.class);
+        assertThatThrownBy(() -> userFollowService.searchUsers(LOGIN_USER_ID, "user", 0, 51))
+                .isInstanceOf(ServiceException.class);
+        verifyNoInteractions(userRepository, userFollowRepository);
+    }
+
     private User mockUser(
             Long userId,
             String nickname,

@@ -4,7 +4,7 @@ export type FollowUserResponseDto = {
   userId: number;
   nickname: string;
   profileImageUrl: string | null;
-  followedAt: string;
+  followedAt: string | null;
   followedByMe: boolean;
   me: boolean;
 };

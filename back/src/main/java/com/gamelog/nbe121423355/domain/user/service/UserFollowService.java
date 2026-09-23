@@ -32,6 +32,27 @@ public class UserFollowService {
     private final UserFollowRepository userFollowRepository;
     private final UserRepository userRepository;
 
+    public FollowPageResponseDto searchUsers(Long loginUserId, String keyword, int page, int size) {
+        validatePageRequest(page, size);
+        String term = keyword == null ? "" : keyword.trim();
+        if (term.isEmpty() || term.length() > 50) {
+            throw new ServiceException("400-9", "검색어는 1자 이상 50자 이하로 입력해 주세요.");
+        }
+        Pageable pageable = PageRequest.of(page, size, Sort.by("nickname", "id"));
+        Page<User> result = loginUserId == null
+                ? userRepository.findByNicknameContainingIgnoreCase(term, pageable)
+                : userRepository.findByNicknameContainingIgnoreCaseAndIdNot(term, loginUserId, pageable);
+        Set<Long> followedIds = findFollowedUserIds(loginUserId,
+                result.getContent().stream().map(User::getId).toList());
+        List<FollowUserResponseDto> users = result.getContent().stream()
+                .map(user -> new FollowUserResponseDto(user.getId(), user.getNickname(),
+                        user.getProfileImageUrl(), null, followedIds.contains(user.getId()),
+                        user.getId().equals(loginUserId)))
+                .toList();
+        return new FollowPageResponseDto(users, result.getNumber(), result.getSize(),
+                result.getTotalElements(), result.getTotalPages(), result.hasNext());
+    }
+
     @Transactional
     public FollowStatusResponseDto follow(
             Long followerId,

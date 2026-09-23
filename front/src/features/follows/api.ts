@@ -25,3 +25,8 @@ export function getFollows(userId: number, kind: FollowKind, page: number, token
 export function setFollowing(userId: number, followed: boolean, token: string) {
   return request<FollowStatusResponseDto>(`me/following/${userId}`, token, { method: followed ? "PUT" : "DELETE" });
 }
+
+export function searchUsers(keyword: string, page: number, token: string | null, signal?: AbortSignal, size = 10) {
+  const query = new URLSearchParams({ keyword, page: String(page), size: String(size) });
+  return request<FollowPageResponseDto>(`search?${query}`, token, { signal });
+}
