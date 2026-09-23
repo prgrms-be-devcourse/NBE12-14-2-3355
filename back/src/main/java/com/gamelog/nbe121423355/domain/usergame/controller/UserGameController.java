@@ -54,6 +54,7 @@ public class UserGameController {
                 "200-1",
                 "라이브러리 게임 목록을 조회했습니다.",
                 new UserGameLibraryResponse(
+                        pages.getTotalElements(),
                         pages.getTotalPages(),
                         pages.getContent()
                 )
