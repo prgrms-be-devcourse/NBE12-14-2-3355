@@ -71,13 +71,15 @@ class UserGameSearchTest {
 
     @Test
     void filtersEachStatusIndependently() {
-        for (UserGameTab tab : List.of(UserGameTab.PLAYED, UserGameTab.PLAYING, UserGameTab.BACKLOG, UserGameTab.WISHLIST)) {
+        for (UserGameTab tab : List.of(UserGameTab.PLAYED, UserGameTab.PLAYING, UserGameTab.BACKLOG, UserGameTab.WISHLIST, UserGameTab.LIKED)) {
             UserGameSearchRequest request = new UserGameSearchRequest();
             request.setStatus(tab);
             String expected = switch (tab) {
                 case PLAYED -> "가 게임";
                 case PLAYING, BACKLOG -> "나 게임";
-                default -> "다 100%_!";
+                case WISHLIST -> "다 100%_!";
+                case LIKED -> "Removed";
+                default -> throw new IllegalArgumentException("지원하지 않는 상태: " + tab);
             };
             assertThat(search(request).getContent()).extracting(UserGameListResponse::title).containsExactly(expected);
         }
@@ -140,7 +142,8 @@ class UserGameSearchTest {
                         .param("status", "PLAYED").param("sort", "RATING")
                         .param("genreIds", rpg.getId() + "," + action.getId())
                         .param("platformIds", pc.getId().toString()))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.data.totalPages").value(1))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.totalElements").value(1))
+                .andExpect(jsonPath("$.data.totalPages").value(1))
                 .andExpect(jsonPath("$.data.userGames[0].title").value("가 게임"));
     }
 

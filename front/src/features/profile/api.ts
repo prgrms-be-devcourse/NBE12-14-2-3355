@@ -55,3 +55,23 @@ export function getMyLibraryGames(
     accessToken,
   );
 }
+
+export function getLikedGames(
+  accessToken: string,
+  page = 0,
+  size = 20,
+  sort: "RECENT_PLAYED" | "TITLE" = "RECENT_PLAYED",
+) {
+  const params = new URLSearchParams({
+    status: "LIKED",
+    sort,
+    page: String(page),
+    size: String(size),
+  });
+
+  return request<UserGameLibraryResponse>(
+    `?${params.toString()}`,
+    {},
+    accessToken,
+  );
+}
