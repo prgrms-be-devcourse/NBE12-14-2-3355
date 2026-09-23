@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/features/auth/auth-context";
@@ -29,6 +29,17 @@ export default function OnboardingClient() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  // 완료/건너뛰기 버튼으로 이미 처리된 경우, 페이지 이탈 시 암묵적 skip을 또 쏘지 않기 위한 플래그
+  const resolvedRef = useRef(false);
+  const accessTokenRef = useRef(auth.accessToken);
+  useEffect(() => {
+    accessTokenRef.current = auth.accessToken;
+  }, [auth.accessToken]);
+
+  useEffect(() => {
+    if (auth.user && isOnboarded(auth.user)) resolvedRef.current = true;
+  }, [auth.user]);
+
   useEffect(() => {
     if (auth.status === "unauthenticated") router.replace("/login?next=/onboarding");
   }, [auth.status, router]);
@@ -36,6 +47,17 @@ export default function OnboardingClient() {
   useEffect(() => {
     if (auth.user && isOnboarded(auth.user)) router.replace("/");
   }, [auth.user, router]);
+
+  // 버튼 없이 다른 페이지로 이동해 온보딩을 이탈하는 경우, 건너뛰기로 암묵 처리
+  // (완료/건너뛰기를 이미 눌렀다면 resolvedRef가 true라 여기서 다시 호출하지 않음)
+  useEffect(() => {
+    return () => {
+      if (resolvedRef.current) return;
+      const token = accessTokenRef.current;
+      if (!token) return;
+      skipOnboarding(token).catch(() => {});
+    };
+  }, []);
 
   useEffect(() => {
     if (auth.status !== "authenticated") return;
@@ -160,6 +182,7 @@ export default function OnboardingClient() {
       if (selectedGenreIds.length) await setPreferredGenres(selectedGenreIds, auth.accessToken);
       if (selectedGames.length) await setPreferredGames(selectedGames.map((g) => g.id), auth.accessToken);
       const updated = await completeOnboarding(auth.accessToken);
+      resolvedRef.current = true;
       auth.setUser(updated);
       router.replace("/");
     } catch (reason) {
@@ -175,6 +198,7 @@ export default function OnboardingClient() {
     setError("");
     try {
       const updated = await skipOnboarding(auth.accessToken);
+      resolvedRef.current = true;
       auth.setUser(updated);
       router.replace("/");
     } catch (reason) {

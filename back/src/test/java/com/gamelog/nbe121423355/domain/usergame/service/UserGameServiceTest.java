@@ -8,6 +8,7 @@ import com.gamelog.nbe121423355.domain.review.entity.Review;
 import com.gamelog.nbe121423355.domain.review.repository.ReviewRepository;
 import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.domain.user.repository.UserFavoriteGameRepository;
+import com.gamelog.nbe121423355.domain.user.repository.UserFollowRepository;
 import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
 import com.gamelog.nbe121423355.domain.usergame.dto.*;
 import com.gamelog.nbe121423355.domain.usergame.entity.PlayStatus;
@@ -29,8 +30,8 @@ import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,6 +63,67 @@ class UserGameServiceTest {
 
     @Mock
     private UserFavoriteGameRepository userFavoriteGameRepository;
+
+    @Mock
+    private UserFollowRepository userFollowRepository;
+
+    @Test
+    @DisplayName("비로그인 사용자는 공개 프로필을 조회하고 팔로우 상태는 조회하지 않는다")
+    void anonymousProfile() {
+        // given: 조회 대상 사용자가 존재
+        when(userRepository.existsById(2L)).thenReturn(true);
+        // when: 비로그인 상태로 조회
+        UserProfileResponse result = userGameService.profileTab(2L, null);
+        // then: 대상 사용자와 공개 조회 상태를 반환
+        assertThat(result.userId()).isEqualTo(2L);
+        assertThat(result.isMe()).isFalse();
+        assertThat(result.isFollowing()).isFalse();
+        verifyNoInteractions(userFollowRepository);
+    }
+
+    @Test
+    @DisplayName("다른 사용자 프로필에서 현재 사용자의 팔로우 여부를 반환한다")
+    void otherUserProfile() {
+        // given: 현재 사용자가 조회 대상을 팔로우
+        when(userRepository.existsById(2L)).thenReturn(true);
+        when(userFollowRepository.existsByFollowerIdAndFolloweeId(1L, 2L)).thenReturn(true);
+        // when: 다른 사용자의 프로필을 조회
+        UserProfileResponse result = userGameService.profileTab(2L, 1L);
+        // then: 본인이 아니며 팔로우 중인 것으로 반환
+        assertThat(result.isMe()).isFalse();
+        assertThat(result.isFollowing()).isTrue();
+        verify(userGameRepository).findPlayedGames(2L);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 프로필은 조회할 수 없다")
+    void missingProfile() {
+        // given: 저장되지 않은 사용자 ID를 준비
+        Long missingId = 999L;
+        // when: 없는 사용자의 프로필 조회를 요청
+        // then: 통계 조회 전에 예외를 반환
+        assertThatThrownBy(() -> userGameService.profileTab(missingId, null))
+                .isInstanceOf(ServiceException.class);
+        verifyNoInteractions(userGameRepository, userFollowRepository);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 사용자의 공개 게임 목록은 조회할 수 없다")
+    void missingPublicGameList() {
+        // given: 존재하지 않는 사용자와 기본 검색 조건을 준비
+        Long missingUserId = 999L;
+        UserGameSearchRequest request = new UserGameSearchRequest();
+
+        // when: 없는 사용자의 공개 게임 목록을 조회
+        // then: 목록 쿼리 실행 전에 사용자 없음 예외를 반환
+        assertThatThrownBy(() ->
+                userGameService.getPublicUserGameList(
+                        missingUserId,
+                        request
+                )
+        ).isInstanceOf(ServiceException.class);
+        verifyNoInteractions(userGameRepository);
+    }
 
     @Test
     @DisplayName("라이브러리에_게임을_등록")
@@ -711,8 +773,9 @@ class UserGameServiceTest {
     @Test
     @DisplayName("프로필 탭 조회 - 플레이 요약과 취향 분석을 정상적으로 반환한다")
     void t21() {
-        // given
+        // given: 프로필 통계 데이터를 준비
         Long userId = 1L;
+        when(userRepository.existsById(userId)).thenReturn(true);
 
         UserGame game1 = mock(UserGame.class);
         UserGame game2 = mock(UserGame.class);
@@ -775,11 +838,11 @@ class UserGameServiceTest {
         when(userGameRepository.findGenreDistribution(userId))
                 .thenReturn(genreData);
 
-        // when
+        // when: 프로필을 조회
         UserProfileResponse response =
-                userGameService.profileTab(userId);
+                userGameService.profileTab(userId, userId);
 
-        // then
+        // then: 통계와 취향 분석 결과를 검증
         assertThat(response).isNotNull();
 
         // 플레이 요약
@@ -808,8 +871,9 @@ class UserGameServiceTest {
     @Test
     @DisplayName("장시간 플레이 게임이 40% 이상이면 장시간 플레이와 짧은 게임을 골고루 즐긴다고 판단한다")
     void t22() {
-        // given
+        // given: 프로필 통계 데이터를 준비
         Long userId = 1L;
+        when(userRepository.existsById(userId)).thenReturn(true);
 
         UserGame game1 = mock(UserGame.class);
         UserGame game2 = mock(UserGame.class);
@@ -837,11 +901,11 @@ class UserGameServiceTest {
         when(userGameRepository.findGenreDistribution(userId))
                 .thenReturn(List.of());
 
-        // when
+        // when: 프로필을 조회
         UserProfileResponse response =
-                userGameService.profileTab(userId);
+                userGameService.profileTab(userId, userId);
 
-        // then
+        // then: 통계와 취향 분석 결과를 검증
         TasteMetricDto longPlay =
                 response.tasteResponse().longPlay();
 
@@ -855,8 +919,9 @@ class UserGameServiceTest {
     @Test
     @DisplayName("장시간 플레이 비율이 70% 이상이면 장시간 플레이 성향으로 판단한다")
     void t23() {
-        // given
+        // given: 프로필 통계 데이터를 준비
         Long userId = 1L;
+        when(userRepository.existsById(userId)).thenReturn(true);
 
         UserGame game1 = mock(UserGame.class);
         UserGame game2 = mock(UserGame.class);
@@ -874,11 +939,11 @@ class UserGameServiceTest {
                 List.of(game1, game2, game3)
         );
 
-        // when
+        // when: 프로필을 조회
         UserProfileResponse response =
-                userGameService.profileTab(userId);
+                userGameService.profileTab(userId, userId);
 
-        // then
+        // then: 통계와 취향 분석 결과를 검증
         TasteMetricDto result =
                 response.tasteResponse().longPlay();
 
@@ -892,8 +957,9 @@ class UserGameServiceTest {
     @Test
     @DisplayName("플레이 시간 기록이 3개 미만이면 장시간 플레이 성향을 분석하지 않는다")
     void t24() {
-        // given
+        // given: 프로필 통계 데이터를 준비
         Long userId = 1L;
+        when(userRepository.existsById(userId)).thenReturn(true);
 
         UserGame game1 = mock(UserGame.class);
         UserGame game2 = mock(UserGame.class);
@@ -908,11 +974,11 @@ class UserGameServiceTest {
                 List.of(game1, game2)
         );
 
-        // when
+        // when: 프로필을 조회
         UserProfileResponse response =
-                userGameService.profileTab(userId);
+                userGameService.profileTab(userId, userId);
 
-        // then
+        // then: 통계와 취향 분석 결과를 검증
         TasteMetricDto result =
                 response.tasteResponse().longPlay();
 
@@ -926,8 +992,9 @@ class UserGameServiceTest {
     @Test
     @DisplayName("2.5 이상 4.0 미만 평점이 가장 많으면 중간 평점 성향으로 판단한다")
     void t26() {
-        // given
+        // given: 프로필 통계 데이터를 준비
         Long userId = 1L;
+        when(userRepository.existsById(userId)).thenReturn(true);
 
         List<BigDecimal> ratings = List.of(
                 BigDecimal.valueOf(3.0),
@@ -944,11 +1011,11 @@ class UserGameServiceTest {
         when(reviewRepository.findPlayedGameRatings(userId))
                 .thenReturn(ratings);
 
-        // when
+        // when: 프로필을 조회
         UserProfileResponse response =
-                userGameService.profileTab(userId);
+                userGameService.profileTab(userId, userId);
 
-        // then
+        // then: 통계와 취향 분석 결과를 검증
         TasteMetricDto result =
                 response.tasteResponse().rating();
 
@@ -962,8 +1029,9 @@ class UserGameServiceTest {
     @Test
     @DisplayName("높은 평점과 중간 평점이 동률이면 중간 평점 성향을 선택한다")
     void t27() {
-        // given
+        // given: 프로필 통계 데이터를 준비
         Long userId = 1L;
+        when(userRepository.existsById(userId)).thenReturn(true);
 
         List<BigDecimal> ratings = List.of(
                 BigDecimal.valueOf(4.0),
@@ -980,11 +1048,11 @@ class UserGameServiceTest {
         when(reviewRepository.findPlayedGameRatings(userId))
                 .thenReturn(ratings);
 
-        // when
+        // when: 프로필을 조회
         UserProfileResponse response =
-                userGameService.profileTab(userId);
+                userGameService.profileTab(userId, userId);
 
-        // then
+        // then: 통계와 취향 분석 결과를 검증
         assertThat(response.tasteResponse().rating().message())
                 .isEqualTo("게임을 비교적 후하게 평가하는 편이에요.");
     }
@@ -992,8 +1060,9 @@ class UserGameServiceTest {
     @Test
     @DisplayName("완료 비율이 40% 이상 70% 미만이면 절반 정도를 완료했다고 판단한다")
     void t28() {
-        // given
+        // given: 프로필 통계 데이터를 준비
         Long userId = 1L;
+        when(userRepository.existsById(userId)).thenReturn(true);
 
         UserGame game1 = mock(UserGame.class);
         UserGame game2 = mock(UserGame.class);
@@ -1013,11 +1082,11 @@ class UserGameServiceTest {
                 List.of(game1, game2, game3)
         );
 
-        // when
+        // when: 프로필을 조회
         UserProfileResponse response =
-                userGameService.profileTab(userId);
+                userGameService.profileTab(userId, userId);
 
-        // then
+        // then: 통계와 취향 분석 결과를 검증
         TasteMetricDto result =
                 response.tasteResponse().completion();
 
@@ -1031,8 +1100,9 @@ class UserGameServiceTest {
     @Test
     @DisplayName("장르별 게임 수를 기준으로 장르 비율을 계산한다")
     void t29() {
-        // given
+        // given: 프로필 통계 데이터를 준비
         Long userId = 1L;
+        when(userRepository.existsById(userId)).thenReturn(true);
 
         mockProfileRepositories(
                 userId,
@@ -1045,11 +1115,11 @@ class UserGameServiceTest {
                         new UserGameGenreDTO(2L, "Action", 1L)
                 ));
 
-        // when
+        // when: 프로필을 조회
         UserProfileResponse response =
-                userGameService.profileTab(userId);
+                userGameService.profileTab(userId, userId);
 
-        // then
+        // then: 통계와 취향 분석 결과를 검증
         List<UserGameGenreDistributionResponse> result =
                 response.genreDistribution();
 
@@ -1071,8 +1141,9 @@ class UserGameServiceTest {
     @Test
     @DisplayName("장르 데이터가 없으면 빈 목록을 반환한다")
     void t30() {
-        // given
+        // given: 프로필 통계 데이터를 준비
         Long userId = 1L;
+        when(userRepository.existsById(userId)).thenReturn(true);
 
         mockProfileRepositories(
                 userId,
@@ -1082,11 +1153,11 @@ class UserGameServiceTest {
         when(userGameRepository.findGenreDistribution(userId))
                 .thenReturn(List.of());
 
-        // when
+        // when: 프로필을 조회
         UserProfileResponse response =
-                userGameService.profileTab(userId);
+                userGameService.profileTab(userId, userId);
 
-        // then
+        // then: 통계와 취향 분석 결과를 검증
         assertThat(response.genreDistribution())
                 .isEmpty();
     }

@@ -100,6 +100,17 @@ public class UserService {
         return new UserDto(user);
     }
 
+    //유저 정보 가져오기
+    public PublicUserDto getUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ServiceException(
+                        "404-1",
+                        "존재하지 않는 유저입니다."
+                ));
+
+        return new PublicUserDto(user);
+    }
+
     // 온보딩 완료(선호 정보 저장 후 확정)
     @Transactional
     public UserDto exitOnboarding(Long userId) {
@@ -139,6 +150,20 @@ public class UserService {
             imageUploadService.deleteImage(oldProfileImageUrl);
         }
         return new UserDto(user);
+    }
+
+    // 비밀번호 변경(로그인 상태)
+    @Transactional
+    public void changePassword(Long userId, ChangePasswordRequestDto requestDto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ServiceException("404-1", "존재하지 않는 유저 입니다."));
+        if(!passwordEncoder.matches(requestDto.currentPassword(), user.getPassword())) {
+            throw new ServiceException("400-3", "현재 비밀번호가 일치하지 않습니다.");
+        }
+        if(passwordEncoder.matches(requestDto.newPassword(), user.getPassword())) {
+            throw new ServiceException("400-4", "새 비밀번호는 현재 비밀번호와 달라야 합니다.");
+        }
+        user.changePassword(passwordEncoder.encode(requestDto.newPassword()));
     }
 
     @Transactional

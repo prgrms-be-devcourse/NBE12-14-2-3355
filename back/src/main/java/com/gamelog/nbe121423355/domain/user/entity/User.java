@@ -54,6 +54,10 @@ public class User extends BaseEntity {
         this.bio = bio;
     }
 
+    public void changePassword(String encodedPassword) {
+        this.password = Objects.requireNonNull(encodedPassword, "password");
+    }
+
     public void promoteToAdmin() {
         this.role = "ADMIN";
     }

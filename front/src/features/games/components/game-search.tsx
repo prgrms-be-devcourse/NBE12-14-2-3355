@@ -11,17 +11,18 @@ type Props = {
   onSearch: () => void;
   onSelect: (game: Game) => void;
   libraryAccessToken?: string;
+  libraryUserId?: number;
 };
 
 // 전역 검색과 라이브러리 검색에서 재사용하는 게임 자동완성
-export default function GameSearch({ value, demo, onChange, onSearch, onSelect, libraryAccessToken }: Props) {
+export default function GameSearch({ value, demo, onChange, onSearch, onSelect, libraryAccessToken, libraryUserId }: Props) {
   const listId = useId();
   const composing = useRef(false);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const [result, setResult] = useState<{ key: string; games: Game[]; error: string } | null>(null);
   const keyword = value.trim();
-  const requestKey = JSON.stringify([keyword, demo, libraryAccessToken]);
+  const requestKey = JSON.stringify([keyword, demo, libraryAccessToken, libraryUserId]);
   const visible = open && keyword.length > 0;
   const current = result?.key === requestKey ? result : null;
   const games = current?.games ?? [];
@@ -32,10 +33,11 @@ export default function GameSearch({ value, demo, onChange, onSearch, onSelect, 
     const timer = setTimeout(async () => {
       try {
         let matches: Game[];
-        if (libraryAccessToken) {
+        if (libraryAccessToken || libraryUserId !== undefined) {
           const query = new URLSearchParams({ keyword, status: "ALL", sort: "TITLE", page: "0", size: "6" });
-          const response = await fetch(`/api/library/games?${query}`, {
-            headers: { Authorization: `Bearer ${libraryAccessToken}` }, signal: controller.signal, cache: "no-store",
+          const endpoint = libraryUserId === undefined ? "/api/library/games" : `/api/library/games/profile/${libraryUserId}/games`;
+          const response = await fetch(`${endpoint}?${query}`, {
+            headers: libraryAccessToken ? { Authorization: `Bearer ${libraryAccessToken}` } : undefined, signal: controller.signal, cache: "no-store",
           });
           acceptRefreshedToken(response);
           if (!response.ok) throw new Error("검색 실패");
@@ -61,7 +63,7 @@ export default function GameSearch({ value, demo, onChange, onSearch, onSelect, 
       }
     }, 300);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [keyword, demo, requestKey, visible, libraryAccessToken]);
+  }, [keyword, demo, requestKey, visible, libraryAccessToken, libraryUserId]);
 
   function select(game: Game) { setOpen(false); setActive(-1); onSelect(game); }
 

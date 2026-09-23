@@ -62,6 +62,9 @@ export type RecentReview = {
 };
 
 export type ProfileResponse = {
+  userId: number;
+  isMe: boolean;
+  isFollowing: boolean;
   favorite: FavoriteGame[];
   stats: ProfileStats;
   scatterData: ScatterGame[];

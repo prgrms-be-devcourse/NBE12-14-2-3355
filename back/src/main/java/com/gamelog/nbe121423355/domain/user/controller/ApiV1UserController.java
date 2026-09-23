@@ -101,6 +101,18 @@ public class ApiV1UserController {
         );
     }
 
+    @GetMapping("/{userId}")
+    public RsData<PublicUserDto> getOtherUser(
+            @PathVariable Long userId
+    ){
+        PublicUserDto userDto = userService.getUser(userId);
+        return new RsData<>(
+                "200-3",
+                "유저 정보 조회 성공",
+                userDto
+        );
+    }
+
     @GetMapping("/me")
     public RsData<UserDto> getMe(
             @AuthenticationPrincipal SecurityUser securityUser
@@ -202,6 +214,18 @@ public class ApiV1UserController {
                 "200-9",
                 "선호 게임 조회 성공",
                 result
+        );
+    }
+
+    @PatchMapping("/me/password")
+    public RsData<Void> changePassword(
+            @AuthenticationPrincipal SecurityUser securityUser,
+            @Valid @RequestBody ChangePasswordRequestDto changePasswordRequestDto
+    ) {
+        userService.changePassword(securityUser.getId(), changePasswordRequestDto);
+        return new RsData<>(
+                "200-14",
+                "비밀번호 변경 성공"
         );
     }
 

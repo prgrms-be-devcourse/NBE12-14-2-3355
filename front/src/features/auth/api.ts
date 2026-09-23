@@ -1,9 +1,11 @@
 import type {
   ApiResponse,
+  ChangePasswordRequestBody,
   LoginRequestBody,
   LoginResponseDto,
   PreferredGame,
   PreferredGenre,
+  PublicUserDto,
   SignupRequestBody,
   TokenResponseDto,
   UpdateProfileRequestBody,
@@ -80,12 +82,20 @@ export function refresh() {
   return request<TokenResponseDto>("refresh", { method: "POST" });
 }
 
+export async function getUser(userId: number,) {
+  return request<PublicUserDto>(`/${userId}`);
+}
+
 export function getMe(accessToken: string) {
   return request<UserDto>("me", { accessToken });
 }
 
 export function updateProfile(body: UpdateProfileRequestBody, accessToken: string) {
   return request<UserDto>("me", { method: "PATCH", body: JSON.stringify(body), accessToken });
+}
+
+export function changePassword(body: ChangePasswordRequestBody, accessToken: string) {
+  return request<null>("me/password", { method: "PATCH", body: JSON.stringify(body), accessToken });
 }
 
 export async function uploadProfileImage(file: File, accessToken: string): Promise<string> {
