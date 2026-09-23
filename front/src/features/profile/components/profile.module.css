@@ -1293,9 +1293,23 @@
     font-size: 14px;
   }
 
-  .profileReviewMeta > strong {
+  .profileReviewAuthor {
     color: var(--text);
     font-size: 16px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .profileReviewAuthor:hover {
+    text-decoration: underline;
+    text-decoration-color: var(--lime);
+    text-underline-offset: 4px;
+  }
+
+  .profileReviewAuthor:focus-visible {
+    border-radius: 2px;
+    outline: 2px solid var(--lime);
+    outline-offset: 3px;
   }
 
   .profileReviewRating {

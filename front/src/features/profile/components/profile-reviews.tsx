@@ -182,7 +182,9 @@ export default function ProfileReviews({
                 </Link>
                 <div className={styles.profileReviewBody}>
                   <div className={styles.profileReviewMeta}>
-                    <strong>{review.nickname || nickname}</strong>
+                    <Link className={styles.profileReviewAuthor} href={`/profile/${review.userId}`}>
+                      {review.nickname || nickname}
+                    </Link>
                     <Rating value={review.rating} />
                     <ReviewStatus review={review} />
                     {review.platformName ? <span className={styles.profileReviewPlatform}>{review.platformName}</span> : null}
