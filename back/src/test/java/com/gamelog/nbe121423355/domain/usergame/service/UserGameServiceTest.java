@@ -108,6 +108,24 @@ class UserGameServiceTest {
     }
 
     @Test
+    @DisplayName("존재하지 않는 사용자의 공개 게임 목록은 조회할 수 없다")
+    void missingPublicGameList() {
+        // given: 존재하지 않는 사용자와 기본 검색 조건을 준비
+        Long missingUserId = 999L;
+        UserGameSearchRequest request = new UserGameSearchRequest();
+
+        // when: 없는 사용자의 공개 게임 목록을 조회
+        // then: 목록 쿼리 실행 전에 사용자 없음 예외를 반환
+        assertThatThrownBy(() ->
+                userGameService.getPublicUserGameList(
+                        missingUserId,
+                        request
+                )
+        ).isInstanceOf(ServiceException.class);
+        verifyNoInteractions(userGameRepository);
+    }
+
+    @Test
     @DisplayName("라이브러리에_게임을_등록")
     void t1() {
         // given

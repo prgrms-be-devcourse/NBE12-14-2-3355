@@ -36,6 +36,7 @@ class UserGameSearchTest {
     @Autowired UserGameService service;
     @Autowired MockMvc mvc;
     User owner;
+    User other;
     Platform pc;
     Platform console;
     Genre rpg;
@@ -54,7 +55,7 @@ class UserGameSearchTest {
         save(owner, "가 게임", PlayStatus.COMPLETED, false, false, false, pc, 10, 1, "4.5", List.of(rpg, action));
         save(owner, "나 게임", null, true, true, false, console, 20, 2, "2.0", List.of(action));
         save(owner, "다 100%_!", null, false, false, true, null, null, null, null, List.of());
-        User other = new User("other", "other@test.com", "password");
+        other = new User("other", "other@test.com", "password");
         em.persist(other);
         save(other, "Other", PlayStatus.PLAYED, true, true, true, pc, 100, 3, "5.0", List.of(rpg));
         UserGame removed = save(owner, "Removed", null, false, false, false, null, null, null, null, List.of());
@@ -145,6 +146,72 @@ class UserGameSearchTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.totalElements").value(1))
                 .andExpect(jsonPath("$.data.totalPages").value(1))
                 .andExpect(jsonPath("$.data.userGames[0].title").value("가 게임"));
+    }
+
+    @Test
+    @DisplayName("비로그인 사용자도 다른 사용자의 프로필 통계를 조회할 수 있다")
+    void publicProfileAllowsAnonymousUser() throws Exception {
+        // given: 프로필 통계를 가진 다른 사용자를 준비
+        Long targetUserId = other.getId();
+
+        // when: 인증 정보 없이 다른 사용자의 프로필을 조회
+        mockMvc.perform(get(
+                        "/api/v1/library/games/profile/{userId}",
+                        targetUserId
+                ))
+                // then: 대상 사용자 ID와 공개 조회 상태를 반환하는지 확인
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resultCode").value("200-1"))
+                .andExpect(jsonPath("$.data.userId")
+                        .value(targetUserId))
+                .andExpect(jsonPath("$.data.isMe").value(false))
+                .andExpect(jsonPath("$.data.isFollowing").value(false))
+                .andExpect(jsonPath("$.data.stats.playedGameCount")
+                        .value(1));
+    }
+
+    @Test
+    @DisplayName("본인이 사용자 ID 경로로 프로필을 조회하면 본인 여부를 반환한다")
+    void publicProfileIdentifiesAuthenticatedOwner() throws Exception {
+        // given: 프로필 소유자의 인증 정보를 준비
+        SecurityUser loginUser = new SecurityUser(
+                owner.getId(),
+                List.of()
+        );
+
+        // when: 본인의 사용자 ID가 포함된 공개 프로필 경로를 조회
+        mockMvc.perform(get(
+                                "/api/v1/library/games/profile/{userId}",
+                                owner.getId()
+                        )
+                        .with(user(loginUser)))
+                // then: 본인 프로필로 판별하는지 확인
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.userId")
+                        .value(owner.getId()))
+                .andExpect(jsonPath("$.data.isMe").value(true))
+                .andExpect(jsonPath("$.data.isFollowing").value(false));
+    }
+
+    @Test
+    @DisplayName("비로그인 사용자도 다른 사용자의 게임 목록을 조회할 수 있다")
+    void publicGameListAllowsAnonymousUser() throws Exception {
+        // given: 다른 사용자의 게임 목록과 조회 조건을 준비
+        Long targetUserId = other.getId();
+
+        // when: 인증 정보 없이 다른 사용자의 게임 목록을 조회
+        mockMvc.perform(get(
+                                "/api/v1/library/games/profile/{userId}/games",
+                                targetUserId
+                        )
+                        .param("status", "ALL")
+                        .param("sort", "RECENT_PLAYED"))
+                // then: 대상 사용자의 게임과 전체 개수를 반환하는지 확인
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalElements").value(1))
+                .andExpect(jsonPath("$.data.totalPages").value(1))
+                .andExpect(jsonPath("$.data.userGames[0].title")
+                        .value("Other"));
     }
 
     @Test
