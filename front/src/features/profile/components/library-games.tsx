@@ -14,7 +14,7 @@ const statuses = ["ALL", "PLAYED", "PLAYING", "BACKLOG", "WISHLIST"] as const;
 const labels = { ALL: "All", PLAYED: "Played", PLAYING: "Playing", BACKLOG: "Backlog", WISHLIST: "Wishlist" };
 
 // 프로필 Games 탭의 라이브러리 목록
-export default function LibraryGames({ accessToken }: { accessToken: string }) {
+export default function LibraryGames({ accessToken, userId }: { accessToken: string, userId?: number; }) {
   const router = useRouter();
   const [status, setStatus] = useState<typeof statuses[number]>("ALL");
   const [sort, setSort] = useState("RECENT_PLAYED");
@@ -28,6 +28,10 @@ export default function LibraryGames({ accessToken }: { accessToken: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
+  const endpoint =
+    userId !== undefined
+      ? `/api/library/games/profile/${userId}/games`
+      : `/api/library/games`; 
 
   useEffect(() => {
     const controller = new AbortController();
@@ -48,7 +52,21 @@ export default function LibraryGames({ accessToken }: { accessToken: string }) {
     async function load() {
       setLoading(true); setError("");
       try {
-        const response = await fetch(`/api/library/games?${query}`, { headers: { Authorization: `Bearer ${accessToken}` }, signal: controller.signal, cache: "no-store" });
+        const headers: HeadersInit = {};
+
+        if (accessToken) {
+          headers.Authorization = `Bearer ${accessToken}`;
+        }
+
+        const response = await fetch(
+          `${endpoint}?${query}`,
+          {
+            headers,
+            signal: controller.signal,
+            cache: "no-store",
+          }
+        );
+        // const response = await fetch(`/api/library/games?${query}`, { headers: { Authorization: `Bearer ${accessToken}` }, signal: controller.signal, cache: "no-store" });
         acceptRefreshedToken(response);
         const body = await response.json();
         if (!response.ok) throw new Error(body.msg || "게임 목록을 불러오지 못했어요.");

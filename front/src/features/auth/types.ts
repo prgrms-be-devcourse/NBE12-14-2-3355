@@ -17,6 +17,13 @@ export type UserDto = {
   profileImageUrl?: string;
 };
 
+export type PublicUserDto = {
+  id: number;
+  nickname: string;
+  profileImageUrl: string | null;
+  bio: string | null;
+}
+
 export type UpdateProfileRequestBody = {
   nickname: string;
   bio: string | null;

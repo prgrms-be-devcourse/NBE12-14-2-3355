@@ -237,6 +237,11 @@ GET {{baseUrl}}/api/v1/library/games/profile
 Authorization: Bearer {{accessToken}}
 
 ###
+# @name 타인 프로필 탭
+GET {{baseUrl}}/api/v1/library/games/profile/6
+Authorization: Bearer {{accessToken}}
+
+###
 # @name 인생게임 수정
 PUT {{baseUrl}}/api/v1/library/games/favorite-games
 Authorization: Bearer {{accessToken}}

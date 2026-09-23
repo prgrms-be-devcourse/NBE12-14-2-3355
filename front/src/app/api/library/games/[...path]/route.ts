@@ -5,7 +5,7 @@ type RouteContext = {
   params: Promise<{ path: string[] }>;
 };
 
-const allowedPath = /^(profile|favorite-games|recentGames)$/;
+const allowedPath = /^(profile|profile\/[1-9]\d*|profile\/[1-9]\d*\/games|favorite-games)$/;
 
 async function proxy(
   request: NextRequest,

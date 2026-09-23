@@ -21,8 +21,19 @@ async function request<T>(path: string, options: RequestInit = {}, accessToken?:
   return payload.data;
 }
 
-export function getProfile(accessToken: string) {
-  return request<ProfileResponse>("profile", {}, accessToken);
+export function getProfile(
+  accessToken?: string,
+  userId?: number,
+) {
+  const query = userId
+    ? `/${userId}`
+    : "";
+
+  return request<ProfileResponse>(
+    `profile${query}`,
+    {},
+    accessToken,
+  );
 }
 
 export function updateFavoriteGames(gameIds: number[], accessToken: string) {

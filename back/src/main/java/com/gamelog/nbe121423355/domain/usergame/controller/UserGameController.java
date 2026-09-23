@@ -42,6 +42,24 @@ public class UserGameController {
         );
     }
 
+    @GetMapping("/profile/{userId}/games")
+    public RsData<UserGameLibraryResponse> getUserProfileGames(
+            @PathVariable Long userId,
+            @Valid @ModelAttribute UserGameSearchRequest request
+    ){
+        Page<UserGameListResponse> pages =
+                userGameService.getUserGameList(userId, request);
+
+        return new RsData<>(
+                "200-1",
+                "라이브러리 게임 목록을 조회했습니다.",
+                new UserGameLibraryResponse(
+                        pages.getTotalPages(),
+                        pages.getContent()
+                )
+        );
+    }
+
     //등록 및 수정
     @PostMapping("/{gameId}")
     public RsData<UserGameDto> addGameToLibrary(
@@ -167,11 +185,29 @@ public class UserGameController {
     public RsData<UserProfileResponse> profileTab(
             @AuthenticationPrincipal SecurityUser user
     ){
-        UserProfileResponse response = userGameService.profileTab(user.getId());
+        UserProfileResponse response = userGameService.profileTab(user.getId(), user.getId());
 
         return new RsData<>(
                 "200-1",
                 "프로필 정보를 조회했습니다.",
+                response
+        );
+    }
+
+    @GetMapping("/profile/{userId}")
+    public RsData<UserProfileResponse> getProfile(
+            @PathVariable Long userId,
+            @AuthenticationPrincipal SecurityUser user
+    ) {
+        Long currentUserId =
+                user != null ? user.getId() : null;
+
+        UserProfileResponse response =
+                userGameService.profileTab(userId, currentUserId);
+
+        return new RsData<>(
+                "200-1",
+                "프로필을 조회했습니다.",
                 response
         );
     }
@@ -189,21 +225,6 @@ public class UserGameController {
         return new RsData<>(
                 "200-1",
                 "인생게임을 수정했습니다.",
-                response
-        );
-    }
-
-    @GetMapping("/recentGames")
-    public RsData<List<UserGameListResponse>> recentGameList(
-            @AuthenticationPrincipal SecurityUser user
-    ){
-        List<UserGameListResponse> response = userGameService.getRecentPlayedGames(
-                user.getId()
-        );
-
-        return new RsData<>(
-                "200-1",
-                "최근 플레이한 게임을 불러왔습니다",
                 response
         );
     }

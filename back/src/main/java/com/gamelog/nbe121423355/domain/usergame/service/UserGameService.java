@@ -8,6 +8,7 @@ import com.gamelog.nbe121423355.domain.review.repository.ReviewRepository;
 import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.domain.user.entity.UserFavoriteGame;
 import com.gamelog.nbe121423355.domain.user.repository.UserFavoriteGameRepository;
+import com.gamelog.nbe121423355.domain.user.repository.UserFollowRepository;
 import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
 import com.gamelog.nbe121423355.domain.usergame.dto.*;
 import com.gamelog.nbe121423355.domain.usergame.entity.PlayStatus;
@@ -39,7 +40,9 @@ public class UserGameService {
     private final GameRepository gameRepository;
     private final PlatformRepository platformRepository;
     private final ReviewRepository reviewRepository;
+    private final UserFollowRepository userFollowRepository;
     private final UserFavoriteGameRepository userFavoriteGameRepository;
+
     private static final BigDecimal LONG_PLAY_HOURS = BigDecimal.valueOf(30);
     private static final BigDecimal HIGH_RATIO = BigDecimal.valueOf(0.7);
     private static final BigDecimal MEDIUM_RATIO = BigDecimal.valueOf(0.4);
@@ -310,20 +313,20 @@ public class UserGameService {
 
     //프로필 탭
     @Transactional(readOnly = true)
-    public UserProfileResponse profileTab(Long userId){
+    public UserProfileResponse profileTab(Long targetUserId, Long currentUserId){
         List<UserGame> playedGames =
-                userGameRepository.findPlayedGames(userId);
+                userGameRepository.findPlayedGames(targetUserId);
 
         List<BigDecimal> ratings =
-                reviewRepository.findPlayedGameRatings(userId);
+                reviewRepository.findPlayedGameRatings(targetUserId);
 
         //인생게임
         List<UserFavoriteGameResponse> favoriteGames =
-                getFavoriteGames(userId);
+                getFavoriteGames(targetUserId);
 
         //플레이 요약 카운터
         long playedGameCount = playedGames.size();
-        BigDecimal averageRating = reviewRepository.findAverageRating(userId);
+        BigDecimal averageRating = reviewRepository.findAverageRating(targetUserId);
         BigDecimal totalPlayTime = playedGames.stream()
                 .map(UserGame::getPlayTimeHours)
                 .filter(Objects::nonNull)
@@ -331,7 +334,7 @@ public class UserGameService {
 
         // 산점도
         List<UserGameScatterDto> scatterData =
-                userGameRepository.findPlayedGameScatterData(userId);
+                userGameRepository.findPlayedGameScatterData(targetUserId);
 
         //내 게임 취향 한번에 보기
         //30시간 이상 플레이 비율
@@ -348,13 +351,24 @@ public class UserGameService {
 
         //장르 분포
         List<UserGameGenreDistributionResponse> genreDistribution =
-                getGenreDistribution(userId);
+                getGenreDistribution(targetUserId);
 
         //최근 플레이 게임
-        List<UserGameListResponse> RecentPlayedGames = getRecentPlayedGames(userId);
+        List<UserGameListResponse> RecentPlayedGames = getRecentPlayedGames(targetUserId);
 
         //최근 리뷰
-        List<RecentReviewResponse> recentReviews = getRecentReviews(userId);
+        List<RecentReviewResponse> recentReviews = getRecentReviews(targetUserId);
+
+        boolean isMe =
+                currentUserId != null &&
+                        targetUserId.equals(currentUserId);
+
+        boolean isFollowing =
+                currentUserId != null &&
+                        userFollowRepository.existsByFollowerIdAndFolloweeId(
+                                currentUserId,
+                                targetUserId
+                        );
 
         ProfileStatsDto statsResponse = new ProfileStatsDto(playedGameCount,averageRating,totalPlayTime);
         UserGameTasteDto tasteResponse = new UserGameTasteDto(
@@ -362,7 +376,7 @@ public class UserGameService {
                 rating,
                 completion
         );
-        return new UserProfileResponse(favoriteGames, statsResponse, scatterData, tasteResponse, genreDistribution, RecentPlayedGames, recentReviews);
+        return new UserProfileResponse(targetUserId, isMe, isFollowing,favoriteGames, statsResponse, scatterData, tasteResponse, genreDistribution, RecentPlayedGames, recentReviews);
     }
 
     public List<UserFavoriteGameResponse> getFavoriteGames(Long userId) {

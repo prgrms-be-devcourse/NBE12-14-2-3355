@@ -4,6 +4,7 @@ import type {
   LoginResponseDto,
   PreferredGame,
   PreferredGenre,
+  PublicUserDto,
   SignupRequestBody,
   TokenResponseDto,
   UpdateProfileRequestBody,
@@ -78,6 +79,10 @@ export function logout() {
 
 export function refresh() {
   return request<TokenResponseDto>("refresh", { method: "POST" });
+}
+
+export async function getUser(userId: number,) {
+  return request<PublicUserDto>(`/${userId}`);
 }
 
 export function getMe(accessToken: string) {
