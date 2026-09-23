@@ -17,6 +17,7 @@ export default function OnboardingClient() {
   const auth = useAuth();
   const [step, setStep] = useState<1 | 2>(1);
   const [genreOptions, setGenreOptions] = useState<Option[]>([]);
+  const [genreLoading, setGenreLoading] = useState(true);
   const [selectedGenreIds, setSelectedGenreIds] = useState<number[]>([]);
   const [shakeGenreId, setShakeGenreId] = useState<number | null>(null);
   const [shakeGameId, setShakeGameId] = useState<number | null>(null);
@@ -39,13 +40,15 @@ export default function OnboardingClient() {
   useEffect(() => {
     if (auth.status !== "authenticated") return;
     const controller = new AbortController();
+    setGenreLoading(true);
     fetch("/api/games/filters", { signal: controller.signal })
       .then(async (response) => {
         const body = await response.json();
         if (!response.ok) throw new Error();
         setGenreOptions(body.data.genres ?? []);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => { if (!controller.signal.aborted) setGenreLoading(false); });
     return () => controller.abort();
   }, [auth.status]);
 
@@ -120,7 +123,8 @@ export default function OnboardingClient() {
     }, 300);
     return () => { clearTimeout(timer); controller.abort(); };
   }, [keyword]);
-  const gameResults = keyword && gameResult?.key === keyword ? gameResult.games : [];
+  const gameResults = keyword ? gameResult?.games ?? [] : [];
+  const searchLoading = keyword !== "" && gameResult?.key !== keyword;
 
   function toggleGenre(id: number) {
     setSelectedGenreIds((current) => {
@@ -208,7 +212,11 @@ export default function OnboardingClient() {
             <h1 className={styles.title}>좋아하는 장르를 선택해 주세요</h1>
             <p className={styles.subtitle}>최대 {MAX_GENRES}개까지 고를 수 있어요 ({selectedGenreIds.length}/{MAX_GENRES})</p>
             <div className={styles.genreGrid}>
-              {genreOptions.map((genre) => {
+              {genreLoading ? (
+                [72, 88, 60, 96, 76, 68, 84, 64].map((width, index) => (
+                  <span key={index} className={styles.genreSkeleton} style={{ width }} />
+                ))
+              ) : genreOptions.map((genre) => {
                 const selected = selectedGenreIds.includes(genre.id);
                 const base = selected ? styles.genreSelected : styles.genre;
                 const className = shakeGenreId === genre.id ? `${base} ${styles.genreShake}` : base;
@@ -245,9 +253,14 @@ export default function OnboardingClient() {
                 ))}
               </div>
             )}
-            {gameResults.length > 0 && (
+            {keyword && (
               <ul className={styles.resultList}>
-                {gameResults.map((game) => {
+                {searchLoading ? Array.from({ length: 4 }).map((_, index) => (
+                  <li key={index} className={styles.resultSkeletonRow}>
+                    <span className={styles.skeletonCover} />
+                    <span className={styles.skeletonText} />
+                  </li>
+                )) : gameResults.length > 0 ? gameResults.map((game) => {
                   const cover = coverUrl(game.coverImageUrl);
                   const picked = selectedGames.some((g) => g.id === game.id);
                   return (
@@ -265,32 +278,38 @@ export default function OnboardingClient() {
                       </button>
                     </li>
                   );
-                })}
+                }) : (
+                  <li className={styles.resultEmpty}>검색 결과가 없어요.</li>
+                )}
               </ul>
             )}
 
-            {curatedLoading && <p className={styles.hint}>게임을 불러오는 중…</p>}
-            {!curatedLoading && curatedGames.length === 0 && <p className={styles.hint}>추천할 게임을 찾지 못했어요.</p>}
-            <div className={styles.gameGrid}>
-              {curatedGames.map((game) => {
-                const cover = coverUrl(game.coverImageUrl);
-                const picked = selectedGames.some((g) => g.id === game.id);
-                const base = picked ? styles.gameCardSelected : styles.gameCard;
-                const className = shakeGameId === game.id ? `${base} ${styles.gameCardShake}` : base;
-                return (
-                  <button key={game.id} type="button" className={className} onClick={() => toggleGame(game)}>
-                    {cover
-                      ? <img className={styles.gameCover} src={cover} alt="" />
-                      : <span className={styles.gameCoverFallback}>{game.title.slice(0, 1)}</span>}
-                    <span className={styles.gameCardTitle}>{game.title}</span>
+            {!keyword && (
+              <>
+                {curatedLoading && <p className={styles.hint}>게임을 불러오는 중…</p>}
+                {!curatedLoading && curatedGames.length === 0 && <p className={styles.hint}>추천할 게임을 찾지 못했어요.</p>}
+                <div className={styles.gameGrid}>
+                  {curatedGames.map((game) => {
+                    const cover = coverUrl(game.coverImageUrl);
+                    const picked = selectedGames.some((g) => g.id === game.id);
+                    const base = picked ? styles.gameCardSelected : styles.gameCard;
+                    const className = shakeGameId === game.id ? `${base} ${styles.gameCardShake}` : base;
+                    return (
+                      <button key={game.id} type="button" className={className} onClick={() => toggleGame(game)}>
+                        {cover
+                          ? <img className={styles.gameCover} src={cover} alt="" />
+                          : <span className={styles.gameCoverFallback}>{game.title.slice(0, 1)}</span>}
+                        <span className={styles.gameCardTitle}>{game.title}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {hasMoreGames && (
+                  <button type="button" className={styles.loadMore} onClick={loadMoreGames} disabled={loadingMore}>
+                    {loadingMore ? "불러오는 중…" : "더보기"}
                   </button>
-                );
-              })}
-            </div>
-            {hasMoreGames && (
-              <button type="button" className={styles.loadMore} onClick={loadMoreGames} disabled={loadingMore}>
-                {loadingMore ? "불러오는 중…" : "더보기"}
-              </button>
+                )}
+              </>
             )}
 
             <div className={styles.actions}>
