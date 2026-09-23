@@ -1301,9 +1301,7 @@
   }
 
   .profileReviewAuthor:hover {
-    text-decoration: underline;
-    text-decoration-color: var(--lime);
-    text-underline-offset: 4px;
+    color: var(--lime);
   }
 
   .profileReviewAuthor:focus-visible {
