@@ -100,6 +100,17 @@ public class UserService {
         return new UserDto(user);
     }
 
+    //유저 정보 가져오기
+    public PublicUserDto getUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ServiceException(
+                        "404-1",
+                        "존재하지 않는 유저입니다."
+                ));
+
+        return new PublicUserDto(user);
+    }
+
     // 온보딩 완료(선호 정보 저장 후 확정)
     @Transactional
     public UserDto exitOnboarding(Long userId) {

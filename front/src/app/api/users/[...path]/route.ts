@@ -6,21 +6,24 @@ type RouteContext = { params: Promise<{ path: string[] }> };
 const allowedPath = /^(signup|login|logout|refresh|me(?:\/onboarding(?:\/skip)?|\/preferred-genres|\/preferred-games)?|check-email|check-nickname)$/;
 const followListPath = /^[1-9]\d*\/(following|followers)$/;
 const followActionPath = /^me\/following\/[1-9]\d*$/;
+const publicUserPath = /^[1-9]\d*$/;
 
 async function proxy(request: NextRequest, context: RouteContext) {
   const { path } = await context.params;
   const endpoint = path.join("/");
   const isFollowList = endpoint === "search" || followListPath.test(endpoint);
   const isFollowAction = followActionPath.test(endpoint);
-  if (!allowedPath.test(endpoint) && !isFollowList && !isFollowAction) {
+  const isPublicUser = publicUserPath.test(endpoint);
+  if (!allowedPath.test(endpoint) && !isFollowList && !isFollowAction && !isPublicUser) {
     return Response.json({ data: null, msg: "요청한 경로를 찾을 수 없습니다.", resultCode: "404-0" }, { status: 404 });
   }
 
-  if ((isFollowList && request.method !== "GET") ||
+  if ((isPublicUser && request.method !== "GET") ||
+    (isFollowList && request.method !== "GET") ||
       (isFollowAction && !["PUT", "DELETE"].includes(request.method))) {
     return Response.json({ data: null, msg: "허용되지 않은 요청 방식입니다.", resultCode: "405-0" }, {
       status: 405,
-      headers: { Allow: isFollowList ? "GET" : "PUT, DELETE" },
+      headers: { Allow: isFollowList || isPublicUser ? "GET" : "PUT, DELETE" },
     });
   }
 

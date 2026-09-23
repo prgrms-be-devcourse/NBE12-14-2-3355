@@ -17,8 +17,8 @@ import type { FavoriteGame, GenreDistribution, ProfileResponse, ProfileStats, Re
 import { coverUrl, type Game} from "@/features/games/model";
 
 import styles from "./profile.module.css";
-
-
+import { PublicUserDto } from "@/features/auth/types";
+import { getUser } from "@/features/auth/api";
 
 const GENRE_COLORS = [
   "#B7D77A",
@@ -471,14 +471,15 @@ function FavoriteGames({
   favorites,
   onSave,
   accessToken,
+  editable,
 }: {
   favorites: FavoriteGame[];
   onSave: (gameIds: number[]) => Promise<void>;
-  accessToken: string;
+  accessToken?: string;
+  editable: boolean;
 }) {
   const [editing, setEditing] = useState(false);
-  const [showAddModal, setShowAddModal] =
-    useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const [draftFavorites, setDraftFavorites] =
     useState<FavoriteGame[]>(favorites);
@@ -494,9 +495,7 @@ function FavoriteGames({
       setSaving(true);
 
       await onSave(
-        draftFavorites.map(
-          (game) => game.gameId,
-        ),
+        draftFavorites.map((game) => game.gameId),
       );
 
       setEditing(false);
@@ -504,7 +503,6 @@ function FavoriteGames({
       setSaving(false);
     }
   }
-
 
   function handleAddGame(game: Game) {
     if (draftFavorites.length >= 5) {
@@ -606,75 +604,72 @@ function FavoriteGames({
             <h3>인생게임</h3>
 
             <p>
-              내가 가장 좋아하는 게임을
-              전시해보세요.
+              가장 좋아하는 게임을 전시해보세요.
             </p>
           </div>
 
-          <div className={styles.favoriteHeaderActions}>
-            {editing && (
-              <button
-                type="button"
-                className={styles.favoriteAddButton}
-                onClick={() =>
-                  setShowAddModal(true)
-                }
-                disabled={
-                  draftFavorites.length >= 5
-                }
-              >
-                + 게임 추가
-              </button>
-            )}
-
-            {!editing ? (
-              <button
-                type="button"
-                className={
-                  styles.favoriteEditButton
-                }
-                onClick={() => {
-                  setDraftFavorites(
-                    favorites,
-                  );
-                  setEditing(true);
-                }}
-              >
-                수정하기
-              </button>
-            ) : (
-              <div
-                className={
-                  styles.favoriteActions
-                }
-              >
+          {editable && (
+            <div className={styles.favoriteHeaderActions}>
+              {editing && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setDraftFavorites(
-                      favorites,
-                    );
-                    setEditing(false);
-                  }}
+                  className={styles.favoriteAddButton}
+                  onClick={() =>
+                    setShowAddModal(true)
+                  }
+                  disabled={
+                    draftFavorites.length >= 5
+                  }
                 >
-                  취소
+                  + 게임 추가
                 </button>
+              )}
 
+              {!editing ? (
                 <button
                   type="button"
                   className={
-                    styles.favoriteSaveButton
+                    styles.favoriteEditButton
                   }
-                  disabled={saving}
-                  onClick={handleSave}
+                  onClick={() => {
+                    setDraftFavorites(favorites);
+                    setEditing(true);
+                  }}
                 >
-                  {saving
-                    ? "저장 중..."
-                    : "저장"}
+                  수정하기
                 </button>
-              </div>
-            )}
-          </div>
+              ) : (
+                <div
+                  className={
+                    styles.favoriteActions
+                  }
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDraftFavorites(favorites);
+                      setEditing(false);
+                    }}
+                  >
+                    취소
+                  </button>
+
+                  <button
+                    type="button"
+                    className={
+                      styles.favoriteSaveButton
+                    }
+                    disabled={saving}
+                    onClick={handleSave}
+                  >
+                    {saving
+                      ? "저장 중..."
+                      : "저장"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {displayGames.length === 0 ? (
@@ -687,13 +682,29 @@ function FavoriteGames({
               <div
                 key={game.gameId}
                 className={styles.favoriteCard}
-                draggable={editing}
-                onDragStart={(event) =>
-                  handleDragStart(event, game.gameId)
+                draggable={editable && editing}
+                onDragStart={
+                  editable && editing
+                    ? (event) =>
+                        handleDragStart(
+                          event,
+                          game.gameId,
+                        )
+                    : undefined
                 }
-                onDragOver={handleDragOver}
-                onDrop={(event) =>
-                  handleDrop(event, game.gameId)
+                onDragOver={
+                  editable && editing
+                    ? handleDragOver
+                    : undefined
+                }
+                onDrop={
+                  editable && editing
+                    ? (event) =>
+                        handleDrop(
+                          event,
+                          game.gameId,
+                        )
+                    : undefined
                 }
               >
                 <Link
@@ -718,7 +729,7 @@ function FavoriteGames({
                   </span>
                 </Link>
 
-                {editing && (
+                {editable && editing && (
                   <button
                     type="button"
                     className={
@@ -745,14 +756,14 @@ function FavoriteGames({
         )}
       </section>
 
-      {showAddModal && (
+      {editable && showAddModal && (
         <FavoriteGameSearchModal
           favorites={draftFavorites}
           onAdd={handleAddGame}
           onClose={() =>
             setShowAddModal(false)
           }
-          accessToken={accessToken}
+          accessToken={accessToken ?? ""}
         />
       )}
     </>
@@ -1356,14 +1367,19 @@ function RecentReviews({
   );
 }
 
-export default function ProfileClient({ section = "profile", page = 0 }: { section?: ProfileSection; page?: number }) {
+export default function ProfilePage({ section = "profile", page = 0, userId }: { section?: ProfileSection; page?: number; userId?: number; }) {
   const router = useRouter();
   const auth = useAuth();
   const activeTab = section;
   const isFriends = section === "following" || section === "followers";
+  const isMe = userId === undefined || auth.user?.id === userId;
+  const targetUserId = userId ?? auth.user?.id;
 
   const [profile, setProfile] =
     useState<ProfileResponse | null>(null);
+
+  const [profileUser, setProfileUser] =
+    useState<PublicUserDto | null>(null);
 
   const [profileLoading, setProfileLoading] =
     useState(true);
@@ -1371,52 +1387,110 @@ export default function ProfileClient({ section = "profile", page = 0 }: { secti
   const [profileError, setProfileError] =
     useState("");
 
-  useEffect(() => {
-    const next = section === "profile" ? "/profile" : `/profile/${section}?page=${page}`;
-    if (auth.status === "unauthenticated") router.replace(`/login?next=${encodeURIComponent(next)}`);
-  }, [auth.status, router, section, page]);
+  const headerUser = isMe ? auth.user : profileUser;
+  const canViewProfile =
+  !isMe ||
+  (
+    auth.status === "authenticated" &&
+    !!auth.user &&
+    !!auth.accessToken
+  );
 
   useEffect(() => {
+    // 다른 유저의 공개 프로필은 로그인 없이 접근 가능
+    if (userId !== undefined) {
+      return;
+    }
+  
+    // 내 프로필만 로그인 필요
+    const next =
+      section === "profile"
+        ? "/profile"
+        : `/profile/${section}?page=${page}`;
+  
+    if (auth.status === "unauthenticated") {
+      router.replace(
+        `/login?next=${encodeURIComponent(next)}`
+      );
+    }
+  }, [
+    auth.status,
+    router,
+    section,
+    page,
+    userId,
+  ]);
+
+  useEffect(() => {
+    if (isFriends && isMe) {
+      return;
+    }
+  
     if (
-      auth.status !== "authenticated" ||
-      !auth.accessToken || isFriends
+      isMe &&
+      (
+        auth.status !== "authenticated" ||
+        !auth.accessToken
+      )
     ) {
       return;
     }
-
+  
+    let active = true;
     const loadProfile = async () => {
       try {
         setProfileLoading(true);
         setProfileError("");
-
-        const response = await getProfile(
-          auth.accessToken!,
-        );
-
-        setProfile(response);
+  
+        if (isMe) {
+          setProfileUser(null);
+  
+          const profileResponse =
+            await getProfile(auth.accessToken!);
+  
+          if (active) setProfile(profileResponse);
+        } else {
+          const publicUser =
+            await getUser(userId!);
+  
+          if (!active) return;
+          setProfileUser(publicUser);
+  
+          const profileResponse =
+            await getProfile(
+              auth.accessToken ?? undefined,
+              userId!
+            );
+  
+          if (active) setProfile(profileResponse);
+        }
       } catch (error) {
+        if (!active) return;
         setProfileError(
           error instanceof Error
             ? error.message
-            : "프로필 정보를 불러오지 못했습니다.",
+            : "프로필 정보를 불러오지 못했습니다."
         );
       } finally {
-        setProfileLoading(false);
+        if (active) setProfileLoading(false);
       }
     };
-
-    loadProfile();
+  
+    void loadProfile();
+    return () => { active = false; };
   }, [
     auth.status,
     auth.accessToken,
     isFriends,
+    isMe,
+    userId,
   ]);
 
 
   const handleFavoriteSave = async (
     gameIds: number[],
   ) => {
-    if (!auth.accessToken) return;
+    if (!isMe || !auth.accessToken) return;
 
     const updatedFavorites =
       await updateFavoriteGames(
@@ -1433,26 +1507,28 @@ export default function ProfileClient({ section = "profile", page = 0 }: { secti
         : prev,
     );
   };
-
+    
   return (
     <ProfileLayout>
-        {auth.status === "authenticated" && auth.user && auth.accessToken ? (
+        {canViewProfile ? (
           <>
-            <ProfileHeader key={auth.user.id} user={auth.user} accessToken={auth.accessToken} onSaved={auth.setUser} />
-            <ProfileTabs section={section} />
+            {headerUser && ( <ProfileHeader key={headerUser.id} user={headerUser} accessToken={auth.accessToken ?? undefined} editable={isMe} onSaved={isMe? auth.setUser: undefined} />)}
+            <ProfileTabs section={section} userId = {userId}/>
             <div className={styles.content}>
-              <div hidden={activeTab !== "games"}>{activeTab === "games" && <LibraryGames accessToken={auth.accessToken} />}</div>
-              {activeTab === "reviews" && (
+              {activeTab !== "profile" && profileError && <p role="alert" className={styles.errorBox}>{profileError}</p>}
+              <div hidden={activeTab !== "games"}>{activeTab === "games" && <LibraryGames key={targetUserId} userId={isMe ? undefined : userId} accessToken={auth.accessToken ?? undefined} />}</div>
+              {activeTab === "reviews" && targetUserId !== undefined && (
                 <ProfileReviews
-                  userId={auth.user.id}
-                  nickname={auth.user.nickname}
-                  accessToken={auth.accessToken}
+                  key={targetUserId}
+                  userId={targetUserId}
+                  nickname={headerUser?.nickname ?? "플레이어"}
+                  accessToken={auth.accessToken ?? undefined}
                 />
               )}
-              {isFriends && <FollowList userId={auth.user.id} kind={section} page={page} basePath="/profile" />}
-              {activeTab === "likes" && <ProfileLikes accessToken={auth.accessToken} />}
+              {isFriends && targetUserId !== undefined && <FollowList userId={targetUserId} kind={section} page={page} basePath={userId ? `/profile/${userId}` : "/profile"} />}
+              {activeTab === "likes" && targetUserId !== undefined && <ProfileLikes key={targetUserId} userId={isMe ? undefined : userId} accessToken={auth.accessToken ?? undefined} />}
               <div hidden={activeTab !== "profile"}>
-              <h2 className={styles.contentTitle}>내 게임 라이브러리</h2>
+              <h2 className={styles.contentTitle}>게임 기록</h2>
 
               {profileLoading ? (
                 <div className={styles.loading}>
@@ -1466,10 +1542,13 @@ export default function ProfileClient({ section = "profile", page = 0 }: { secti
                 <>
                   {/* 1. 인생게임 */}
                   <FavoriteGames
-                    key={profile.favorite.map(game => `${game.gameId}:${game.displayOrder}`).join(",")}
+                    key={profile.favorite
+                      .map(game => `${game.gameId}:${game.displayOrder}`)
+                      .join(",")}
                     favorites={profile.favorite}
                     onSave={handleFavoriteSave}
-                    accessToken={auth.accessToken}
+                    accessToken={auth.accessToken ?? undefined}
+                    editable={isMe}
                   />
 
                   {/* 2. 플레이 통계 */}

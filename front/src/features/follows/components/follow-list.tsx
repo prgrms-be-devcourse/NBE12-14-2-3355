@@ -128,7 +128,7 @@ function FollowListContent({ userId, kind, page, basePath, keyword }: Props & { 
       <p className={styles.count}>{keyword ? `“${keyword}” 검색 결과` : kind === "following" ? "팔로잉" : "팔로워"} {data.totalElements.toLocaleString()}명</p>
       {data.users.length === 0 ? <p className={styles.empty}>{keyword ? "검색 결과가 없습니다. 다른 닉네임으로 검색해 보세요." : kind === "following" ? "아직 팔로우하는 사용자가 없습니다." : "아직 팔로워가 없습니다."}</p> : (
         <ul className={styles.list}>{data.users.map(user => <li key={user.userId} className={styles.row}>
-          <Link className={styles.identity} href={user.userId === auth.user?.id ? "/profile/following" : `/profile/${user.userId}/following`} aria-label={`${user.nickname}님의 팔로잉 목록`}>
+          <Link className={styles.identity} href={user.userId === auth.user?.id ? "/profile" : `/profile/${user.userId}`} aria-label={`${user.nickname}님의 프로필`}>
             <Avatar key={user.profileImageUrl} user={user} />
             <span className={styles.details}><strong>{user.nickname}{user.me && " (나)"}</strong>{!keyword && user.followedAt && <time dateTime={user.followedAt}>Since {user.followedAt.slice(0, 10).replaceAll("-", ".")}</time>}</span>
           </Link>

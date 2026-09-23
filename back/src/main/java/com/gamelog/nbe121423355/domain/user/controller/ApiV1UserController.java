@@ -101,6 +101,18 @@ public class ApiV1UserController {
         );
     }
 
+    @GetMapping("/{userId}")
+    public RsData<PublicUserDto> getOtherUser(
+            @PathVariable Long userId
+    ){
+        PublicUserDto userDto = userService.getUser(userId);
+        return new RsData<>(
+                "200-3",
+                "유저 정보 조회 성공",
+                userDto
+        );
+    }
+
     @GetMapping("/me")
     public RsData<UserDto> getMe(
             @AuthenticationPrincipal SecurityUser securityUser

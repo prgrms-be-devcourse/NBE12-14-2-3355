@@ -61,7 +61,7 @@ export function getUserReviews(
   page: number,
   size: number,
   sort: "lastModifiedDate,desc" | "lastModifiedDate,asc",
-  accessToken: string,
+  accessToken?: string,
 ) {
   const query = new URLSearchParams({
     page: String(page),

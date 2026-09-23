@@ -36,5 +36,9 @@ public interface UserFollowRepository extends JpaRepository<UserFollow, UserFoll
             @Param("followerId") Long followerId,
             @Param("followeeIds") Collection<Long> followeeIds
     );
-    
+
+    boolean existsByFollowerIdAndFolloweeId(
+            Long followerId,
+            Long followingId
+    );
 }

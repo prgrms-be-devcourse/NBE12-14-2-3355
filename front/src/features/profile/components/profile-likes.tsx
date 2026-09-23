@@ -58,7 +58,7 @@ function LikedGameCard({ game }: { game: UserGame }) {
   );
 }
 
-export default function ProfileLikes({ accessToken }: { accessToken: string }) {
+export default function ProfileLikes({ accessToken, userId }: { accessToken?: string; userId?: number }) {
   const [page, setPage] = useState(0);
   const [sort, setSort] = useState<LikesSort>("RECENT_PLAYED");
   const [result, setResult] = useState<UserGameLibraryResponse | null>(null);
@@ -72,7 +72,7 @@ export default function ProfileLikes({ accessToken }: { accessToken: string }) {
       setLoading(true);
       setError("");
       try {
-        const response = await getLikedGames(accessToken, page, PAGE_SIZE, sort);
+        const response = await getLikedGames(accessToken, page, PAGE_SIZE, sort, userId);
         if (active) setResult(response);
       } catch (cause) {
         if (!active) return;
@@ -90,7 +90,7 @@ export default function ProfileLikes({ accessToken }: { accessToken: string }) {
     return () => {
       active = false;
     };
-  }, [accessToken, page, sort]);
+  }, [accessToken, page, sort, userId]);
 
   return (
     <section className={styles.profileLikesSection} aria-labelledby="profile-likes-title">

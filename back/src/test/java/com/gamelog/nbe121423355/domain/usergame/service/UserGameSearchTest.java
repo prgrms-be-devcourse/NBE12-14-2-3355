@@ -4,11 +4,16 @@ import com.gamelog.nbe121423355.domain.game.dto.IgdbGameResponse;
 import com.gamelog.nbe121423355.domain.game.entity.*;
 import com.gamelog.nbe121423355.domain.review.entity.Review;
 import com.gamelog.nbe121423355.domain.user.entity.User;
-import com.gamelog.nbe121423355.domain.usergame.dto.*;
-import com.gamelog.nbe121423355.domain.usergame.entity.*;
+import com.gamelog.nbe121423355.domain.usergame.dto.UserGameListResponse;
+import com.gamelog.nbe121423355.domain.usergame.dto.UserGameSearchRequest;
+import com.gamelog.nbe121423355.domain.usergame.dto.UserGameSort;
+import com.gamelog.nbe121423355.domain.usergame.dto.UserGameTab;
+import com.gamelog.nbe121423355.domain.usergame.entity.PlayStatus;
+import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
 import com.gamelog.nbe121423355.global.security.SecurityUser;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,17 +30,22 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
 class UserGameSearchTest {
-    @Autowired EntityManager em;
-    @Autowired UserGameService service;
-    @Autowired MockMvc mvc;
+    @Autowired
+    EntityManager em;
+    @Autowired
+    UserGameService service;
+    @Autowired
+    MockMvc mockMvc;
     User owner;
+    User other;
     Platform pc;
     Platform console;
     Genre rpg;
@@ -54,7 +64,7 @@ class UserGameSearchTest {
         save(owner, "가 게임", PlayStatus.COMPLETED, false, false, false, pc, 10, 1, "4.5", List.of(rpg, action));
         save(owner, "나 게임", null, true, true, false, console, 20, 2, "2.0", List.of(action));
         save(owner, "다 100%_!", null, false, false, true, null, null, null, null, List.of());
-        User other = new User("other", "other@test.com", "password");
+        other = new User("other", "other@test.com", "password");
         em.persist(other);
         save(other, "Other", PlayStatus.PLAYED, true, true, true, pc, 100, 3, "5.0", List.of(rpg));
         UserGame removed = save(owner, "Removed", null, false, false, false, null, null, null, null, List.of());
@@ -137,7 +147,7 @@ class UserGameSearchTest {
 
     @Test
     void endpointBindsFiltersAndPreservesResponseShape() throws Exception {
-        mvc.perform(get("/api/v1/library/games")
+        mockMvc.perform(get("/api/v1/library/games")
                         .with(user(new SecurityUser(owner.getId(), List.of())))
                         .param("status", "PLAYED").param("sort", "RATING")
                         .param("genreIds", rpg.getId() + "," + action.getId())
@@ -148,12 +158,78 @@ class UserGameSearchTest {
     }
 
     @Test
+    @DisplayName("비로그인 사용자도 다른 사용자의 프로필 통계를 조회할 수 있다")
+    void publicProfileAllowsAnonymousUser() throws Exception {
+        // given: 프로필 통계를 가진 다른 사용자를 준비
+        Long targetUserId = other.getId();
+
+        // when: 인증 정보 없이 다른 사용자의 프로필을 조회
+        mockMvc.perform(get(
+                        "/api/v1/library/games/profile/{userId}",
+                        targetUserId
+                ))
+                // then: 대상 사용자 ID와 공개 조회 상태를 반환하는지 확인
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resultCode").value("200-1"))
+                .andExpect(jsonPath("$.data.userId")
+                        .value(targetUserId))
+                .andExpect(jsonPath("$.data.isMe").value(false))
+                .andExpect(jsonPath("$.data.isFollowing").value(false))
+                .andExpect(jsonPath("$.data.stats.playedGameCount")
+                        .value(1));
+    }
+
+    @Test
+    @DisplayName("본인이 사용자 ID 경로로 프로필을 조회하면 본인 여부를 반환한다")
+    void publicProfileIdentifiesAuthenticatedOwner() throws Exception {
+        // given: 프로필 소유자의 인증 정보를 준비
+        SecurityUser loginUser = new SecurityUser(
+                owner.getId(),
+                List.of()
+        );
+
+        // when: 본인의 사용자 ID가 포함된 공개 프로필 경로를 조회
+        mockMvc.perform(get(
+                        "/api/v1/library/games/profile/{userId}",
+                        owner.getId()
+                )
+                        .with(user(loginUser)))
+                // then: 본인 프로필로 판별하는지 확인
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.userId")
+                        .value(owner.getId()))
+                .andExpect(jsonPath("$.data.isMe").value(true))
+                .andExpect(jsonPath("$.data.isFollowing").value(false));
+    }
+
+    @Test
+    @DisplayName("비로그인 사용자도 다른 사용자의 게임 목록을 조회할 수 있다")
+    void publicGameListAllowsAnonymousUser() throws Exception {
+        // given: 다른 사용자의 게임 목록과 조회 조건을 준비
+        Long targetUserId = other.getId();
+
+        // when: 인증 정보 없이 다른 사용자의 게임 목록을 조회
+        mockMvc.perform(get(
+                        "/api/v1/library/games/profile/{userId}/games",
+                        targetUserId
+                )
+                        .param("status", "ALL")
+                        .param("sort", "RECENT_PLAYED"))
+                // then: 대상 사용자의 게임과 전체 개수를 반환하는지 확인
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalElements").value(1))
+                .andExpect(jsonPath("$.data.totalPages").value(1))
+                .andExpect(jsonPath("$.data.userGames[0].title")
+                        .value("Other"));
+    }
+
+    @Test
     void rejectsInvalidParameters() throws Exception {
         for (String[] param : List.of(new String[]{"status", "INVALID"}, new String[]{"sort", "INVALID"},
                 new String[]{"page", "-1"}, new String[]{"size", "0"}, new String[]{"size", "101"},
                 new String[]{"platformIds", "-1"}, new String[]{"genreIds", "text"})) {
-            mvc.perform(get("/api/v1/library/games").with(user(new SecurityUser(owner.getId(), List.of())))
-                            .param(param[0], param[1])).andExpect(status().isBadRequest());
+            mockMvc.perform(get("/api/v1/library/games").with(user(new SecurityUser(owner.getId(), List.of())))
+                    .param(param[0], param[1])).andExpect(status().isBadRequest());
         }
     }
 

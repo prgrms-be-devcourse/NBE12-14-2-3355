@@ -253,6 +253,47 @@ class ApiV1UserControllerTest {
     }
 
     @Test
+    @DisplayName("비로그인 사용자도 다른 사용자의 공개 정보를 조회할 수 있다")
+    void getPublicUserAllowsAnonymousUser() throws Exception {
+        // given: 공개 프로필로 조회할 사용자를 저장
+        User profileUser = saveUser(
+                "profile@test.com",
+                "프로필 사용자",
+                "password123"
+        );
+
+        // when: 인증 정보 없이 공개 사용자 정보를 조회
+        mockMvc.perform(get(
+                        "/api/v1/users/{userId}",
+                        profileUser.getId()
+                ))
+                // then: 공개 정보만 반환하고 이메일은 노출하지 않는지 확인
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resultCode").value("200-3"))
+                .andExpect(jsonPath("$.data.id")
+                        .value(profileUser.getId()))
+                .andExpect(jsonPath("$.data.nickname")
+                        .value("프로필 사용자"))
+                .andExpect(jsonPath("$.data.email").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 사용자의 공개 정보는 조회할 수 없다")
+    void getPublicUserRejectsMissingUser() throws Exception {
+        // given: 존재하지 않는 사용자 ID를 준비
+        long missingUserId = 999_999L;
+
+        // when: 없는 사용자의 공개 정보를 조회
+        mockMvc.perform(get(
+                        "/api/v1/users/{userId}",
+                        missingUserId
+                ))
+                // then: 사용자 없음 응답을 반환하는지 확인
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.resultCode").value("404-1"));
+    }
+
+    @Test
     @DisplayName("온보딩 완료 성공")
     void onboarding_success() throws Exception {
         User user = saveUser("test@test.com", "nickname", "password123");

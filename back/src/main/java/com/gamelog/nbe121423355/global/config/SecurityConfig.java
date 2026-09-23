@@ -43,7 +43,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/users/signup", "/api/v1/users/login", "/api/v1/users/refresh",
                                 "/api/v1/users/check-email", "/api/v1/users/check-nickname", "/api/v1/users/logout").permitAll()
+                        .requestMatchers("/api/v1/users/me", "/api/v1/users/me/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/users/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/*/following", "/api/v1/users/*/followers").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/library/games/profile/*", "/api/v1/library/games/profile/*/games").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/library/games/profile").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/games/*/reviews/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/games/recommendations/personalized").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reviews/popular").permitAll()
