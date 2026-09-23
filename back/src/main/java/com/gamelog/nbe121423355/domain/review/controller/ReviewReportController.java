@@ -8,6 +8,10 @@ import com.gamelog.nbe121423355.domain.review.entity.ReportStatus;
 import com.gamelog.nbe121423355.domain.review.service.ReviewReportService;
 import com.gamelog.nbe121423355.global.dto.RsData;
 import com.gamelog.nbe121423355.global.security.SecurityUser;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -27,13 +31,15 @@ import static org.springframework.data.domain.Sort.Direction.DESC;
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
+@Tag(name = "review-report-controller", description = "리뷰 신고 접수 및 관리자 처리 API")
 public class ReviewReportController {
 
     private final ReviewReportService reviewReportService;
 
     @PostMapping("/reviews/{reviewId}/reports")
+    @Operation(summary = "리뷰 신고 접수", description = "리뷰 신고 사유와 신고 당시 리뷰 내용을 저장합니다.", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<ReviewReportResponse> createReport(
-            @AuthenticationPrincipal SecurityUser securityUser,
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser securityUser,
             @PathVariable Long reviewId,
             @Valid @RequestBody ReviewReportCreateRequest request
     ) {
@@ -46,6 +52,7 @@ public class ReviewReportController {
     }
 
     @GetMapping("/admin/review-reports")
+    @Operation(summary = "신고 목록 조회", description = "관리자가 처리 상태별 신고 목록을 조회합니다. ADMIN 권한이 필요합니다.", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<ReviewReportPageResponse> getReports(
             @RequestParam(required = false) ReportStatus status,
             @PageableDefault(size = 20, sort = "createdDate", direction = DESC) Pageable pageable
@@ -55,6 +62,7 @@ public class ReviewReportController {
     }
 
     @PutMapping("/admin/review-reports/{reportId}/status")
+    @Operation(summary = "신고 처리 상태 변경", description = "관리자가 신고를 승인하거나 반려합니다. ADMIN 권한이 필요합니다.", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<ReviewReportResponse> updateStatus(
             @PathVariable Long reportId,
             @Valid @RequestBody ReviewReportStatusUpdateRequest request

@@ -7,6 +7,9 @@ import com.gamelog.nbe121423355.domain.usergame.service.UserGameService;
 import com.gamelog.nbe121423355.global.dto.RsData;
 import com.gamelog.nbe121423355.global.security.SecurityUser;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,15 +21,16 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/library/games")
 @RequiredArgsConstructor
-@Tag(name = "UserGameController", description = "유저 게임 라이브러리 API")
+@Tag(name = "user-game-controller", description = "내 게임 라이브러리·플레이 상태·프로필 기록 API")
 public class UserGameController {
 
     private final UserGameService userGameService;
 
     @GetMapping("")
+    @Operation(summary = "내 게임 목록 조회", description = "상태, 플랫폼, 장르, 검색어와 정렬 조건으로 내 게임 목록을 조회합니다.", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<UserGameLibraryResponse> getUserGameList(
             @Valid @ModelAttribute UserGameSearchRequest request,
-            @AuthenticationPrincipal SecurityUser user
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser user
     ){
         Page<UserGameListResponse> pages =
                 userGameService.getUserGameList(user.getId(), request);
@@ -43,6 +47,7 @@ public class UserGameController {
     }
 
     @GetMapping("/profile/{userId}/games")
+    @Operation(summary = "사용자 프로필 게임 목록 조회", description = "특정 사용자의 공개 게임 기록을 페이지 단위로 조회합니다.")
     public RsData<UserGameLibraryResponse> getUserProfileGames(
             @PathVariable Long userId,
             @Valid @ModelAttribute UserGameSearchRequest request
@@ -63,10 +68,11 @@ public class UserGameController {
 
     //등록 및 수정
     @PostMapping("/{gameId}")
+    @Operation(summary = "게임 기록 등록 또는 수정", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<UserGameDto> addGameToLibrary(
             @PathVariable Long gameId,
             @Valid @RequestBody UserGameReqBody reqBody,
-            @AuthenticationPrincipal SecurityUser user
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser user
             ){
 
         Long userId = user.getId();
@@ -89,10 +95,11 @@ public class UserGameController {
 
     //수정만
     @PatchMapping("/{gameId}")
+    @Operation(summary = "게임 기록 수정", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<UserGameDto> updatePlayRecord(
             @PathVariable Long gameId,
             @Valid @RequestBody UserGameReqBody reqBody,
-            @AuthenticationPrincipal SecurityUser user
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser user
     ){
 
         Long userId = user.getId();
@@ -108,10 +115,11 @@ public class UserGameController {
     }
 
     @PutMapping("/{gameId}/play-status")
+    @Operation(summary = "플레이 완료 상태 변경", description = "PLAYED, COMPLETED, RETIRED, SHELVED, DROPPED 중 하나를 저장하며, 값을 생략하면 상태를 해제합니다.", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<UserGamePlayStatusResponse> changePlayStatus(
             @PathVariable Long gameId,
             @RequestParam(required = false) PlayStatus status,
-            @AuthenticationPrincipal SecurityUser user
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser user
     ) {
         PlayStatus playStatus = userGameService.changePlayed(user.getId(), gameId, status);
 
@@ -123,10 +131,11 @@ public class UserGameController {
     }
 
     @PatchMapping("/{gameId}/playing")
+    @Operation(summary = "플레이 중 상태 변경", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<UserGameStatusResponse> changePlaying(
             @PathVariable Long gameId,
             @RequestParam boolean playing,
-            @AuthenticationPrincipal SecurityUser user
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser user
     ) {
         boolean playingStatus = userGameService.changePlaying(user.getId(), gameId, playing);
 
@@ -138,10 +147,11 @@ public class UserGameController {
     }
 
     @PatchMapping("/{gameId}/wishlist")
+    @Operation(summary = "위시리스트 상태 변경", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<UserGameStatusResponse> changeWishlist(
             @PathVariable Long gameId,
             @RequestParam boolean wishlist,
-            @AuthenticationPrincipal SecurityUser user
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser user
     ) {
         boolean wishlistStatus = userGameService.changeWishlist(user.getId(), gameId,wishlist);
 
@@ -153,10 +163,11 @@ public class UserGameController {
     }
 
     @PatchMapping("/{gameId}/backlog")
+    @Operation(summary = "플레이 예정 상태 변경", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<UserGameStatusResponse> changeBacklog(
             @PathVariable Long gameId,
             @RequestParam boolean backlog,
-            @AuthenticationPrincipal SecurityUser user
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser user
     ) {
         boolean backlogStatus = userGameService.changeBacklog(user.getId(), gameId, backlog);
 
@@ -168,10 +179,11 @@ public class UserGameController {
     }
 
     @PatchMapping("/{gameId}/liked")
+    @Operation(summary = "좋아하는 게임 상태 변경", description = "프로필 Likes 탭에 표시할 게임의 하트 상태를 변경합니다.", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<UserGameStatusResponse> changeLiked(
             @PathVariable Long gameId,
             @RequestParam boolean liked,
-            @AuthenticationPrincipal SecurityUser user
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser user
     ) {
         boolean likedStatus = userGameService.changeLiked(user.getId(), gameId, liked);
 
@@ -183,8 +195,9 @@ public class UserGameController {
     }
 
     @GetMapping("/profile")
+    @Operation(summary = "내 프로필 게임 통계 조회", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<UserProfileResponse> profileTab(
-            @AuthenticationPrincipal SecurityUser user
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser user
     ){
         UserProfileResponse response = userGameService.profileTab(user.getId(), user.getId());
 
@@ -196,9 +209,10 @@ public class UserGameController {
     }
 
     @GetMapping("/profile/{userId}")
+    @Operation(summary = "사용자 프로필 게임 통계 조회", description = "특정 사용자의 공개 프로필 기록과 게임 통계를 조회합니다.")
     public RsData<UserProfileResponse> getProfile(
             @PathVariable Long userId,
-            @AuthenticationPrincipal SecurityUser user
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser user
     ) {
         Long currentUserId =
                 user != null ? user.getId() : null;
@@ -214,17 +228,19 @@ public class UserGameController {
     }
 
     @GetMapping("/recentGames")
+    @Operation(summary = "최근 플레이 게임 조회", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<List<UserGameListResponse>> recentGameList(
-            @AuthenticationPrincipal SecurityUser user
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser user
     ) {
         return new RsData<>("200-1", "최근 플레이한 게임을 불러왔습니다",
                 userGameService.getRecentPlayedGames(user.getId()));
     }
 
     @PutMapping("/favorite-games")
+    @Operation(summary = "인생 게임 수정", description = "프로필에 노출할 인생 게임 목록과 순서를 저장합니다.", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<List<UserFavoriteGameResponse>> updateFavoriteGames(
             @RequestBody UserFavoriteGameRequest request,
-            @AuthenticationPrincipal SecurityUser user
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser user
     ) {
         List<UserFavoriteGameResponse> response = userGameService.updateFavoriteGames(
                 user.getId(),
