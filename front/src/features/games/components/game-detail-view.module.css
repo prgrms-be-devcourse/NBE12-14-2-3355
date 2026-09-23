@@ -1,6 +1,5 @@
 /* 게임 상세 화면 */
 .currentNav{color:var(--lime);font-size:13px;font-weight:600}
-.headerNote{margin-left:auto}
 .main{max-width:1440px;min-height:calc(100vh - 83px);margin:0 auto;padding:34px 42px 80px}
 .backLink{display:inline-flex;align-items:center;min-height:32px;color:var(--muted);font-size:12px;transition:color .2s}
 .backLink:hover{color:var(--lime)}

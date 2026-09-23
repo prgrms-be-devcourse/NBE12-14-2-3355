@@ -10,7 +10,7 @@ const followActionPath = /^me\/following\/[1-9]\d*$/;
 async function proxy(request: NextRequest, context: RouteContext) {
   const { path } = await context.params;
   const endpoint = path.join("/");
-  const isFollowList = followListPath.test(endpoint);
+  const isFollowList = endpoint === "search" || followListPath.test(endpoint);
   const isFollowAction = followActionPath.test(endpoint);
   if (!allowedPath.test(endpoint) && !isFollowList && !isFollowAction) {
     return Response.json({ data: null, msg: "요청한 경로를 찾을 수 없습니다.", resultCode: "404-0" }, { status: 404 });

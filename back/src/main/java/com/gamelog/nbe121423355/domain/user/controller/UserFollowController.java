@@ -16,6 +16,17 @@ public class UserFollowController {
 
     private final UserFollowService userFollowService;
 
+    @GetMapping("/search")
+    public RsData<FollowPageResponseDto> searchUsers(
+            @AuthenticationPrincipal SecurityUser securityUser,
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return new RsData<>("200-18", "사용자 검색 결과를 조회했습니다.",
+                userFollowService.searchUsers(securityUser == null ? null : securityUser.getId(), keyword, page, size));
+    }
+
     @PutMapping("/me/following/{targetUserId}")
     public RsData<FollowStatusResponseDto> follow(
             @AuthenticationPrincipal SecurityUser securityUser,

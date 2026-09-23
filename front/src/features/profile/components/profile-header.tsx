@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { UserDto } from "@/features/auth/types";
+import { useAuth } from "@/features/auth/auth-context";
 import ProfileEditor from "./profile-editor";
 import styles from "./profile.module.css";
 
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export default function ProfileHeader({ user, accessToken, onSaved }: Props) {
+  const auth = useAuth();
   const [editing, setEditing] = useState(false);
 
   return <section className={styles.profileHeader} aria-label="내 프로필">
@@ -23,7 +25,10 @@ export default function ProfileHeader({ user, accessToken, onSaved }: Props) {
       <span className={styles.profileEyebrow}>MY GAME LOG</span>
       <h1 className={styles.nickname}>{user.nickname}</h1>
       <p className={styles.profileBio}>{user.bio?.trim() || "아직 한줄 소개가 없어요."}</p>
-      <button type="button" className={styles.profileEditButton} onClick={() => setEditing(true)}>프로필 수정</button>
+      <div className={styles.profileHeaderActions}>
+        <button type="button" className={styles.profileEditButton} onClick={() => setEditing(true)}>프로필 수정</button>
+        <button type="button" className={`${styles.profileEditButton} ${styles.profileLogoutButton}`} onClick={() => { void auth.logout(); }}>로그아웃</button>
+      </div>
     </div>
     {editing && <ProfileEditor user={user} accessToken={accessToken} onSaved={onSaved} onClose={() => setEditing(false)} />}
   </section>;
