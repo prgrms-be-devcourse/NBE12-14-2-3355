@@ -100,7 +100,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: validate   # 운영에서는 절대 update/create 쓰지 말 것
+      ddl-auto: update   # 운영에서는 절대 update/create 쓰지 말 것
     show-sql: false
   sql:
     init:
