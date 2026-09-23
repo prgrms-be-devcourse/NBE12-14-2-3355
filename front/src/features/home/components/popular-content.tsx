@@ -129,13 +129,15 @@ function PopularReviewCard({ review }: { review: PopularReview }) {
   return <article className={reviewStyles.card}>
     <div className={styles.reviewHeader}>
       <div className={reviewStyles.reviewIdentity}>
-        <span
-          className={`${reviewStyles.avatar} ${review.profileImageUrl ? reviewStyles.avatarImage : ""}`}
-          style={avatarStyle}
-          aria-hidden="true"
-        >
-          {!review.profileImageUrl && nickname.slice(0, 1).toUpperCase()}
-        </span>
+        <Link className={reviewStyles.reviewerAvatarLink} href={`/profile/${review.userId}`} aria-label={`${nickname}님의 프로필`}>
+          <span
+            className={`${reviewStyles.avatar} ${review.profileImageUrl ? reviewStyles.avatarImage : ""}`}
+            style={avatarStyle}
+            aria-hidden="true"
+          >
+            {!review.profileImageUrl && nickname.slice(0, 1).toUpperCase()}
+          </span>
+        </Link>
         <div className={reviewStyles.reviewerDetails}>
           <div className={reviewStyles.reviewerName}>
             <Link className={reviewStyles.reviewerProfileLink} href={`/profile/${review.userId}`}>{nickname}</Link><span>님이 리뷰를 남겼어요</span>

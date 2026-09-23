@@ -21,6 +21,9 @@
 .reviewIdentity{display:flex;align-items:center;gap:14px;min-width:0}
 .avatar{display:grid;flex:0 0 48px;width:48px;height:48px;place-items:center;border:1px solid #5d724d;border-radius:50%;background:linear-gradient(145deg,#405338,#202a22);color:var(--lime);font-size:18px;font-weight:800;background-position:center;background-size:cover}
 .avatarImage{color:transparent}
+.reviewerAvatarLink{display:block;border-radius:50%;line-height:0}
+.reviewerAvatarLink:hover + .reviewerDetails .reviewerProfileLink{color:var(--lime)}
+.reviewerAvatarLink:focus-visible{outline:2px solid var(--lime);outline-offset:3px}
 .reviewerDetails{display:flex;min-width:0;flex-direction:column;gap:10px}
 .reviewerName{display:flex;flex-wrap:wrap;align-items:center;gap:6px;color:var(--muted);font-size:13px}
 .reviewerName strong{max-width:260px;overflow:hidden;color:var(--text);font-size:16px;text-overflow:ellipsis;white-space:nowrap}

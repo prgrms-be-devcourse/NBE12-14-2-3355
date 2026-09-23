@@ -108,9 +108,11 @@ function ReviewCard({
   return <article className={styles.card}>
     <div className={styles.cardHeader}>
       <div className={styles.reviewIdentity}>
-        <span className={`${styles.avatar} ${review.profileImageUrl ? styles.avatarImage : ""}`} style={avatarStyle} aria-hidden="true">
-          {!review.profileImageUrl && nickname.slice(0, 1).toUpperCase()}
-        </span>
+        <Link className={styles.reviewerAvatarLink} href={`/profile/${review.userId}`} aria-label={`${nickname}님의 프로필`}>
+          <span className={`${styles.avatar} ${review.profileImageUrl ? styles.avatarImage : ""}`} style={avatarStyle} aria-hidden="true">
+            {!review.profileImageUrl && nickname.slice(0, 1).toUpperCase()}
+          </span>
+        </Link>
         <div className={styles.reviewerDetails}>
           <div className={styles.reviewerName}>
             <Link className={styles.reviewerProfileLink} href={`/profile/${review.userId}`}>{nickname}</Link><span>님이 리뷰를 남겼어요</span>
