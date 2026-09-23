@@ -48,7 +48,7 @@ public class UserGameController {
             @Valid @ModelAttribute UserGameSearchRequest request
     ){
         Page<UserGameListResponse> pages =
-                userGameService.getUserGameList(userId, request);
+                userGameService.getPublicUserGameList(userId, request);
 
         return new RsData<>(
                 "200-1",
@@ -210,6 +210,14 @@ public class UserGameController {
                 "프로필을 조회했습니다.",
                 response
         );
+    }
+
+    @GetMapping("/recentGames")
+    public RsData<List<UserGameListResponse>> recentGameList(
+            @AuthenticationPrincipal SecurityUser user
+    ) {
+        return new RsData<>("200-1", "최근 플레이한 게임을 불러왔습니다",
+                userGameService.getRecentPlayedGames(user.getId()));
     }
 
     @PutMapping("/favorite-games")

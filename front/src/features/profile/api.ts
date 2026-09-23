@@ -1,4 +1,5 @@
 import type { ApiResponse, FavoriteGame, ProfileResponse, UserGameLibraryResponse } from "./types";
+import { acceptRefreshedToken } from "@/features/auth/api";
 
 export class ProfileApiError extends Error {
   constructor(message: string, public readonly status: number) {
@@ -16,6 +17,7 @@ async function request<T>(path: string, options: RequestInit = {}, accessToken?:
     headers,
     cache: "no-store",
   });
+  acceptRefreshedToken(response);
   const payload = (await response.json()) as ApiResponse<T>;
   if (!response.ok) throw new ProfileApiError(payload.msg || "프로필 정보를 불러오지 못했습니다.", response.status);
   return payload.data;
@@ -68,10 +70,11 @@ export function getMyLibraryGames(
 }
 
 export function getLikedGames(
-  accessToken: string,
+  accessToken: string | undefined,
   page = 0,
   size = 20,
   sort: "RECENT_PLAYED" | "TITLE" = "RECENT_PLAYED",
+  userId?: number,
 ) {
   const params = new URLSearchParams({
     status: "LIKED",
@@ -81,7 +84,7 @@ export function getLikedGames(
   });
 
   return request<UserGameLibraryResponse>(
-    `?${params.toString()}`,
+    `${userId === undefined ? "" : `profile/${userId}/games`}?${params.toString()}`,
     {},
     accessToken,
   );

@@ -16,11 +16,11 @@ export default function ProfileTabs({ section, userId }: Props ) {
       : "/profile";
 
   const tabs = [
-    { label: "Profile", href: "basePath", active: section === "profile" },
-    { label: "Games", href: "${basePath}/games", active: section === "games" },
-    { label: "Reviews", href: "${basePath}/reviews", active: section === "reviews" },
-    { label: "Friends", href: "${basePath}/following", active: section === "following" || section === "followers" },
-    { label: "Likes", href: "${basePath}/likes", active: section === "likes" },
+    { label: "Profile", href: basePath, active: section === "profile" },
+    { label: "Games", href: `${basePath}/games`, active: section === "games" },
+    { label: "Reviews", href: `${basePath}/reviews`, active: section === "reviews" },
+    { label: "Friends", href: `${basePath}/following`, active: section === "following" || section === "followers" },
+    { label: "Likes", href: `${basePath}/likes`, active: section === "likes" },
   ];
   return <nav className={styles.profileTabs} aria-label="프로필 메뉴">
     {tabs.map(tab => <Link key={tab.label} href={tab.href} aria-current={tab.active ? "page" : undefined}>{tab.label}</Link>)}

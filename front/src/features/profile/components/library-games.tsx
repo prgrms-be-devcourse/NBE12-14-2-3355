@@ -14,7 +14,7 @@ const statuses = ["ALL", "PLAYED", "PLAYING", "BACKLOG", "WISHLIST"] as const;
 const labels = { ALL: "All", PLAYED: "Played", PLAYING: "Playing", BACKLOG: "Backlog", WISHLIST: "Wishlist" };
 
 // 프로필 Games 탭의 라이브러리 목록
-export default function LibraryGames({ accessToken, userId }: { accessToken: string, userId?: number; }) {
+export default function LibraryGames({ accessToken, userId }: { accessToken?: string, userId?: number; }) {
   const router = useRouter();
   const [status, setStatus] = useState<typeof statuses[number]>("ALL");
   const [sort, setSort] = useState("RECENT_PLAYED");
@@ -77,16 +77,16 @@ export default function LibraryGames({ accessToken, userId }: { accessToken: str
     }
     void load();
     return () => controller.abort();
-  }, [accessToken, status, sort, keyword, filters, page, retry]);
+  }, [accessToken, status, sort, keyword, filters, page, retry, endpoint]);
 
   function reset() { setStatus("ALL"); setSort("RECENT_PLAYED"); setInput(""); setKeyword(""); setFilters({ genres: [], platforms: [] }); setPage(0); }
 
   return <section aria-label="내 게임 라이브러리">
-    <h2 className={styles.contentTitle}>내 게임 라이브러리</h2>
+    <h2 className={styles.contentTitle}>{userId === undefined ? "내 게임 라이브러리" : "게임 라이브러리"}</h2>
     <div className={styles.statusTabs} aria-label="플레이 상태">{statuses.map(value => <button key={value} type="button" aria-pressed={status === value} onClick={() => { setStatus(status === value ? "ALL" : value); setPage(0); }}>{labels[value]}</button>)}</div>
     <div className={styles.libraryToolbar}>
       <div className={styles.librarySearch}>
-        <GameSearch value={input} demo={false} libraryAccessToken={accessToken} onChange={setInput}
+        <GameSearch value={input} demo={false} libraryAccessToken={accessToken} libraryUserId={userId} onChange={setInput}
           onSearch={() => { setKeyword(input.trim()); setPage(0); }}
           onSelect={game => router.push(`/games/${game.id}`)} />
       </div>

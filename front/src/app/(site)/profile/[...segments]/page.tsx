@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import ProfilePage from "@/features/profile/components/profile-page";
-import PublicFriendsPage from "@/features/profile/components/public-friends-page";
 import type { ProfileSection } from "@/features/profile/components/profile-tabs";
 
 export const metadata: Metadata = { title: "프로필 | GameLog" };
@@ -17,11 +16,6 @@ export default async function ProfileSectionPage({ params, searchParams }: {
   if (!validPage) redirect(`/profile/${segments.map(encodeURIComponent).join("/")}`);
   const page = Number(rawPage ?? 0);
   const [first, second] = segments;
-  const profileSections = [
-    "games",
-    "reviews",
-    "likes",
-  ] as const;
 
   if (
     segments.length === 1 &&
@@ -30,6 +24,7 @@ export default async function ProfileSectionPage({ params, searchParams }: {
   ) {
     return (
       <ProfilePage
+        key={first}
         userId={Number(first)}
         page={page}
       />
@@ -50,6 +45,7 @@ export default async function ProfileSectionPage({ params, searchParams }: {
   ) {
     return (
       <ProfilePage
+        key={first}
         userId={Number(first)}
         section={second as ProfileSection}
         page={page}
@@ -57,7 +53,7 @@ export default async function ProfileSectionPage({ params, searchParams }: {
     );
   }
   if (segments.length === 2 && /^[1-9]\d*$/.test(first) && Number.isSafeInteger(Number(first)) && (second === "following" || second === "followers")) {
-    return <PublicFriendsPage userId={Number(first)} kind={second} page={page} />;
+    return <ProfilePage key={first} userId={Number(first)} section={second} page={page} />;
   }
   notFound();
 }

@@ -94,7 +94,7 @@ export default function ProfileReviews({
 }: {
   userId: number;
   nickname: string;
-  accessToken: string;
+  accessToken?: string;
 }) {
   const [page, setPage] = useState(0);
   const [sort, setSort] = useState<SortOrder>("lastModifiedDate,desc");

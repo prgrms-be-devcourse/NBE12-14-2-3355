@@ -23,7 +23,7 @@ async function proxy(request: NextRequest, context: RouteContext) {
       (isFollowAction && !["PUT", "DELETE"].includes(request.method))) {
     return Response.json({ data: null, msg: "허용되지 않은 요청 방식입니다.", resultCode: "405-0" }, {
       status: 405,
-      headers: { Allow: isFollowList ? "GET" : "PUT, DELETE" },
+      headers: { Allow: isFollowList || isPublicUser ? "GET" : "PUT, DELETE" },
     });
   }
 

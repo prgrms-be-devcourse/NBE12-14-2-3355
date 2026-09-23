@@ -1372,7 +1372,8 @@ export default function ProfilePage({ section = "profile", page = 0, userId }: {
   const auth = useAuth();
   const activeTab = section;
   const isFriends = section === "following" || section === "followers";
-  const isMe = userId === undefined;
+  const isMe = userId === undefined || auth.user?.id === userId;
+  const targetUserId = userId ?? auth.user?.id;
 
   const [profile, setProfile] =
     useState<ProfileResponse | null>(null);
@@ -1421,7 +1422,7 @@ export default function ProfilePage({ section = "profile", page = 0, userId }: {
   ]);
 
   useEffect(() => {
-    if (isFriends) {
+    if (isFriends && isMe) {
       return;
     }
   
@@ -1435,6 +1436,7 @@ export default function ProfilePage({ section = "profile", page = 0, userId }: {
       return;
     }
   
+    let active = true;
     const loadProfile = async () => {
       try {
         setProfileLoading(true);
@@ -1446,11 +1448,12 @@ export default function ProfilePage({ section = "profile", page = 0, userId }: {
           const profileResponse =
             await getProfile(auth.accessToken!);
   
-          setProfile(profileResponse);
+          if (active) setProfile(profileResponse);
         } else {
           const publicUser =
             await getUser(userId!);
   
+          if (!active) return;
           setProfileUser(publicUser);
   
           const profileResponse =
@@ -1459,20 +1462,22 @@ export default function ProfilePage({ section = "profile", page = 0, userId }: {
               userId!
             );
   
-          setProfile(profileResponse);
+          if (active) setProfile(profileResponse);
         }
       } catch (error) {
+        if (!active) return;
         setProfileError(
           error instanceof Error
             ? error.message
             : "프로필 정보를 불러오지 못했습니다."
         );
       } finally {
-        setProfileLoading(false);
+        if (active) setProfileLoading(false);
       }
     };
   
     void loadProfile();
+    return () => { active = false; };
   }, [
     auth.status,
     auth.accessToken,
@@ -1485,7 +1490,7 @@ export default function ProfilePage({ section = "profile", page = 0, userId }: {
   const handleFavoriteSave = async (
     gameIds: number[],
   ) => {
-    if (!auth.accessToken) return;
+    if (!isMe || !auth.accessToken) return;
 
     const updatedFavorites =
       await updateFavoriteGames(
@@ -1510,16 +1515,18 @@ export default function ProfilePage({ section = "profile", page = 0, userId }: {
             {headerUser && ( <ProfileHeader key={headerUser.id} user={headerUser} accessToken={auth.accessToken ?? undefined} editable={isMe} onSaved={isMe? auth.setUser: undefined} />)}
             <ProfileTabs section={section} userId = {userId}/>
             <div className={styles.content}>
-              <div hidden={activeTab !== "games"}>{activeTab === "games" && <LibraryGames accessToken={auth.accessToken ?? undefined} />}</div>
-              {activeTab === "reviews" && (
+              {activeTab !== "profile" && profileError && <p role="alert" className={styles.errorBox}>{profileError}</p>}
+              <div hidden={activeTab !== "games"}>{activeTab === "games" && <LibraryGames key={targetUserId} userId={isMe ? undefined : userId} accessToken={auth.accessToken ?? undefined} />}</div>
+              {activeTab === "reviews" && targetUserId !== undefined && (
                 <ProfileReviews
-                  userId={userId ?? auth.user.id}
-                  nickname={headerUser?.nickname ?? auth.user.nickname}
-                  accessToken={auth.accessToken}
+                  key={targetUserId}
+                  userId={targetUserId}
+                  nickname={headerUser?.nickname ?? "플레이어"}
+                  accessToken={auth.accessToken ?? undefined}
                 />
               )}
-              {isFriends && <FollowList userId={userId ?? auth.user.id} kind={section} page={page} basePath={userId ? `/profile/${userId}` : "/profile"} />}
-              {activeTab === "likes" && isMe && auth.accessToken && <ProfileLikes accessToken={auth.accessToken} />}
+              {isFriends && targetUserId !== undefined && <FollowList userId={targetUserId} kind={section} page={page} basePath={userId ? `/profile/${userId}` : "/profile"} />}
+              {activeTab === "likes" && targetUserId !== undefined && <ProfileLikes key={targetUserId} userId={isMe ? undefined : userId} accessToken={auth.accessToken ?? undefined} />}
               <div hidden={activeTab !== "profile"}>
               <h2 className={styles.contentTitle}>게임 기록</h2>
 
@@ -1540,7 +1547,7 @@ export default function ProfilePage({ section = "profile", page = 0, userId }: {
                       .join(",")}
                     favorites={profile.favorite}
                     onSave={handleFavoriteSave}
-                    accessToken={auth.accessToken}
+                    accessToken={auth.accessToken ?? undefined}
                     editable={isMe}
                   />
 

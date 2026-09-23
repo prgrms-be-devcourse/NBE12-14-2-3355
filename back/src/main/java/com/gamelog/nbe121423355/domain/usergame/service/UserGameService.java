@@ -74,6 +74,14 @@ public class UserGameService {
                 .map(UserGameListResponse::new);
     }
 
+    @Transactional(readOnly = true)
+    public Page<UserGameListResponse> getPublicUserGameList(Long userId, UserGameSearchRequest request) {
+        if (!userRepository.existsById(userId)) {
+            throw new ServiceException("404-1", "존재하지 않는 유저입니다.");
+        }
+        return getUserGameList(userId, request);
+    }
+
     //생성 또는 수정
     @Transactional
     public UserGameSaveResult addOrUpdateGameToLibrary(
@@ -314,6 +322,9 @@ public class UserGameService {
     //프로필 탭
     @Transactional(readOnly = true)
     public UserProfileResponse profileTab(Long targetUserId, Long currentUserId){
+        if (!userRepository.existsById(targetUserId)) {
+            throw new ServiceException("404-1", "존재하지 않는 유저입니다.");
+        }
         List<UserGame> playedGames =
                 userGameRepository.findPlayedGames(targetUserId);
 
@@ -365,6 +376,7 @@ public class UserGameService {
 
         boolean isFollowing =
                 currentUserId != null &&
+                        !isMe &&
                         userFollowRepository.existsByFollowerIdAndFolloweeId(
                                 currentUserId,
                                 targetUserId

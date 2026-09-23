@@ -17,13 +17,13 @@ export default function ProfileHeader({ user, accessToken, editable, onSaved }: 
   const auth = useAuth();
   const [editing, setEditing] = useState(false);
 
-  return <section className={styles.profileHeader} aria-label="내 프로필">
+  return <section className={styles.profileHeader} aria-label={editable ? "내 프로필" : `${user.nickname}님의 프로필`}>
     {user.profileImageUrl
       ? /* eslint-disable-next-line @next/next/no-img-element */
         <img className={styles.avatar} src={user.profileImageUrl} alt={`${user.nickname} 프로필`} />
       : <div className={styles.avatarFallback}>{user.nickname.slice(0, 1).toUpperCase()}</div>}
     <div className={styles.profileIdentity}>
-      <span className={styles.profileEyebrow}>MY GAME LOG</span>
+      <span className={styles.profileEyebrow}>{editable ? "MY GAME LOG" : "GAME LOG"}</span>
       <h1 className={styles.nickname}>{user.nickname}</h1>
       <p className={styles.profileBio}>{user.bio?.trim() || "아직 한줄 소개가 없어요."}</p>
       {editable && <div className={styles.profileHeaderActions}>
