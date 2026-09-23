@@ -24,6 +24,9 @@
 .reviewerDetails{display:flex;min-width:0;flex-direction:column;gap:10px}
 .reviewerName{display:flex;flex-wrap:wrap;align-items:center;gap:6px;color:var(--muted);font-size:13px}
 .reviewerName strong{max-width:260px;overflow:hidden;color:var(--text);font-size:16px;text-overflow:ellipsis;white-space:nowrap}
+.reviewerProfileLink{max-width:260px;overflow:hidden;color:var(--text);font-size:16px;font-weight:700;text-decoration:none;text-overflow:ellipsis;white-space:nowrap}
+.reviewerProfileLink:hover{text-decoration:underline;text-decoration-color:var(--lime);text-underline-offset:4px}
+.reviewerProfileLink:focus-visible{outline:2px solid var(--lime);outline-offset:3px;border-radius:2px}
 .reviewerMeta{display:flex;flex-wrap:wrap;align-items:center;gap:11px}
 .playState{display:inline-flex;align-items:center;gap:6px;color:#c2cec0;font-size:12px}.playState i{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 8px #b8ed6b66}
 .platformName{padding:4px 8px;border:1px solid #445340;border-radius:999px;background:#222c23;color:#b7c2b3;font-size:11px}

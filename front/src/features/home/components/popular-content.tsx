@@ -138,7 +138,7 @@ function PopularReviewCard({ review }: { review: PopularReview }) {
         </span>
         <div className={reviewStyles.reviewerDetails}>
           <div className={reviewStyles.reviewerName}>
-            <strong>{nickname}</strong><span>님이 리뷰를 남겼어요</span>
+            <Link className={reviewStyles.reviewerProfileLink} href={`/profile/${review.userId}`}>{nickname}</Link><span>님이 리뷰를 남겼어요</span>
           </div>
           <div className={reviewStyles.reviewerMeta}>
             {review.rating == null

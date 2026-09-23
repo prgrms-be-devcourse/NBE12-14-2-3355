@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createReviewReport, deleteReview, getLikeStatus, getMyDetailedReview, setReviewLike } from "@/features/reviews/api";
 import type { DetailedReview } from "@/features/reviews/types";
@@ -112,7 +113,7 @@ function ReviewCard({
         </span>
         <div className={styles.reviewerDetails}>
           <div className={styles.reviewerName}>
-            <strong>{nickname}</strong><span>님이 리뷰를 남겼어요</span>
+            <Link className={styles.reviewerProfileLink} href={`/profile/${review.userId}`}>{nickname}</Link><span>님이 리뷰를 남겼어요</span>
             {mine && <span className={styles.mineBadge}>내 리뷰</span>}
           </div>
           <div className={styles.reviewerMeta}>
