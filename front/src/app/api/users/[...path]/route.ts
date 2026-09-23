@@ -3,7 +3,7 @@ import {relayAuthHeaders} from "@/lib/proxy";
 
 type RouteContext = { params: Promise<{ path: string[] }> };
 
-const allowedPath = /^(signup|login|logout|refresh|me(?:\/onboarding(?:\/skip)?|\/preferred-genres|\/preferred-games)?|check-email|check-nickname)$/;
+const allowedPath = /^(signup|login|logout|refresh|me(?:\/onboarding(?:\/skip)?|\/preferred-genres|\/preferred-games|\/password)?|check-email|check-nickname)$/;
 const followListPath = /^[1-9]\d*\/(following|followers)$/;
 const followActionPath = /^me\/following\/[1-9]\d*$/;
 const publicUserPath = /^[1-9]\d*$/;

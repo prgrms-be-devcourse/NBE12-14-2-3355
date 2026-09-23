@@ -1,5 +1,6 @@
 import type {
   ApiResponse,
+  ChangePasswordRequestBody,
   LoginRequestBody,
   LoginResponseDto,
   PreferredGame,
@@ -91,6 +92,10 @@ export function getMe(accessToken: string) {
 
 export function updateProfile(body: UpdateProfileRequestBody, accessToken: string) {
   return request<UserDto>("me", { method: "PATCH", body: JSON.stringify(body), accessToken });
+}
+
+export function changePassword(body: ChangePasswordRequestBody, accessToken: string) {
+  return request<null>("me/password", { method: "PATCH", body: JSON.stringify(body), accessToken });
 }
 
 export async function uploadProfileImage(file: File, accessToken: string): Promise<string> {
