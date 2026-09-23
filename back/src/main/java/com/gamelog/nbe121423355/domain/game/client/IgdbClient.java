@@ -78,7 +78,7 @@ public class IgdbClient {
                genres.name, platforms.name, collections.name;
         sort id asc;
         limit 500;
-        offset 0;
+        offset 500;
         """;
 
         List<IgdbGameResponse> games = restClient.post()

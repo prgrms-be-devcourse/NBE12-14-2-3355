@@ -13,7 +13,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GameImportService {
 
-    private final GameRepository gameRepository;
+    private final GamePersistenceRepository gameRepository;
     private final GenreRepository genreRepository;
     private final PlatformRepository platformRepository;
     private final GameGenreRepository gameGenreRepository;

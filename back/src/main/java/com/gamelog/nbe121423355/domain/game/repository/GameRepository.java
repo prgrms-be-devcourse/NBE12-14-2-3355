@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface GameRepository extends JpaRepository<Game,Long> {
+public interface GameRepository extends GamePersistenceRepository {
     @Query("""
         SELECT g FROM Game g
         WHERE LOWER(g.title) LIKE LOWER(:containsPattern) ESCAPE '!'

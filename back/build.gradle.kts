@@ -18,6 +18,20 @@ repositories {
     mavenCentral()
 }
 
+springBoot {
+    mainClass.set("com.gamelog.nbe121423355.Nbe121423355Application")
+}
+
+tasks.register<JavaExec>("importIgdb") {
+    group = "application"
+    description = "Import one IGDB page without starting the web application"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.gamelog.igdbimport.IgdbImportApplication")
+    javaLauncher.set(javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    })
+}
+
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
