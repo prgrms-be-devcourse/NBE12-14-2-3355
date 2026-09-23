@@ -989,12 +989,22 @@ function ScatterPlot({
                 }
                 onClick={() => router.push(`/games/${game.gameId}`)}
               >
-                <circle
+                {/* <circle
                   cx={pointX}
                   cy={pointY}
                   r={isActive ? 6 : 4}
                   className={styles.scatterPointBg}
+                /> */}
+
+                <image
+                  href="/gamelog-logo-console.png"
+                  x={pointX - (isActive ? 10 : 8)}
+                  y={pointY - (isActive ? 10 : 8)}
+                  width={isActive ? 18 : 14}
+                  height={isActive ? 18 : 14}
+                  preserveAspectRatio="xMidYMid meet"
                 />
+
 
                 {isActive && (
                   <g

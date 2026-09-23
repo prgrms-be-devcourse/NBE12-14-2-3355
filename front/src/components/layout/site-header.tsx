@@ -6,6 +6,7 @@ import { useState } from "react";
 import AuthNav from "@/components/auth/auth-nav";
 import GameSearch from "@/features/games/components/game-search";
 import type { Game } from "@/features/games/model";
+import Image from "next/image";
 
 export default function SiteHeader() {
   const pathname = usePathname();
@@ -24,6 +25,12 @@ export default function SiteHeader() {
   return <header className="header">
     <div className="header-inner">
       <Link className="logo" href="/" aria-label="GameLog 홈">
+        <Image
+          src="/gamelog-logo-console.png"
+          alt=""
+          width={28}
+          height={28}
+        />
         GameLog<span className="lime">.</span>
       </Link>
       <nav aria-label="주요 메뉴">
