@@ -217,6 +217,18 @@ public class ApiV1UserController {
         );
     }
 
+    @PatchMapping("/me/password")
+    public RsData<Void> changePassword(
+            @AuthenticationPrincipal SecurityUser securityUser,
+            @Valid @RequestBody ChangePasswordRequestDto changePasswordRequestDto
+    ) {
+        userService.changePassword(securityUser.getId(), changePasswordRequestDto);
+        return new RsData<>(
+                "200-14",
+                "비밀번호 변경 성공"
+        );
+    }
+
     @GetMapping("/check-email")
     public RsData<Boolean> checkEmailDuplicate(
             @RequestParam String email
