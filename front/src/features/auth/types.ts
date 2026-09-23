@@ -30,6 +30,11 @@ export type UpdateProfileRequestBody = {
   profileImageUrl: string | null;
 };
 
+export type ChangePasswordRequestBody = {
+  currentPassword: string;
+  newPassword: string;
+};
+
 export type SignupRequestBody = {
   nickname: string;
   email: string;

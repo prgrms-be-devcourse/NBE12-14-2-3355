@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { PublicUserDto, UserDto } from "@/features/auth/types";
 import { useAuth } from "@/features/auth/auth-context";
 import ProfileEditor from "./profile-editor";
+import PasswordChangeDialog from "./password-change-dialog";
 import styles from "./profile.module.css";
 
 type Props = {
@@ -16,6 +17,7 @@ type Props = {
 export default function ProfileHeader({ user, accessToken, editable, onSaved }: Props) {
   const auth = useAuth();
   const [editing, setEditing] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   return <section className={styles.profileHeader} aria-label={editable ? "내 프로필" : `${user.nickname}님의 프로필`}>
     {user.profileImageUrl
@@ -28,6 +30,7 @@ export default function ProfileHeader({ user, accessToken, editable, onSaved }: 
       <p className={styles.profileBio}>{user.bio?.trim() || "아직 한줄 소개가 없어요."}</p>
       {editable && <div className={styles.profileHeaderActions}>
         <button type="button" className={styles.profileEditButton} onClick={() => setEditing(true)}>프로필 수정</button>
+        <button type="button" className={styles.profileEditButton} onClick={() => setChangingPassword(true)}>비밀번호 변경</button>
         <button type="button" className={`${styles.profileEditButton} ${styles.profileLogoutButton}`} onClick={() => { void auth.logout(); }}>로그아웃</button>
       </div>}
     </div>
@@ -35,5 +38,6 @@ export default function ProfileHeader({ user, accessToken, editable, onSaved }: 
             onSaved?.(updatedUser);
             setEditing(false);
           }} onClose={() => setEditing(false)} />}
+    {changingPassword && <PasswordChangeDialog accessToken={accessToken ?? ""} onClose={() => setChangingPassword(false)} />}
   </section>;
 }
