@@ -1360,8 +1360,8 @@ function RecentReviews({
               </div>
 
               <p>
-                {review.content ||
-                  "작성한 리뷰가 없습니다."}
+                {review.content?.trim() ||
+                  "별점만 남긴 리뷰입니다."}
               </p>
 
               <time>

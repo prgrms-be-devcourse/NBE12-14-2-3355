@@ -45,8 +45,13 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             SELECT review
             FROM Review review
             WHERE review.userGame.game.id = :gameId
-              AND review.content IS NOT NULL
-              AND TRIM(review.content) <> ''
+              AND (
+                  review.rating IS NOT NULL
+                  OR (
+                      review.content IS NOT NULL
+                      AND TRIM(review.content) <> ''
+                  )
+              )
               AND (
                   review.status IS NULL
                   OR review.status = com.gamelog.nbe121423355.domain.review.entity.ReviewStatus.ACTIVE
@@ -62,8 +67,13 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             SELECT review
             FROM Review review
             WHERE review.userGame.user.id = :userId
-              AND review.content IS NOT NULL
-              AND TRIM(review.content) <> ''
+              AND (
+                  review.rating IS NOT NULL
+                  OR (
+                      review.content IS NOT NULL
+                      AND TRIM(review.content) <> ''
+                  )
+              )
               AND (
                   review.status IS NULL
                   OR review.status = com.gamelog.nbe121423355.domain.review.entity.ReviewStatus.ACTIVE
@@ -119,8 +129,13 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     JOIN FETCH ug.game g
     LEFT JOIN FETCH ug.platform p
     WHERE ug.user.id = :userId
-      AND r.content IS NOT NULL
-      AND TRIM(r.content) <> ''
+      AND (
+          r.rating IS NOT NULL
+          OR (
+              r.content IS NOT NULL
+              AND TRIM(r.content) <> ''
+          )
+      )
       AND (
           r.status IS NULL
           OR r.status = com.gamelog.nbe121423355.domain.review.entity.ReviewStatus.ACTIVE
