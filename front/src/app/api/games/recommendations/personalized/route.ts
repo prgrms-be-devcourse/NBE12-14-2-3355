@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const url = new URL("/api/v1/games/recommendations/personalized", process.env.BACKEND_URL || "http://localhost:8080");
-    const upstream = await fetch(url, { headers, cache: "no-store", signal: AbortSignal.timeout(8000) });
+    const upstream = await fetch(url, { headers, cache: "no-store", signal: AbortSignal.timeout(80000) });
     const responseHeaders = new Headers({
       "Content-Type": upstream.headers.get("content-type") || "application/json",
       "Cache-Control": "private, no-store",

@@ -49,10 +49,10 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
   sql:
     init:
       mode: always   # data.sql 항상 실행 (중복 방지 필요하면 always -> never로 바꾸고 수동 실행)
@@ -116,4 +116,3 @@ app:
   cookie:
     same-site: None
     secure: true
-
