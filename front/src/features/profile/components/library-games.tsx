@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GameSearch from "@/features/games/components/game-search";
 import SelectDropdown from "@/components/ui/select-dropdown";
+import ImageWithFallback from "@/components/ui/image-with-fallback";
+import GameCoverFallback from "@/components/ui/game-cover-fallback";
 import { acceptRefreshedToken } from "@/features/auth/api";
 import { coverUrl, type Option } from "@/features/games/model";
 import styles from "./profile.module.css";
@@ -114,8 +116,8 @@ export default function LibraryGames({ accessToken, userId }: { accessToken?: st
 }
 
 function LibraryCover({ game }: { game: LibraryGame }) {
-  const [broken, setBroken] = useState(false);
-  const url = coverUrl(game.coverImageUrl);
-  // eslint-disable-next-line @next/next/no-img-element
-  return url && !broken ? <img className={styles.libraryCover} src={url} alt={game.title} loading="lazy" onError={() => setBroken(true)} /> : <div className={styles.libraryCoverFallback}>🎮</div>;
+  return <ImageWithFallback
+    src={coverUrl(game.coverImageUrl)} alt={game.title} className={styles.libraryCover}
+    fallback={<GameCoverFallback title={game.title} className={styles.libraryCover} />}
+  />;
 }

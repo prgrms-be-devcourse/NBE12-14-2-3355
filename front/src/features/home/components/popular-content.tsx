@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { coverUrl } from "@/features/games/model";
+import ImageWithFallback from "@/components/ui/image-with-fallback";
+import GameCoverFallback from "@/components/ui/game-cover-fallback";
 import {
   getPopularGames,
   getPopularReviews,
@@ -88,17 +90,15 @@ function StateMessage({ children, retry, type }: { children: string; retry?: () 
 }
 
 function PopularGameCard({ game }: { game: PopularGame }) {
-  const [broken, setBroken] = useState(false);
-  const imageUrl = coverUrl(game.coverImageUrl);
   const genres = game.genres ?? [];
 
   return <li>
     <Link className={gameStyles.card} href={`/games/${game.gameId}`}>
       <div className={gameStyles.cover}>
-        {imageUrl && !broken ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt={`${game.title} 커버`} loading="lazy" onError={() => setBroken(true)} />
-        ) : <div className={gameStyles.fallback}><span>{game.title}</span><small>커버 준비 중</small></div>}
+        <ImageWithFallback
+          src={coverUrl(game.coverImageUrl)} alt={`${game.title} 커버`}
+          fallback={<GameCoverFallback title={game.title} />}
+        />
         <span className={gameStyles.openHint} aria-hidden="true">↗</span>
       </div>
       <div className={gameStyles.cardInfo}>
@@ -116,7 +116,6 @@ function PopularGameCard({ game }: { game: PopularGame }) {
 
 function PopularReviewCard({ review }: { review: PopularReview }) {
   const [revealed, setRevealed] = useState(false);
-  const [brokenCover, setBrokenCover] = useState(false);
   const gameCover = coverUrl(review.gameCoverImageUrl);
   const nickname = review.nickname?.trim() || `플레이어 ${review.userId}`;
   const hidden = review.spoiler && !revealed;
@@ -151,10 +150,7 @@ function PopularReviewCard({ review }: { review: PopularReview }) {
       </div>
       <Link className={styles.reviewGame} href={`/games/${review.gameId}`}>
         <span className={styles.reviewGameCover}>
-          {gameCover && !brokenCover ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={gameCover} alt={`${review.gameTitle} 커버`} loading="lazy" onError={() => setBrokenCover(true)} />
-          ) : <span aria-hidden="true">GL</span>}
+          <ImageWithFallback src={gameCover} alt={`${review.gameTitle} 커버`} fallback={<span aria-hidden="true">GL</span>} />
         </span>
         <span className={styles.reviewGameInfo}>
           <small>REVIEW OF</small>

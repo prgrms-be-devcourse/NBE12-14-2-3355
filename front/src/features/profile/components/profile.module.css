@@ -23,7 +23,7 @@
 .editorForm,.editorFields{display:flex;flex-direction:column;gap:20px}
 .editorFields{border:0;padding:0;margin:0;min-width:0}
 .editorFields label{display:flex;flex-direction:column;gap:8px;font-size:13px}
-.editorFields input,.libraryToolbar input,.libraryToolbar select{width:100%;min-width:0;padding:10px;border:1px solid var(--line);border-radius:5px;background:#101512;color:var(--text)}
+.editorFields input,.libraryToolbar input{width:100%;min-width:0;padding:10px;border:1px solid var(--line);border-radius:5px;background:#101512;color:var(--text)}
 .editorFields input[type="file"]{cursor:pointer;transition:border-color .15s ease,color .15s ease}
 .editorFields input[type="file"]::file-selector-button{margin-right:12px;padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font:inherit;font-weight:600;cursor:pointer;transition:border-color .15s ease,color .15s ease}
 .editorFields input[type="file"]:hover:not(:disabled),.editorFields input[type="file"]:hover:not(:disabled)::file-selector-button{border-color:var(--lime);color:var(--lime)}
@@ -1189,16 +1189,6 @@
     gap: 10px;
     color: var(--muted);
     font-size: 13px;
-  }
-
-  .profileReviewsSort select {
-    min-width: 120px;
-    padding: 10px 34px 10px 12px;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: var(--panel);
-    color: var(--text);
-    font: inherit;
   }
 
   .profileReviewsList {

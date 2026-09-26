@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { coverUrl, type RelatedGame } from "@/features/games/model";
+import ImageWithFallback from "@/components/ui/image-with-fallback";
+import GameCoverFallback from "@/components/ui/game-cover-fallback";
 import styles from "./related-games.module.css";
 
 type RelatedResponse = { data?: RelatedGame[]; msg?: string };
@@ -12,17 +14,15 @@ type QueryState =
   | { status: "error" };
 
 function RecommendationCard({ game }: { game: RelatedGame }) {
-  const [broken, setBroken] = useState(false);
-  const imageUrl = coverUrl(game.coverImageUrl);
   const genres = game.genres ?? [];
 
   return <li>
     <Link className={styles.card} href={`/games/${game.id}`}>
       <div className={styles.cover}>
-        {imageUrl && !broken ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt="" loading="lazy" onError={() => setBroken(true)} />
-        ) : <div className={styles.fallback}><span>{game.title}</span><small>커버 준비 중</small></div>}
+        <ImageWithFallback
+          src={coverUrl(game.coverImageUrl)} alt=""
+          fallback={<GameCoverFallback title={game.title} />}
+        />
         <span className={styles.openHint} aria-hidden="true">↗</span>
       </div>
       <div className={styles.cardInfo}>

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { coverUrl, type GameDetail, type GameStatistics } from "@/features/games/model";
+import ImageWithFallback from "@/components/ui/image-with-fallback";
+import GameCoverFallback from "@/components/ui/game-cover-fallback";
 import GameReviews from "@/features/reviews/components/game-reviews";
 import RelatedGames from "@/features/recommendations/components/related-games";
 import MyGameLog from "@/features/library/components/my-game-log";
@@ -20,15 +22,10 @@ function formatReleaseDate(value: string) {
 }
 
 function GameCover({ game }: { game: GameDetail }) {
-  const [broken, setBroken] = useState(false);
-  const url = coverUrl(game.coverImageUrl);
-
-  if (!url || broken) {
-    return <div className={styles.coverFallback}><span>{game.title}</span><small>커버 준비 중</small></div>;
-  }
-
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={url} alt={`${game.title} 커버`} onError={() => setBroken(true)} />;
+  return <ImageWithFallback
+    src={coverUrl(game.coverImageUrl)} alt={`${game.title} 커버`} loading="eager"
+    fallback={<GameCoverFallback title={game.title} />}
+  />;
 }
 
 type StatIconName = "game" | "play" | "backlog" | "wishlist" | "review" | "heart" | "clock";

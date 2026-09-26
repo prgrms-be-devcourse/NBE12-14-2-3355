@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { searchUsers } from "@/features/follows/api";
 import type { FollowUserResponseDto } from "@/features/follows/types";
 import SearchCombobox from "@/components/ui/search-combobox";
+import ImageWithFallback from "@/components/ui/image-with-fallback";
 import styles from "./follow-list.module.css";
 
 type Props = {
@@ -29,9 +29,8 @@ export default function UserSearch({ value, accessToken, onChange, onSearch, onS
 }
 
 function UserAvatar({ user }: { user: FollowUserResponseDto }) {
-  const [broken, setBroken] = useState(false);
-  return user.profileImageUrl && !broken
-    // eslint-disable-next-line @next/next/no-img-element
-    ? <img src={user.profileImageUrl} alt="" onError={() => setBroken(true)} />
-    : <span className="search-cover-fallback" aria-hidden="true">{user.nickname.slice(0, 1).toUpperCase()}</span>;
+  return <ImageWithFallback
+    src={user.profileImageUrl} alt=""
+    fallback={<span className="search-cover-fallback" aria-hidden="true">{user.nickname.slice(0, 1).toUpperCase()}</span>}
+  />;
 }
