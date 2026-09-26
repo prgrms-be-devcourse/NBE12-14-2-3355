@@ -9,6 +9,8 @@ import styles from "./signup-client.module.css";
 
 type FieldStatus = "idle" | "checking" | "available" | "duplicate" | "error";
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function SignupClient() {
   const router = useRouter();
   const auth = useAuth();
@@ -24,6 +26,7 @@ export default function SignupClient() {
   async function checkEmail() {
     const value = email.trim();
     if (!value) { setError("이메일을 먼저 입력해 주세요."); return; }
+    if (!EMAIL_PATTERN.test(value)) { setError("올바른 이메일 형식이 아닙니다."); return; }
     setError("");
     setEmailStatus("checking");
     try {
