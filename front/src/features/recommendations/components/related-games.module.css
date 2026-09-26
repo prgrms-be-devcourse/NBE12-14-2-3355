@@ -13,9 +13,6 @@
 .cover img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .3s}
 .card:hover .cover img{transform:scale(1.04)}
 .openHint{position:absolute;right:10px;bottom:10px;display:grid;place-items:center;width:28px;height:28px;border:1px solid #d2e4be40;border-radius:50%;background:#111a13cc;color:#d5f39b;font-size:17px}
-.fallback{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;height:100%;padding:18px;text-align:center;background:radial-gradient(ellipse at 70% 20%,#49503b,#1b2523 70%)}
-.fallback span{font-size:16px;font-weight:700;overflow-wrap:anywhere}
-.fallback small{font-size:10px;color:var(--muted)}
 .cardInfo{padding:14px}
 .cardInfo h3{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.8em;color:var(--text);font-size:14px;line-height:1.4;overflow-wrap:anywhere}
 .detailLink{display:flex;align-items:center;justify-content:space-between;margin-top:14px;color:#a8c38e;font-size:10px}

@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { coverUrl, demoGames, demoOptions, emptyFilters, type Filters, type Game, type GamePage, type Option } from "@/features/games/model";
 import SelectDropdown from "@/components/ui/select-dropdown";
+import ImageWithFallback from "@/components/ui/image-with-fallback";
+import GameCoverFallback from "@/components/ui/game-cover-fallback";
 
 const catalogSortOptions: { value: string; label: string }[] = [
   { value: "", label: "기본순" },
@@ -26,13 +28,10 @@ function Icon({ name, size = 20 }: { name: "search" | "game" | "filter" | "arrow
 }
 
 function Cover({ game }: { game: Game }) {
-  const [broken, setBroken] = useState(false);
-  const url = coverUrl(game.coverImageUrl);
-  return url && !broken
-    // Covers are served by IGDB or the preview CDN, with an explicit missing-image fallback.
-    // eslint-disable-next-line @next/next/no-img-element
-    ? <img src={url} alt={`${game.title} 커버`} loading="lazy" onError={() => setBroken(true)}/>
-    : <div className="cover-fallback"><Icon name="game" size={36}/><span>{game.title}</span><small>커버 준비 중</small></div>;
+  return <ImageWithFallback
+    src={coverUrl(game.coverImageUrl)} alt={`${game.title} 커버`}
+    fallback={<GameCoverFallback title={game.title} />}
+  />;
 }
 
 function Detail({ game, onClose }: { game: Game; onClose: () => void }) {

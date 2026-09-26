@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { coverUrl, demoGames, type Game } from "@/features/games/model";
 import { acceptRefreshedToken } from "@/features/auth/api";
 import SearchCombobox from "@/components/ui/search-combobox";
+import ImageWithFallback from "@/components/ui/image-with-fallback";
 
 type Props = {
   value: string;
@@ -54,8 +54,8 @@ export default function GameSearch({ value, demo, onChange, onSearch, onSelect, 
 }
 
 function SearchCover({ game }: { game: Game }) {
-  const [broken, setBroken] = useState(false);
-  const url = coverUrl(game.coverImageUrl);
-  // eslint-disable-next-line @next/next/no-img-element
-  return url && !broken ? <img src={url} alt="" onError={() => setBroken(true)} /> : <span className="search-cover-fallback" aria-hidden="true">🎮</span>;
+  return <ImageWithFallback
+    src={coverUrl(game.coverImageUrl)} alt=""
+    fallback={<span className="search-cover-fallback" aria-hidden="true">🎮</span>}
+  />;
 }

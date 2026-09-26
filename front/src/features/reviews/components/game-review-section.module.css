@@ -24,8 +24,8 @@
 .editorHeading span{font-size:8px;letter-spacing:1.8px;color:var(--lime)}.editorHeading h3{font-size:17px;margin-top:5px}
 .editorHeading>button{font-size:24px;color:var(--muted);line-height:1}
 .editor label{display:grid;gap:8px;font-size:12px;font-weight:650}.editor label small{display:inline;color:var(--muted);font-weight:400;margin-left:4px}
-.editor select,.editor textarea{width:100%;border:1px solid #3a443b;border-radius:6px;background:#141918;color:var(--text);padding:11px 12px;outline:none}
-.editor select:focus,.editor textarea:focus{border-color:var(--lime)}.editor textarea{resize:vertical;line-height:1.7}
+.editor textarea{width:100%;border:1px solid #3a443b;border-radius:6px;background:#141918;color:var(--text);padding:11px 12px;outline:none}
+.editor textarea:focus{border-color:var(--lime)}.editor textarea{resize:vertical;line-height:1.7}
 .editor .checkLabel{display:flex;grid-template-columns:auto 1fr;align-items:center;gap:9px;font-weight:400;color:#bdc5bb}
 .checkLabel input{accent-color:var(--lime)}
 .formError{color:#f0b39c;font-size:11px}.editorActions{display:flex;justify-content:flex-end;gap:10px}.editorActions>button:first-child{padding:11px 14px;color:var(--muted)}
