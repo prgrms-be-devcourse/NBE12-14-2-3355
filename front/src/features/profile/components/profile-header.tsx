@@ -19,6 +19,11 @@ export default function ProfileHeader({ user, accessToken, editable, onSaved }: 
   const [editing, setEditing] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
 
+  async function handleLogout() {
+    await auth.logout();
+    window.location.href = "/";
+  }
+
   return <section className={styles.profileHeader} aria-label={editable ? "내 프로필" : `${user.nickname}님의 프로필`}>
     {user.profileImageUrl
       ? /* eslint-disable-next-line @next/next/no-img-element */
@@ -31,7 +36,7 @@ export default function ProfileHeader({ user, accessToken, editable, onSaved }: 
       {editable && <div className={styles.profileHeaderActions}>
         <button type="button" className={styles.profileEditButton} onClick={() => setEditing(true)}>프로필 수정</button>
         <button type="button" className={styles.profileEditButton} onClick={() => setChangingPassword(true)}>비밀번호 변경</button>
-        <button type="button" className={`${styles.profileEditButton} ${styles.profileLogoutButton}`} onClick={() => { void auth.logout(); }}>로그아웃</button>
+        <button type="button" className={`${styles.profileEditButton} ${styles.profileLogoutButton}`} onClick={() => { void handleLogout(); }}>로그아웃</button>
       </div>}
     </div>
     {editing && <ProfileEditor user={user as UserDto} accessToken={accessToken ?? ""} onSaved={(updatedUser) => {
