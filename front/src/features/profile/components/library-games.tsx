@@ -4,9 +4,17 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GameSearch from "@/features/games/components/game-search";
+import SelectDropdown from "@/components/ui/select-dropdown";
 import { acceptRefreshedToken } from "@/features/auth/api";
 import { coverUrl, type Option } from "@/features/games/model";
 import styles from "./profile.module.css";
+
+const sortOptions: { value: string; label: string }[] = [
+  { value: "RECENT_PLAYED", label: "최근 플레이순" },
+  { value: "RATING", label: "별점순" },
+  { value: "TITLE", label: "가나다순" },
+  { value: "PLAY_TIME", label: "플레이타임 순" },
+];
 
 type LibraryGame = { gameId: number; title: string; coverImageUrl: string | null; playStatus: string | null; playing: boolean; backlog: boolean; wishlist: boolean; liked: boolean };
 type LibraryResult = { totalPages: number; userGames: LibraryGame[] };
@@ -90,7 +98,7 @@ export default function LibraryGames({ accessToken, userId }: { accessToken?: st
           onSearch={() => { setKeyword(input.trim()); setPage(0); }}
           onSelect={game => router.push(`/games/${game.id}`)} />
       </div>
-      <label>정렬 <select value={sort} onChange={event => { setSort(event.target.value); setPage(0); }}><option value="RECENT_PLAYED">최근 플레이순</option><option value="RATING">별점순</option><option value="TITLE">가나다순</option><option value="PLAY_TIME">플레이타임 순</option></select></label>
+      <label>정렬 <SelectDropdown ariaLabel="정렬" value={sort} options={sortOptions} onChange={value => { setSort(value); setPage(0); }} /></label>
     </div>
     <div className={styles.libraryFilters}>{(["platforms", "genres"] as const).map(type => <details key={type}><summary>{type === "genres" ? "장르" : "플랫폼"} · {filters[type].length}개 선택</summary><fieldset><legend>여러 개 선택 가능</legend>{options[type].map(option => <label key={option.id}><input type="checkbox" checked={filters[type].includes(option.id)} onChange={() => { setFilters(previous => ({ ...previous, [type]: previous[type].includes(option.id) ? previous[type].filter(id => id !== option.id) : [...previous[type], option.id] })); setPage(0); }} />{option.name}</label>)}{!options[type].length && <p>선택 가능한 항목이 없습니다.</p>}</fieldset></details>)}<button type="button" className={styles.linkBtn} onClick={reset}>조건 초기화</button></div>
     {optionsError && <p className={styles.error} role="alert">{optionsError} <button type="button" onClick={() => setRetry(value => value + 1)}>다시 시도</button></p>}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState, type FormEvent, type MouseEvent as ReactMouseEvent } from "react";
+import { useEffect, useState, type FormEvent, type MouseEvent as ReactMouseEvent } from "react";
 import { deleteReview, getMyDetailedReview, ReviewApiError, saveDetailedReview } from "@/features/reviews/api";
 import type {
   DetailedReview,
@@ -8,6 +8,7 @@ import type {
   PlayStatus,
 } from "@/features/reviews/types";
 import type { Option } from "@/features/games/model";
+import SelectDropdown from "@/components/ui/select-dropdown";
 import styles from "./my-game-log.module.css";
 
 type Props = {
@@ -428,7 +429,15 @@ export default function MyGameLog({
                   <output className={styles.ratingOutput} aria-live="polite">{ratingPreview ? `${ratingPreview.toFixed(1)}점` : "선택 안 함"}</output>
                 </div>
               </div>
-              <label className={styles.platformField}>플랫폼<PlatformSelect platforms={platforms} value={form.platformId} onChange={(value) => update("platformId", value)} /></label>
+              <label className={styles.platformField}>플랫폼
+                <SelectDropdown
+                  ariaLabel="플랫폼 선택" disabled={platforms.length === 0}
+                  placeholder={platforms.length ? "플랫폼 선택" : "등록된 플랫폼 정보 없음"}
+                  value={form.platformId}
+                  onChange={(value) => update("platformId", value)}
+                  options={[{ value: "", label: "선택 안 함" }, ...platforms.map((platform) => ({ value: String(platform.id), label: platform.name }))]}
+                />
+              </label>
             </div>
 
             <label className={styles.playTimeField}>
@@ -483,35 +492,4 @@ export default function MyGameLog({
       </form>
     </div>}
   </section>;
-}
-
-// 게임 검색 자동완성(search-dropdown)과 같은 디자인을 쓰는 커스텀 플랫폼 드롭다운
-function PlatformSelect({ platforms, value, onChange }: { platforms: Option[]; value: string; onChange: (value: string) => void }) {
-  const listId = useId();
-  const [open, setOpen] = useState(false);
-  const disabled = platforms.length === 0;
-  const selected = platforms.find((platform) => String(platform.id) === value);
-  const label = selected ? selected.name : disabled ? "등록된 플랫폼 정보 없음" : "플랫폼 선택";
-
-  function select(next: string) {
-    onChange(next);
-    setOpen(false);
-  }
-
-  return (
-    <div className={styles.platformSelect} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false); }}>
-      <button type="button" className={styles.platformTrigger} aria-haspopup="listbox" aria-expanded={open}
-        aria-controls={open ? listId : undefined} disabled={disabled} onClick={() => setOpen((current) => !current)}>
-        <span>{label}</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-      </button>
-      {open && <div className="search-dropdown">
-        <ul id={listId} role="listbox" aria-label="플랫폼 선택">
-          <li role="option" aria-selected={value === ""} onPointerDown={(event) => event.preventDefault()} onClick={() => select("")}>플랫폼 선택</li>
-          {platforms.map((platform) => <li key={platform.id} role="option" aria-selected={String(platform.id) === value}
-            onPointerDown={(event) => event.preventDefault()} onClick={() => select(String(platform.id))}>{platform.name}</li>)}
-        </ul>
-      </div>}
-    </div>
-  );
 }

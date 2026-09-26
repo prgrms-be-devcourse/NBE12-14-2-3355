@@ -3,6 +3,16 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { coverUrl, demoGames, demoOptions, emptyFilters, type Filters, type Game, type GamePage, type Option } from "@/features/games/model";
+import SelectDropdown from "@/components/ui/select-dropdown";
+
+const catalogSortOptions: { value: string; label: string }[] = [
+  { value: "", label: "기본순" },
+  { value: "LATEST", label: "최신 출시일순" },
+  { value: "TITLE", label: "제목순" },
+  { value: "RATING", label: "GameLog 평점순" },
+  { value: "LIBRARY", label: "라이브러리 등록순" },
+  { value: "PLAY_TIME", label: "평균 플레이 타임순" },
+];
 
 function Icon({ name, size = 20 }: { name: "search" | "game" | "filter" | "arrow" | "close"; size?: number }) {
   const paths = {
@@ -141,7 +151,7 @@ export default function GameCatalog({ initialKeyword = "" }: { initialKeyword?: 
 
         <section className="catalog" id="catalog" aria-label="게임 목록">
           <div className="catalog-toolbar"><div><h2>{keyword ? `“${keyword}” 검색 결과` : "모든 게임"}<span className="count">{loading ? "…" : (result?.totalElements ?? 0).toLocaleString()}</span></h2><p>{filterCount ? `${filterCount}개의 필터가 적용되었어요` : "마음에 드는 커버에서 새로운 이야기를 시작해 보세요."}</p></div>
-            <div className="toolbar-actions"><button className="mobile-filter" aria-expanded={mobileFilters} aria-controls="filters" onClick={() => setMobileFilters(!mobileFilters)}><Icon name="filter" size={16}/>필터</button><label className="sort-label">정렬<select aria-label="게임 정렬" value={sort} onChange={e => { setSort(e.target.value); setPage(0); }}><option value="">기본순</option><option value="LATEST">최신 출시일순</option><option value="TITLE">제목순</option><option value="RATING">GameLog 평점순</option><option value="LIBRARY">라이브러리 등록순</option><option value="PLAY_TIME">평균 플레이 타임순</option></select></label></div>
+            <div className="toolbar-actions"><button className="mobile-filter" aria-expanded={mobileFilters} aria-controls="filters" onClick={() => setMobileFilters(!mobileFilters)}><Icon name="filter" size={16}/>필터</button><label className="sort-label">정렬<SelectDropdown ariaLabel="게임 정렬" value={sort} options={catalogSortOptions} onChange={value => { setSort(value); setPage(0); }} /></label></div>
           </div>
           {(filterCount > 0 || keyword) && <div className="chips active-chips">{keyword && <button onClick={() => { setKeyword(""); setPage(0); }}>검색: {keyword} ×</button>}{(["genres", "platforms"] as const).flatMap(type => filters[type].map(id => <button key={`${type}-${id}`} onClick={() => removeFilter(type, id)}>{available[type].find(o => o.id === id)?.name || id} ×</button>))}</div>}
           {demo && <div className="preview-notice"><span><span className="dot"/> 디자인 미리보기 · 샘플 게임 데이터</span><button onClick={switchMode}>실제 게임 불러오기 ↗</button></div>}

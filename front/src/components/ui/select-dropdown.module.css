@@ -1,0 +1,5 @@
+.wrap{position:relative;display:inline-block;min-width:160px}
+.trigger{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:10px 13px;border:1px solid var(--line);border-radius:5px;background:var(--panel);color:var(--text);font-size:13px;font-weight:400;text-align:left;cursor:pointer}
+.trigger:focus-visible{border-color:var(--lime);box-shadow:0 0 0 2px #b8ef7620}
+.trigger svg{flex-shrink:0;color:var(--muted)}
+.trigger:disabled{color:var(--muted);cursor:not-allowed}
