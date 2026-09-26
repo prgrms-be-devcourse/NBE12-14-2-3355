@@ -248,7 +248,7 @@ public class ApiV1UserController {
         boolean result = userService.checkNicknameDuplicate(nickname);
         return new RsData<>(
                 "200-12",
-                "선호 게임 조회 성공",
+                "닉네임 중복 확인 성공",
                 result
         );
     }
