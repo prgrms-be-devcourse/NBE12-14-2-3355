@@ -8,6 +8,7 @@ import type {
   PlayStatus,
 } from "@/features/reviews/types";
 import type { Option } from "@/features/games/model";
+import SelectDropdown from "@/components/ui/select-dropdown";
 import styles from "./my-game-log.module.css";
 
 type Props = {
@@ -428,7 +429,15 @@ export default function MyGameLog({
                   <output className={styles.ratingOutput} aria-live="polite">{ratingPreview ? `${ratingPreview.toFixed(1)}점` : "선택 안 함"}</output>
                 </div>
               </div>
-              <label className={styles.platformField}>플랫폼<select value={form.platformId} onChange={(event) => update("platformId", event.target.value)} disabled={platforms.length === 0}><option value="">{platforms.length ? "플랫폼 선택" : "등록된 플랫폼 정보 없음"}</option>{platforms.map((platform) => <option key={platform.id} value={platform.id}>{platform.name}</option>)}</select></label>
+              <label className={styles.platformField}>플랫폼
+                <SelectDropdown
+                  ariaLabel="플랫폼 선택" disabled={platforms.length === 0}
+                  placeholder={platforms.length ? "플랫폼 선택" : "등록된 플랫폼 정보 없음"}
+                  value={form.platformId}
+                  onChange={(value) => update("platformId", value)}
+                  options={[{ value: "", label: "선택 안 함" }, ...platforms.map((platform) => ({ value: String(platform.id), label: platform.name }))]}
+                />
+              </label>
             </div>
 
             <label className={styles.playTimeField}>
@@ -457,8 +466,16 @@ export default function MyGameLog({
               <label>마지막 플레이<input type="datetime-local" value={form.lastPlayedAt} onChange={(event) => update("lastPlayedAt", event.target.value)} /></label>
             </div>}
 
-            <label className={styles.reviewLabel}>리뷰 <small>선택</small><textarea rows={7} value={form.content} onChange={(event) => update("content", event.target.value)} placeholder="이 게임은 어땠나요? 별점이나 글 없이 게임 상태만 저장해도 됩니다." /></label>
-            <label className={styles.spoiler}><input type="checkbox" checked={form.spoiler} onChange={(event) => update("spoiler", event.target.checked)} />스포일러가 포함되어 있어요</label>
+            <div className={styles.reviewField}>
+              <div className={styles.reviewFieldHeader}>
+                <label htmlFor="review-content" className={styles.reviewFieldLabel}>리뷰</label>
+                <label className={styles.spoiler}>
+                  스포일러 포함
+                  <input type="checkbox" checked={form.spoiler} onChange={(event) => update("spoiler", event.target.checked)} />
+                </label>
+              </div>
+              <textarea id="review-content" rows={7} value={form.content} onChange={(event) => update("content", event.target.value)} placeholder={"이 게임은 어땠나요? 별점이나 글 없이 게임 상태만 저장해도 됩니다.\n선택사항입니다."} />
+            </div>
           </div>
         </div>
 

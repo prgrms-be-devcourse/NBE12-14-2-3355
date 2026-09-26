@@ -6,10 +6,15 @@ import { useEffect, useState } from "react";
 import { getLikedGames, ProfileApiError } from "@/features/profile/api";
 import type { UserGame, UserGameLibraryResponse } from "@/features/profile/types";
 import { coverUrl } from "@/features/games/model";
+import SelectDropdown from "@/components/ui/select-dropdown";
 import styles from "./profile.module.css";
 
 const PAGE_SIZE = 20;
 type LikesSort = "RECENT_PLAYED" | "TITLE";
+const likesSortOptions: { value: LikesSort; label: string }[] = [
+  { value: "RECENT_PLAYED", label: "최근 기록순" },
+  { value: "TITLE", label: "제목순" },
+];
 
 const PLAY_STATUS_LABEL: Record<string, string> = {
   PLAYED: "플레이함",
@@ -102,16 +107,10 @@ export default function ProfileLikes({ accessToken, userId }: { accessToken?: st
         </div>
         <label className={styles.profileReviewsSort}>
           <span>정렬</span>
-          <select
-            value={sort}
-            onChange={(event) => {
-              setSort(event.target.value as LikesSort);
-              setPage(0);
-            }}
-          >
-            <option value="RECENT_PLAYED">최근 기록순</option>
-            <option value="TITLE">제목순</option>
-          </select>
+          <SelectDropdown
+            ariaLabel="정렬" value={sort} options={likesSortOptions}
+            onChange={(value) => { setSort(value); setPage(0); }}
+          />
         </label>
       </div>
 
