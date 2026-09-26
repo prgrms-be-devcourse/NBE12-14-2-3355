@@ -45,10 +45,10 @@
 .librarySearch :global(.header-search)>input{border:0;background:transparent;padding:0;outline:none}
 .librarySearch button{color:var(--lime);white-space:nowrap;padding:8px}
 .libraryToolbar>label{display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:12px}
-.libraryFilters{display:flex;align-items:flex-start;flex-wrap:wrap;gap:12px;margin:16px 0 24px}
-.libraryFilters details{flex:1;min-width:150px;border:1px solid var(--line);border-radius:6px;padding:10px;font-size:12px}
+.libraryFilters{display:flex;align-items:flex-start;flex-wrap:wrap;gap:12px;margin:16px 0 24px;position:relative;z-index:5}
+.libraryFilters details{position:relative;flex:1;min-width:150px;border:1px solid var(--line);border-radius:6px;padding:10px;font-size:12px}
 .libraryFilters summary{cursor:pointer;color:var(--lime)}
-.libraryFilters fieldset{display:flex;flex-direction:column;gap:10px;max-height:240px;overflow:auto;border:0;margin:12px 0 0;padding:0}
+.libraryFilters fieldset{position:absolute;top:calc(100% + 6px);left:0;min-width:220px;display:flex;flex-direction:column;gap:10px;max-height:240px;overflow:auto;border:1px solid var(--line);border-radius:6px;margin:0;padding:12px;background:#101512;box-shadow:0 8px 24px rgba(0,0,0,.4)}
 .libraryFilters legend{color:var(--muted);padding-bottom:10px}
 .libraryFilters label{display:flex;gap:8px;align-items:center}
 .libraryFilters input{accent-color:var(--lime)}
