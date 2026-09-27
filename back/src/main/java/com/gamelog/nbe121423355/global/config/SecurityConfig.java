@@ -41,6 +41,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/v1/users/signup", "/api/v1/users/login", "/api/v1/users/refresh",
                                 "/api/v1/users/check-email", "/api/v1/users/check-nickname", "/api/v1/users/logout").permitAll()
                         .requestMatchers("/api/v1/users/me", "/api/v1/users/me/**").authenticated()
@@ -52,6 +53,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/games/recommendations/personalized").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reviews/popular").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reviews/*/likes/count").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/users/*/reviews").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/games", "/api/v1/games/**").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN") // 관리자 권한용
                         .anyRequest().authenticated()

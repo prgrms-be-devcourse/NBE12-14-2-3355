@@ -6,6 +6,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.List;
 
 public interface ReviewReportRepository extends JpaRepository<ReviewReport, Long> {
 
@@ -20,4 +24,37 @@ public interface ReviewReportRepository extends JpaRepository<ReviewReport, Long
     @Override
     @EntityGraph(attributePaths = {"reporter", "review.userGame.user"})
     Page<ReviewReport> findAll(Pageable pageable);
+
+    // 관리자 목록의 페이지 기준을 신고 건수가 아닌 신고 대상 리뷰로 잡는다.
+    @Query(value = """
+            SELECT report.review.id
+            FROM ReviewReport report
+            WHERE (:status IS NULL OR report.status = :status)
+            GROUP BY report.review.id
+            ORDER BY MAX(report.createdDate) DESC
+            """, countQuery = """
+            SELECT COUNT(DISTINCT report.review.id)
+            FROM ReviewReport report
+            WHERE (:status IS NULL OR report.status = :status)
+            """)
+    Page<Long> findReviewIdsGroupedByReview(
+            @Param("status") ReportStatus status,
+            Pageable pageable
+    );
+
+    @EntityGraph(attributePaths = {"reporter", "review.userGame.user"})
+    @Query("""
+            SELECT report
+            FROM ReviewReport report
+            WHERE report.review.id IN :reviewIds
+              AND (:status IS NULL OR report.status = :status)
+            ORDER BY report.createdDate DESC
+            """)
+    List<ReviewReport> findAllByReviewIdsAndStatus(
+            @Param("reviewIds") List<Long> reviewIds,
+            @Param("status") ReportStatus status
+    );
+
+    @EntityGraph(attributePaths = {"reporter", "review.userGame.user"})
+    List<ReviewReport> findByReview_IdAndStatus(Long reviewId, ReportStatus status);
 }

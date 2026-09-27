@@ -7,6 +7,10 @@ import com.gamelog.nbe121423355.domain.user.service.UserService;
 import com.gamelog.nbe121423355.global.dto.RsData;
 import com.gamelog.nbe121423355.global.security.SecurityUser;
 import com.gamelog.nbe121423355.global.security.jwt.CookieProperties;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +25,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/users")
+@Tag(name = "api-v1-user-controller", description = "회원가입·로그인·프로필·온보딩 API")
 public class ApiV1UserController {
 
     private final UserService userService;
@@ -30,6 +35,7 @@ public class ApiV1UserController {
 
 
     @PostMapping ("/signup")
+    @Operation(summary = "회원가입", description = "닉네임, 이메일과 비밀번호로 일반 사용자 계정을 생성합니다.")
     public RsData<UserDto> signUp(
             @Valid
             @RequestBody SignupRequestDto signupRequestDto
@@ -43,10 +49,11 @@ public class ApiV1UserController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "로그인", description = "accessToken을 응답하고 refreshToken을 HttpOnly 쿠키로 설정합니다.")
     public RsData<LoginResponseDto> login(
             @Valid
             @RequestBody LoginRequestDto loginRequestDto,
-                        HttpServletResponse httpServletResponse
+            @Parameter(hidden = true) HttpServletResponse httpServletResponse
     ){
         UserService.LoginResult result = userService.login(loginRequestDto);
 
@@ -68,9 +75,10 @@ public class ApiV1UserController {
     }
 
     @PostMapping("/logout")
+    @Operation(summary = "로그아웃", description = "refreshToken을 폐기하고 인증 쿠키를 제거합니다.")
     public RsData<Void> logout(
             @CookieValue(value = "refreshToken", required = false) String refreshToken,
-            HttpServletResponse httpServletResponse
+            @Parameter(hidden = true) HttpServletResponse httpServletResponse
     ) {
         if (refreshToken != null) {
             userService.logout(refreshToken);
@@ -89,6 +97,7 @@ public class ApiV1UserController {
     }
 
     @PostMapping("/refresh")
+    @Operation(summary = "accessToken 재발급", description = "HttpOnly refreshToken 쿠키를 사용해 새로운 accessToken을 발급합니다.")
     public RsData<TokenResponseDto> refresh(
             @CookieValue("refreshToken")
             String refreshToken
@@ -102,6 +111,7 @@ public class ApiV1UserController {
     }
 
     @GetMapping("/{userId}")
+    @Operation(summary = "사용자 공개 정보 조회", description = "사용자 ID로 닉네임, 프로필 이미지와 자기소개를 조회합니다.")
     public RsData<PublicUserDto> getOtherUser(
             @PathVariable Long userId
     ){
@@ -114,8 +124,9 @@ public class ApiV1UserController {
     }
 
     @GetMapping("/me")
+    @Operation(summary = "내 정보 조회", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<UserDto> getMe(
-            @AuthenticationPrincipal SecurityUser securityUser
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser securityUser
     ){
         UserDto userDto = userService.getMe(securityUser.getId());
         return new RsData<>(
@@ -126,8 +137,9 @@ public class ApiV1UserController {
     }
 
     @PatchMapping("/me")
+    @Operation(summary = "내 프로필 수정", description = "닉네임, 프로필 이미지와 자기소개를 수정합니다.", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<UserDto> updateProfile(
-            @AuthenticationPrincipal SecurityUser securityUser,
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser securityUser,
             @Valid @RequestBody UpdateProfileRequestDto updateProfileRequestDto
     ) {
         UserDto userDto = userService.updateProfile(securityUser.getId(), updateProfileRequestDto);
@@ -139,8 +151,9 @@ public class ApiV1UserController {
     }
 
     @PatchMapping("/me/onboarding")
+    @Operation(summary = "온보딩 완료", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<UserDto> onboarding(
-        @AuthenticationPrincipal SecurityUser securityUser
+        @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser securityUser
     ){
         UserDto userDto = userService.exitOnboarding(securityUser.getId());
         return new RsData<>(
@@ -152,8 +165,9 @@ public class ApiV1UserController {
 
 
     @PatchMapping("/me/onboarding/skip")
+    @Operation(summary = "온보딩 건너뛰기", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<UserDto> onboardingSkip(
-            @AuthenticationPrincipal SecurityUser securityUser
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser securityUser
     ){
         UserDto userDto = userService.skipOnboarding(securityUser.getId());
         return new RsData<>(
@@ -164,8 +178,9 @@ public class ApiV1UserController {
     }
 
     @PutMapping("/me/preferred-genres")
+    @Operation(summary = "선호 장르 저장", description = "온보딩에서 선택한 선호 장르 목록을 교체합니다.", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<List<PreferredGenreResponseDto>> updatePreferredGenres(
-            @AuthenticationPrincipal SecurityUser securityUser,
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser securityUser,
             @Valid @RequestBody PreferredGenreRequestDto requestDto
     ) {
         List<PreferredGenreResponseDto> result =
@@ -178,8 +193,9 @@ public class ApiV1UserController {
     }
 
     @GetMapping("/me/preferred-genres")
+    @Operation(summary = "선호 장르 조회", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<List<PreferredGenreResponseDto>> getPreferredGenres(
-            @AuthenticationPrincipal SecurityUser securityUser
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser securityUser
     ) {
         List<PreferredGenreResponseDto> result =
                 userPreferenceGenreService.getPreferredGenres(securityUser.getId());
@@ -191,8 +207,9 @@ public class ApiV1UserController {
     }
 
     @PutMapping("/me/preferred-games")
+    @Operation(summary = "선호 게임 저장", description = "온보딩에서 선택한 선호 게임 목록을 교체합니다.", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<List<PreferredGameResponseDto>> updatePreferredGames(
-            @AuthenticationPrincipal SecurityUser securityUser,
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser securityUser,
             @Valid @RequestBody PreferredGameRequestDto requestDto
     ) {
         List<PreferredGameResponseDto> result =
@@ -205,8 +222,9 @@ public class ApiV1UserController {
     }
 
     @GetMapping("/me/preferred-games")
+    @Operation(summary = "선호 게임 조회", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<List<PreferredGameResponseDto>> getPreferredGames(
-            @AuthenticationPrincipal SecurityUser securityUser
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser securityUser
     ) {
         List<PreferredGameResponseDto> result =
                 userPreferenceGameService.getPreferredGames(securityUser.getId());
@@ -218,8 +236,9 @@ public class ApiV1UserController {
     }
 
     @PatchMapping("/me/password")
+    @Operation(summary = "비밀번호 변경", description = "현재 비밀번호를 확인한 뒤 새 비밀번호로 변경합니다.", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<Void> changePassword(
-            @AuthenticationPrincipal SecurityUser securityUser,
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser securityUser,
             @Valid @RequestBody ChangePasswordRequestDto changePasswordRequestDto
     ) {
         userService.changePassword(securityUser.getId(), changePasswordRequestDto);
@@ -230,6 +249,7 @@ public class ApiV1UserController {
     }
 
     @GetMapping("/check-email")
+    @Operation(summary = "이메일 중복 확인", description = "true이면 이미 사용 중인 이메일입니다.")
     public RsData<Boolean> checkEmailDuplicate(
             @RequestParam String email
     ) {
@@ -242,6 +262,7 @@ public class ApiV1UserController {
     }
 
     @GetMapping("/check-nickname")
+    @Operation(summary = "닉네임 중복 확인", description = "true이면 이미 사용 중인 닉네임입니다.")
     public RsData<Boolean> chekNicknameDuplicate(
             @RequestParam String nickname
     ) {

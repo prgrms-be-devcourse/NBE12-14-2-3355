@@ -156,7 +156,7 @@ function ReviewCard({
           스포일러가 포함된 리뷰입니다 · 눌러서 보기
         </button>
       ) : (
-        <p className={styles.content}>{review.content?.trim() || "작성된 리뷰 내용이 없습니다."}</p>
+        <p className={styles.content}>{review.content?.trim() || "별점만 남긴 리뷰입니다."}</p>
       )}
 
       <div className={styles.cardActions}>

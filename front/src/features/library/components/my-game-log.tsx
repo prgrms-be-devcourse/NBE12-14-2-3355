@@ -69,7 +69,7 @@ function initialForm(detail: DetailedReview | null): FormState {
     masterTimeHours: textNumber(record?.masterTimeHours),
     startedAt: record?.startedAt ?? "",
     completedAt: record?.completedAt ?? "",
-    lastPlayedAt: record?.lastPlayedAt?.slice(0, 16) ?? "",
+    lastPlayedAt: record?.lastPlayedAt?.slice(0, 10) ?? "",
     rating: textNumber(review?.rating),
     content: review?.content ?? "",
     spoiler: review?.spoiler ?? false,
@@ -78,6 +78,39 @@ function initialForm(detail: DetailedReview | null): FormState {
 
 function optionalNumber(value: string) {
   return value === "" ? null : Number(value);
+}
+
+function localDateString(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+const TODAY = localDateString(new Date());
+
+function validateDates(form: FormState) {
+  if (form.startedAt && form.startedAt > localDateString(new Date())) {
+    return "시작일은 오늘보다 미래일 수 없습니다.";
+  }
+
+  if (form.startedAt && form.completedAt && form.completedAt < form.startedAt) {
+    return "완료일은 시작일보다 빠를 수 없습니다.";
+  }
+
+  if (form.completedAt && form.completedAt > localDateString(new Date())) {
+    return "완료일은 오늘보다 미래일 수 없습니다.";
+  }
+
+  if (form.lastPlayedAt && form.lastPlayedAt.slice(0, 10) > localDateString(new Date())) {
+    return "마지막 플레이 날짜는 오늘보다 미래일 수 없습니다.";
+  }
+
+  if (form.startedAt && form.lastPlayedAt && form.lastPlayedAt < form.startedAt) {
+    return "마지막 플레이 날짜는 시작일보다 빠를 수 없습니다.";
+  }
+
+  return null;
 }
 
 function toRequest(form: FormState): DetailedReviewSaveBody {
@@ -95,7 +128,7 @@ function toRequest(form: FormState): DetailedReviewSaveBody {
       masterTimeHours: optionalNumber(form.masterTimeHours),
       startedAt: form.startedAt || null,
       completedAt: form.completedAt || null,
-      lastPlayedAt: form.lastPlayedAt ? `${form.lastPlayedAt}:00` : null,
+      lastPlayedAt: form.lastPlayedAt ? `${form.lastPlayedAt}T00:00:00` : null,
     },
     review: hasReview ? {
       rating: optionalNumber(form.rating),
@@ -242,6 +275,11 @@ export default function MyGameLog({
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!accessToken || !tokenVerified) return;
+    const dateError = validateDates(form);
+    if (dateError) {
+      setMessage(dateError);
+      return;
+    }
     const hasReview = form.rating !== "" || form.content.trim() !== "";
     setSaving(true);
     setMessage("");
@@ -461,9 +499,9 @@ export default function MyGameLog({
 
             <label className={styles.dateToggle}><input type="checkbox" checked={showDates} onChange={(event) => setShowDates(event.target.checked)} />플레이 날짜 기록하기</label>
             {showDates && <div className={styles.dateGrid}>
-              <label>시작일<input type="date" value={form.startedAt} onChange={(event) => update("startedAt", event.target.value)} /></label>
-              <label>완료일<input type="date" value={form.completedAt} onChange={(event) => update("completedAt", event.target.value)} /></label>
-              <label>마지막 플레이<input type="datetime-local" value={form.lastPlayedAt} onChange={(event) => update("lastPlayedAt", event.target.value)} /></label>
+              <label>시작일<input type="date" max={form.completedAt && form.completedAt < TODAY ? form.completedAt : TODAY} value={form.startedAt} onChange={(event) => update("startedAt", event.target.value)} /></label>
+              <label>완료일<input type="date" min={form.startedAt || undefined} max={TODAY} value={form.completedAt} onChange={(event) => update("completedAt", event.target.value)} /></label>
+              <label>마지막 플레이<input type="date" min={form.startedAt || undefined} max={TODAY} value={form.lastPlayedAt} onChange={(event) => update("lastPlayedAt", event.target.value)} /></label>
             </div>}
 
             <div className={styles.reviewField}>

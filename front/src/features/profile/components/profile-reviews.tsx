@@ -189,7 +189,7 @@ export default function ProfileReviews({
                     {review.platformName ? <span className={styles.profileReviewPlatform}>{review.platformName}</span> : null}
                   </div>
                   {review.spoiler ? <span className={styles.profileReviewSpoiler}>스포일러 포함</span> : null}
-                  <p>{review.content || "작성한 리뷰 내용이 없습니다."}</p>
+                  <p>{review.content?.trim() || "별점만 남긴 리뷰입니다."}</p>
                   <footer className={styles.profileReviewFooter}>
                     <span>♥ {review.likeCount.toLocaleString()} 좋아요</span>
                     <Link href={`/games/${review.gameId}`}>리뷰 열기 →</Link>

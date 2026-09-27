@@ -135,7 +135,7 @@ function ReviewCard({
         <button onClick={() => setRevealed(true)}>내용 보기</button>
       </div>}
       <p className={hidden ? styles.blurred : undefined} aria-hidden={hidden}>
-        {review.content}
+        {review.content?.trim() || "별점만 남긴 리뷰입니다."}
       </p>
     </div>
     <div className={styles.cardActions}>
@@ -339,7 +339,7 @@ export default function GameReviews({
         <p className={styles.reportGuide}>운영자가 확인할 수 있도록 신고 사유를 구체적으로 작성해 주세요.</p>
         <div className={styles.reportedReview}>
           <strong>{reportingReview.rating == null ? "별점 없음" : `★ ${reportingReview.rating.toFixed(1)}`}</strong>
-          <p>{reportingReview.content}</p>
+          <p>{reportingReview.content?.trim() || "별점만 남긴 리뷰입니다."}</p>
         </div>
         <label className={styles.reportReason}>신고 사유
           <textarea value={reportReason} onChange={(event) => setReportReason(event.target.value)} maxLength={255} rows={5} placeholder="욕설, 광고, 스포일러 미표시 등 신고 사유를 입력하세요." required />
