@@ -17,7 +17,13 @@ import type {
   ReviewDraft,
   ReviewPage,
 } from "@/features/reviews/types";
+import SelectDropdown from "@/components/ui/select-dropdown";
 import styles from "./game-review-section.module.css";
+
+const ratingOptions: { value: string; label: string }[] = [
+  { value: "", label: "별점 없음" },
+  ...Array.from({ length: 10 }, (_, index) => (index + 1) / 2).map((score) => ({ value: String(score), label: score.toFixed(1) })),
+];
 
 type GameReviewSectionProps = {
   gameId: number;
@@ -201,12 +207,7 @@ function ReviewEditor({
       </div>
       <label>
         별점 <small>선택</small>
-        <select value={rating} onChange={(event) => setRating(event.target.value)}>
-          <option value="">별점 없음</option>
-          {Array.from({ length: 10 }, (_, index) => (index + 1) / 2).map((score) => (
-            <option value={score} key={score}>{score.toFixed(1)}</option>
-          ))}
-        </select>
+        <SelectDropdown ariaLabel="별점 선택" value={rating} options={ratingOptions} onChange={setRating} />
       </label>
       <label>
         리뷰 내용 <small>선택</small>

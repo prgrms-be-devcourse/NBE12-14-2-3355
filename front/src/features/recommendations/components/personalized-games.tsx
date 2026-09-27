@@ -5,22 +5,22 @@ import { useEffect, useState } from "react";
 import { useAuth, AuthApiError } from "@/features/auth/auth-context";
 import { getPersonalizedGames, type PersonalizedGame } from "@/features/recommendations/api";
 import { coverUrl } from "@/features/games/model";
+import ImageWithFallback from "@/components/ui/image-with-fallback";
+import GameCoverFallback from "@/components/ui/game-cover-fallback";
 import styles from "./related-games.module.css";
 import personalizedStyles from "./personalized-games.module.css";
 
 // 메인 추천 영역에서 사용할 커버·장르·임시 추천 점수 카드
 function RecommendationCard({ game }: { game: PersonalizedGame }) {
-  const [broken, setBroken] = useState(false);
-  const imageUrl = coverUrl(game.coverImageUrl);
   const genres = game.genres ?? [];
 
   return <li>
     <Link className={styles.card} href={`/games/${game.id}`}>
       <div className={styles.cover}>
-        {imageUrl && !broken ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt="" loading="lazy" onError={() => setBroken(true)} />
-        ) : <div className={styles.fallback}><span>{game.title}</span><small>커버 준비 중</small></div>}
+        <ImageWithFallback
+          src={coverUrl(game.coverImageUrl)} alt=""
+          fallback={<GameCoverFallback title={game.title} />}
+        />
         <span className={styles.openHint} aria-hidden="true">↗</span>
       </div>
       <div className={styles.cardInfo}>
