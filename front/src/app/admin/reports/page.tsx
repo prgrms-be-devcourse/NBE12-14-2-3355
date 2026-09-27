@@ -128,6 +128,7 @@ export default function AdminReviewReportsPage() {
 
   async function processReport(
     reportId: number,
+    reportCount: number,
     nextStatus: "APPROVED" | "REJECTED",
   ) {
     if (
@@ -145,7 +146,7 @@ export default function AdminReviewReportsPage() {
 
     if (
       !window.confirm(
-        `이 신고를 ${action}할까요?`,
+        `이 리뷰에 접수된 대기 신고 ${reportCount}건을 모두 ${action}할까요?`,
       )
     ) {
       return;
@@ -194,7 +195,7 @@ export default function AdminReviewReportsPage() {
           aria-label="신고 필터"
         >
           <strong>
-            총 {result.totalElements.toLocaleString()}건
+            신고된 리뷰 총 {result.totalElements.toLocaleString()}개
           </strong>
 
           <label>
@@ -256,7 +257,7 @@ export default function AdminReviewReportsPage() {
           {result.reports.map((report) => (
             <article
               className={styles.card}
-              key={report.reportId}
+              key={report.reviewId}
             >
               <div className={styles.cardHeader}>
                 <div>
@@ -271,13 +272,13 @@ export default function AdminReviewReportsPage() {
                   </span>
 
                   <strong>
-                    신고 #{report.reportId}
+                    리뷰 #{report.reviewId} · 신고 {report.reportCount}건
                   </strong>
                 </div>
 
-                <time dateTime={report.createdDate}>
+                <time dateTime={report.latestReportedAt}>
                   {new Date(
-                    report.createdDate,
+                    report.latestReportedAt,
                   ).toLocaleString("ko-KR")}
                 </time>
               </div>
@@ -293,11 +294,8 @@ export default function AdminReviewReportsPage() {
                 </div>
 
                 <div>
-                  <dt>신고자</dt>
-                  <dd>
-                    {report.reporterNickname} (#
-                    {report.reporterId})
-                  </dd>
+                  <dt>신고 인원</dt>
+                  <dd>{report.reportCount}명</dd>
                 </div>
 
                 <div>
@@ -312,9 +310,24 @@ export default function AdminReviewReportsPage() {
                 </div>
               </dl>
 
-              <div className={styles.reason}>
-                <span>신고 사유</span>
-                <p>{report.reason}</p>
+              <div className={styles.reasons}>
+                <span>신고자 및 신고 사유</span>
+
+                <ul>
+                  {report.reports.map((item) => (
+                    <li key={item.reportId}>
+                      <div>
+                        <strong>
+                          {item.reporterNickname} (#{item.reporterId})
+                        </strong>
+                        <time dateTime={item.createdDate}>
+                          {new Date(item.createdDate).toLocaleString("ko-KR")}
+                        </time>
+                      </div>
+                      <p>{item.reason}</p>
+                    </li>
+                  ))}
+                </ul>
               </div>
 
               <div className={styles.snapshot}>
@@ -347,7 +360,8 @@ export default function AdminReviewReportsPage() {
                     className={styles.reject}
                     onClick={() =>
                       processReport(
-                        report.reportId,
+                        report.representativeReportId,
+                        report.pendingReportCount,
                         "REJECTED",
                       )
                     }
@@ -361,13 +375,14 @@ export default function AdminReviewReportsPage() {
                     className={styles.approve}
                     onClick={() =>
                       processReport(
-                        report.reportId,
+                        report.representativeReportId,
+                        report.pendingReportCount,
                         "APPROVED",
                       )
                     }
                     disabled={processingId != null}
                   >
-                    {processingId === report.reportId
+                    {processingId === report.representativeReportId
                       ? "처리 중…"
                       : "승인 및 숨김"}
                   </button>

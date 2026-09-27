@@ -329,6 +329,142 @@ class UserGameServiceTest {
     }
 
     @Test
+    @DisplayName("완료일이 시작일보다 빠르면 플레이 기록을 저장할 수 없다")
+    void rejectReversedPlayDates() {
+        UserGameReqBody reqBody = new UserGameReqBody(
+                PlayStatus.COMPLETED,
+                false,
+                false,
+                false,
+                false,
+                null,
+                null,
+                null,
+                null,
+                LocalDate.of(2026, 10, 5),
+                LocalDate.of(2026, 10, 1),
+                null
+        );
+
+        assertThatThrownBy(() ->
+                userGameService.addOrUpdateGameToLibrary(1L, 1L, reqBody)
+        )
+                .isInstanceOf(ServiceException.class)
+                .hasMessage("완료일은 시작일보다 빠를 수 없습니다.");
+
+        verifyNoInteractions(platformRepository, userGameRepository);
+    }
+
+    @Test
+    @DisplayName("마지막 플레이 날짜가 미래면 플레이 기록을 저장할 수 없다")
+    void rejectFutureLastPlayedDate() {
+        UserGameReqBody reqBody = new UserGameReqBody(
+                PlayStatus.PLAYED,
+                false,
+                false,
+                false,
+                false,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                LocalDate.now().plusDays(1).atStartOfDay()
+        );
+
+        assertThatThrownBy(() ->
+                userGameService.addOrUpdateGameToLibrary(1L, 1L, reqBody)
+        )
+                .isInstanceOf(ServiceException.class)
+                .hasMessage("마지막 플레이 날짜는 오늘보다 미래일 수 없습니다.");
+
+        verifyNoInteractions(platformRepository, userGameRepository);
+    }
+
+    @Test
+    @DisplayName("완료일이 미래면 플레이 기록을 저장할 수 없다")
+    void rejectFutureCompletedDate() {
+        UserGameReqBody reqBody = new UserGameReqBody(
+                PlayStatus.COMPLETED,
+                false,
+                false,
+                false,
+                false,
+                null,
+                null,
+                null,
+                null,
+                LocalDate.now(),
+                LocalDate.now().plusDays(1),
+                null
+        );
+
+        assertThatThrownBy(() ->
+                userGameService.addOrUpdateGameToLibrary(1L, 1L, reqBody)
+        )
+                .isInstanceOf(ServiceException.class)
+                .hasMessage("완료일은 오늘보다 미래일 수 없습니다.");
+
+        verifyNoInteractions(platformRepository, userGameRepository);
+    }
+
+    @Test
+    @DisplayName("시작일이 미래면 플레이 기록을 저장할 수 없다")
+    void rejectFutureStartedDate() {
+        UserGameReqBody reqBody = new UserGameReqBody(
+                PlayStatus.PLAYED,
+                false,
+                false,
+                false,
+                false,
+                null,
+                null,
+                null,
+                null,
+                LocalDate.now().plusDays(1),
+                null,
+                null
+        );
+
+        assertThatThrownBy(() ->
+                userGameService.addOrUpdateGameToLibrary(1L, 1L, reqBody)
+        )
+                .isInstanceOf(ServiceException.class)
+                .hasMessage("시작일은 오늘보다 미래일 수 없습니다.");
+
+        verifyNoInteractions(platformRepository, userGameRepository);
+    }
+
+    @Test
+    @DisplayName("마지막 플레이 날짜가 시작일보다 빠르면 저장할 수 없다")
+    void rejectLastPlayedDateBeforeStartedDate() {
+        LocalDate startedAt = LocalDate.now().minusDays(1);
+        UserGameReqBody reqBody = new UserGameReqBody(
+                PlayStatus.PLAYED,
+                false,
+                false,
+                false,
+                false,
+                null,
+                null,
+                null,
+                null,
+                startedAt,
+                null,
+                startedAt.minusDays(1).atStartOfDay()
+        );
+
+        assertThatThrownBy(() ->
+                userGameService.addOrUpdateGameToLibrary(1L, 1L, reqBody)
+        )
+                .isInstanceOf(ServiceException.class)
+                .hasMessage("마지막 플레이 날짜는 시작일보다 빠를 수 없습니다.");
+
+        verifyNoInteractions(platformRepository, userGameRepository);
+    }
+
+    @Test
     @DisplayName("플레이_상태를_변경")
     void t5() {
         // given

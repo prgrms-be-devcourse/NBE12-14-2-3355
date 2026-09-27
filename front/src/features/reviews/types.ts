@@ -78,25 +78,44 @@ export type LikeStatus = {
 export type ReportStatus = "PENDING" | "APPROVED" | "REJECTED";
 export type ReviewStatus = "ACTIVE" | "DELETED_BY_USER" | "HIDDEN_BY_ADMIN";
 
-export type ReviewReport = {
+export type ReviewReportItem = {
   reportId: number;
-  reviewId: number;
   reporterId: number;
   reporterNickname: string;
-  reviewWriterId: number;
-  reviewWriterNickname: string;
   reason: string;
-  reviewRating: number | null;
-  reviewContent: string | null;
-  reviewSpoiler: boolean;
-  reviewStatus: ReviewStatus;
   status: ReportStatus;
   createdDate: string;
   lastModifiedDate: string;
 };
 
+export type ReviewReport = ReviewReportItem & {
+  reviewId: number;
+  reviewWriterId: number;
+  reviewWriterNickname: string;
+  reviewRating: number | null;
+  reviewContent: string | null;
+  reviewSpoiler: boolean;
+  reviewStatus: ReviewStatus;
+};
+
+export type ReviewReportGroup = {
+  reviewId: number;
+  reviewWriterId: number;
+  reviewWriterNickname: string;
+  reviewRating: number | null;
+  reviewContent: string | null;
+  reviewSpoiler: boolean;
+  reviewStatus: ReviewStatus;
+  status: ReportStatus;
+  reportCount: number;
+  pendingReportCount: number;
+  representativeReportId: number;
+  latestReportedAt: string;
+  reports: ReviewReportItem[];
+};
+
 export type ReviewReportPage = {
-  reports: ReviewReport[];
+  reports: ReviewReportGroup[];
   page: number;
   size: number;
   totalElements: number;

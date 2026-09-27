@@ -34,10 +34,10 @@ public record UserGameReqBody(
         @PositiveOrZero
         BigDecimal masterTimeHours,
 
-        @Schema(description = "플레이 시작일", example = "2026-09-01", nullable = true)
+        @Schema(description = "플레이 시작일. 오늘보다 미래일 수 없습니다.", example = "2026-09-01", nullable = true)
         LocalDate startedAt,
-        @Schema(description = "플레이 완료일", example = "2026-09-20", nullable = true)
+        @Schema(description = "플레이 완료일. 시작일과 같거나 이후이며 오늘보다 미래일 수 없습니다.", example = "2026-09-20", nullable = true)
         LocalDate completedAt,
-        @Schema(description = "마지막 플레이 일시", example = "2026-09-20T21:30:00", nullable = true)
+        @Schema(description = "마지막 플레이 일시. 시작일과 같거나 이후이며 오늘보다 미래 날짜는 입력할 수 없습니다.", example = "2026-09-20T00:00:00", nullable = true)
         LocalDateTime lastPlayedAt
 ){}

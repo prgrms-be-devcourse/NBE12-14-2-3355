@@ -52,7 +52,7 @@ public class ReviewReportController {
     }
 
     @GetMapping("/admin/review-reports")
-    @Operation(summary = "신고 목록 조회", description = "관리자가 처리 상태별 신고 목록을 조회합니다. ADMIN 권한이 필요합니다.", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "신고 목록 조회", description = "관리자가 처리 상태별 신고를 리뷰 단위로 묶어서 조회합니다. ADMIN 권한이 필요합니다.", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<ReviewReportPageResponse> getReports(
             @RequestParam(required = false) ReportStatus status,
             @PageableDefault(size = 20, sort = "createdDate", direction = DESC) Pageable pageable
@@ -62,12 +62,12 @@ public class ReviewReportController {
     }
 
     @PutMapping("/admin/review-reports/{reportId}/status")
-    @Operation(summary = "신고 처리 상태 변경", description = "관리자가 신고를 승인하거나 반려합니다. ADMIN 권한이 필요합니다.", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "신고 처리 상태 변경", description = "관리자가 선택한 신고와 같은 리뷰에 접수된 대기 신고를 모두 승인하거나 반려합니다. ADMIN 권한이 필요합니다.", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<ReviewReportResponse> updateStatus(
             @PathVariable Long reportId,
             @Valid @RequestBody ReviewReportStatusUpdateRequest request
     ) {
         ReviewReportResponse response = reviewReportService.updateStatus(reportId, request);
-        return new RsData<>("200-8", "리뷰 신고 상태를 변경했습니다.", response);
+        return new RsData<>("200-8", "같은 리뷰의 대기 신고 상태를 모두 변경했습니다.", response);
     }
 }
