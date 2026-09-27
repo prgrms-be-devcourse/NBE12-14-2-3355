@@ -325,7 +325,7 @@ class GameDetailServiceTest {
         // when: 해당 게임의 상세 정보를 조회하면
         GameDetailResponse response = gameDetailService.getGameDetail(gameId);
 
-        // then: 별점 전용 기록은 평가 통계에, 내용이 있는 기록은 리뷰 수와 공개 목록에 포함한다
+        // then: 별점 전용 기록은 평가 통계와 공개 목록에 포함하고, 리뷰 수는 내용이 있는 기록만 센다
         assertThat(response.statistics().averageRating())
                 .isEqualByComparingTo("3.5");
         assertThat(response.statistics().ratingCount()).isEqualTo(3L);
@@ -337,7 +337,12 @@ class GameDetailServiceTest {
                 PageRequest.of(0, 20)
         ).getContent())
                 .extracting(Review::getContent)
-                .containsExactly("별점 없이 작성한 리뷰");
+                .containsExactlyInAnyOrder(
+                        null,
+                        null,
+                        null,
+                        "별점 없이 작성한 리뷰"
+                );
 
         List<GameRatingDistributionResponse> distribution =
                 response.statistics().ratingDistribution();

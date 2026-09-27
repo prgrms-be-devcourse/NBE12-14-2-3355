@@ -331,6 +331,8 @@ class UserGameServiceTest {
     @Test
     @DisplayName("완료일이 시작일보다 빠르면 플레이 기록을 저장할 수 없다")
     void rejectReversedPlayDates() {
+        LocalDate startedAt = LocalDate.now().minusDays(1);
+        LocalDate completedAt = startedAt.minusDays(1);
         UserGameReqBody reqBody = new UserGameReqBody(
                 PlayStatus.COMPLETED,
                 false,
@@ -341,8 +343,8 @@ class UserGameServiceTest {
                 null,
                 null,
                 null,
-                LocalDate.of(2026, 10, 5),
-                LocalDate.of(2026, 10, 1),
+                startedAt,
+                completedAt,
                 null
         );
 
