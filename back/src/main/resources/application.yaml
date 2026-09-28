@@ -36,6 +36,14 @@ cloudinary:
   api-key: ${CLOUDINARY_API_KEY}
   api-secret: ${CLOUDINARY_API_SECRET}
 
+# === sentry ===
+# SENTRY_DSN이 없으면(빈 값) Sentry 비활성화 -> 로컬/테스트에서는 전송 안 됨
+# ERROR 로그만 Sentry 이벤트로 전송 (GlobalExceptionHandler의 log.error가 여기로 감)
+sentry:
+  dsn: ${SENTRY_DSN:}
+  logging:
+    minimum-event-level: error
+
 ---
 # ===== 로컬 개발 (Docker MySQL) =====
 spring:
