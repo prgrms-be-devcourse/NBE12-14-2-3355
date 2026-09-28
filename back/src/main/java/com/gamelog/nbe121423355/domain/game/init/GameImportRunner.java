@@ -23,8 +23,8 @@ public class GameImportRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        int count = gameCollectionService.importGames();
+        gameCollectionService.importGames();
 
-        log.info("IGDB 게임 수집 완료: {}개 처리", count);
+        log.info("IGDB 동기화를 시작했습니다. 관리자 화면에서 진행 상황을 확인하세요.");
     }
 }
