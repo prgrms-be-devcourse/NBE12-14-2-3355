@@ -17,6 +17,7 @@ public class PersonalizedRelatedGameQueryRepository {
 
     // 기존 게임 상세 연관 추천의 점수 기준으로, 기준 게임별 상위 5개 순위를 일괄 조회
     // TODO: 평점 데이터가 충분해지면 최소 평점 개수(5)와 평균 평점 기준(3.5)을 재조정
+    // JOIN_FIXED_ORDER로 IGDB 평점 필터를 먼저 적용해 대량의 장르 후보에 대한 games PK 반복 조회를 방지
     private static final String RELATED_GAMES_BY_SOURCE_SQL = """
             WITH source_genres AS (
                 SELECT gg.game_id AS source_game_id,
@@ -25,12 +26,13 @@ public class PersonalizedRelatedGameQueryRepository {
                 WHERE gg.game_id IN (:sourceGameIds)
             ),
             candidates AS (
-                SELECT sg.source_game_id,
+                SELECT /*+ JOIN_FIXED_ORDER() */
+                       sg.source_game_id,
                        gg.game_id,
                        COUNT(*) AS shared_genre_count
-                FROM source_genres sg
-                JOIN game_genres gg ON gg.genre_id = sg.genre_id
-                JOIN games g ON g.id = gg.game_id
+                FROM games g
+                JOIN game_genres gg ON gg.game_id = g.id
+                JOIN source_genres sg ON sg.genre_id = gg.genre_id
                 WHERE gg.game_id <> sg.source_game_id
                   AND gg.game_id NOT IN (:excludedGameIds)
                   AND g.igdb_rating >= 70.0
