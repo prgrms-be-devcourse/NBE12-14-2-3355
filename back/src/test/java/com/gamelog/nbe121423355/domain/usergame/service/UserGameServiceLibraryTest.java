@@ -16,6 +16,8 @@ import com.gamelog.nbe121423355.global.exception.ServiceException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -36,9 +38,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserGameServiceLibraryTest {
@@ -593,6 +593,91 @@ class UserGameServiceLibraryTest {
     }
 
     @Test
+    @DisplayName("playing 상태를 true에서 false로 변경할 수 있다")
+    void changePlayingTrueToFalse() {
+        UserGame userGame = createUserGame();
+        userGame.changePlaying(true);
+
+        given(userGameRepository.findByUser_IdAndGame_Id(1L, 1L))
+                .willReturn(Optional.of(userGame));
+
+        boolean result =
+                userGameService.changePlaying(1L, 1L, false);
+
+        assertThat(result).isFalse();
+        assertThat(userGame.isPlaying()).isFalse();
+    }
+
+    @Test
+    @DisplayName("wishlist 상태를 true에서 false로 변경할 수 있다")
+    void changeWishlistTrueToFalse() {
+        UserGame userGame = createUserGame();
+        userGame.changeWishlist(true);
+
+        given(userGameRepository.findByUser_IdAndGame_Id(1L, 1L))
+                .willReturn(Optional.of(userGame));
+
+        boolean result =
+                userGameService.changeWishlist(1L, 1L, false);
+
+        assertThat(result).isFalse();
+        assertThat(userGame.isWishlist()).isFalse();
+    }
+
+    @Test
+    @DisplayName("backlog 상태를 true에서 false로 변경할 수 있다")
+    void changeBacklogTrueToFalse() {
+        UserGame userGame = createUserGame();
+        userGame.changeBacklog(true);
+
+        given(userGameRepository.findByUser_IdAndGame_Id(1L, 1L))
+                .willReturn(Optional.of(userGame));
+
+        boolean result =
+                userGameService.changeBacklog(1L, 1L, false);
+
+        assertThat(result).isFalse();
+        assertThat(userGame.isBacklog()).isFalse();
+    }
+
+    @Test
+    @DisplayName("liked 상태를 true에서 false로 변경할 수 있다")
+    void changeLikedTrueToFalse() {
+        UserGame userGame = createUserGame();
+        userGame.changeLiked(true);
+
+        given(userGameRepository.findByUser_IdAndGame_Id(1L, 1L))
+                .willReturn(Optional.of(userGame));
+
+        boolean result =
+                userGameService.changeLiked(1L, 1L, false);
+
+        assertThat(result).isFalse();
+        assertThat(userGame.isLiked()).isFalse();
+    }
+
+    @ParameterizedTest
+    @EnumSource(PlayStatus.class)
+    @DisplayName("모든 플레이 상태로 변경할 수 있다")
+    void changeAllPlayStatuses(PlayStatus playStatus) {
+        UserGame userGame = createUserGame();
+
+        given(userGameRepository.findByUser_IdAndGame_Id(1L, 1L))
+                .willReturn(Optional.of(userGame));
+
+        PlayStatus result =
+                userGameService.changePlayed(
+                        1L,
+                        1L,
+                        playStatus
+                );
+
+        assertThat(result).isEqualTo(playStatus);
+        assertThat(userGame.getPlayStatus())
+                .isEqualTo(playStatus);
+    }
+
+    @Test
     @DisplayName("라이브러리 게임 목록을 페이지네이션으로 조회한다")
     void getUserGameList() {
         User user = new User("테스트", "test@test.com", "password");
@@ -684,5 +769,169 @@ class UserGameServiceLibraryTest {
                 completedAt,
                 lastPlayedAt
         );
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 사용자는 라이브러리에 게임을 등록할 수 없다")
+    void addGameWithoutUser() {
+        Long userId = 999L;
+        Long gameId = 1L;
+
+        UserGameReqBody request = createRequest(
+                PlayStatus.PLAYED,
+                null,
+                null,
+                null
+        );
+
+        given(userGameRepository.findByUser_IdAndGame_Id(userId, gameId))
+                .willReturn(Optional.empty());
+
+        given(userRepository.findById(userId))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                userGameService.addOrUpdateGameToLibrary(
+                        userId,
+                        gameId,
+                        request
+                )
+        )
+                .isInstanceOf(ServiceException.class)
+                .hasMessage("사용자를 찾을 수 없습니다.");
+
+        verify(gameRepository, never()).findById(anyLong());
+        verify(userGameRepository, never()).save(any(UserGame.class));
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 게임은 라이브러리에 등록할 수 없다")
+    void addGameWithoutGame() {
+        Long userId = 1L;
+        Long gameId = 999L;
+
+        User user = new User(
+                "테스트",
+                "test@test.com",
+                "password"
+        );
+
+        UserGameReqBody request = createRequest(
+                PlayStatus.PLAYED,
+                null,
+                null,
+                null
+        );
+
+        given(userGameRepository.findByUser_IdAndGame_Id(userId, gameId))
+                .willReturn(Optional.empty());
+
+        given(userRepository.findById(userId))
+                .willReturn(Optional.of(user));
+
+        given(gameRepository.findById(gameId))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                userGameService.addOrUpdateGameToLibrary(
+                        userId,
+                        gameId,
+                        request
+                )
+        )
+                .isInstanceOf(ServiceException.class)
+                .hasMessage("게임을 찾을 수 없습니다.");
+
+        verify(userGameRepository, never()).save(any(UserGame.class));
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 플랫폼을 지정하면 라이브러리에 게임을 등록할 수 없다")
+    void addGameWithoutPlatform() {
+        Long userId = 1L;
+        Long gameId = 1L;
+        Long platformId = 999L;
+
+        UserGameReqBody request = new UserGameReqBody(
+                PlayStatus.PLAYED,
+                false,
+                false,
+                false,
+                false,
+                platformId,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+
+        given(platformRepository.findById(platformId))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                userGameService.addOrUpdateGameToLibrary(
+                        userId,
+                        gameId,
+                        request
+                )
+        )
+                .isInstanceOf(ServiceException.class)
+                .hasMessage("플랫폼을 찾을 수 없습니다.");
+
+        verify(userGameRepository, never())
+                .findByUser_IdAndGame_Id(anyLong(), anyLong());
+
+        verify(userGameRepository, never())
+                .save(any(UserGame.class));
+    }
+
+    @Test
+    @DisplayName("시작일과 완료일과 마지막 플레이 날짜가 오늘로 같아도 등록할 수 있다")
+    void allowSameDateBoundaries() {
+        Long userId = 1L;
+        Long gameId = 1L;
+
+        LocalDate today = LocalDate.now();
+
+        User user = new User(
+                "테스트",
+                "test@test.com",
+                "password"
+        );
+
+        Game game = org.mockito.Mockito.mock(Game.class);
+
+        UserGameReqBody request = createRequest(
+                PlayStatus.COMPLETED,
+                today,
+                today,
+                today.atStartOfDay()
+        );
+
+        given(userGameRepository.findByUser_IdAndGame_Id(userId, gameId))
+                .willReturn(Optional.empty());
+
+        given(userRepository.findById(userId))
+                .willReturn(Optional.of(user));
+
+        given(gameRepository.findById(gameId))
+                .willReturn(Optional.of(game));
+
+        given(userGameRepository.save(any(UserGame.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        UserGameSaveResult result =
+                userGameService.addOrUpdateGameToLibrary(
+                        userId,
+                        gameId,
+                        request
+                );
+
+        assertThat(result.created()).isTrue();
+
+        verify(userGameRepository)
+                .save(any(UserGame.class));
     }
 }

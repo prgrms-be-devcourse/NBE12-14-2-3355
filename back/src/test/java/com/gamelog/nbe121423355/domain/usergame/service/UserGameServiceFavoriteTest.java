@@ -21,8 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserGameServiceFavoriteTest {
@@ -102,5 +101,60 @@ class UserGameServiceFavoriteTest {
                 userGameService.updateFavoriteGames(1L, gameIds)
         )
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("인생게임 목록에 빈 리스트를 전달하면 기존 인생게임을 모두 삭제한다")
+    void clearFavoriteGames() {
+        Long userId = 1L;
+
+        User user = mock(User.class);
+
+        given(userRepository.findById(userId))
+                .willReturn(Optional.of(user));
+
+        List<UserFavoriteGameResponse> result =
+                userGameService.updateFavoriteGames(
+                        userId,
+                        List.of()
+                );
+
+        verify(userFavoriteGameRepository)
+                .deleteAllByUserId(userId);
+
+        verify(userFavoriteGameRepository)
+                .saveAll(anyList());
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("라이브러리에 등록하지 않은 게임은 인생게임으로 등록할 수 없다")
+    void rejectGameNotInLibrary() {
+        Long userId = 1L;
+
+        User user = mock(User.class);
+
+        given(userRepository.findById(userId))
+                .willReturn(Optional.of(user));
+
+        given(userGameRepository.findAllByUserIdAndGameIdIn(
+                userId,
+                List.of(10L, 20L)
+        )).willReturn(List.of());
+
+        assertThatThrownBy(() ->
+                userGameService.updateFavoriteGames(
+                        userId,
+                        List.of(10L, 20L)
+                )
+        )
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(userFavoriteGameRepository, never())
+                .deleteAllByUserId(userId);
+
+        verify(userFavoriteGameRepository, never())
+                .saveAll(anyList());
     }
 }
