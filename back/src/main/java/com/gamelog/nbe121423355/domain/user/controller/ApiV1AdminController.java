@@ -9,12 +9,14 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/admin")
@@ -33,6 +35,8 @@ public class ApiV1AdminController {
 
     ) {
         UserDto result =userService.promoteToAdmin(userId);
+        // 권한 변경 이력 추적용 (누가 누구를 승격했는지)
+        log.info("관리자 승격: adminId={}, targetUserId={}", adminUser.getId(), userId);
         return new RsData<>(
                 "200-13",
                 "관리자로 승격 성공",

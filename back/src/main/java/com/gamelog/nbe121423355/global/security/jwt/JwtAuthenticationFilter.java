@@ -11,6 +11,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -23,6 +24,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -91,7 +93,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             setSecurityContext(userId, user.getRole());
             response.setHeader("New-Access-Token", newAccessToken);
         } catch (Exception e) {
-
+            log.warn("자동 재발급 중 예외 발생", e);
         }
     }
 
