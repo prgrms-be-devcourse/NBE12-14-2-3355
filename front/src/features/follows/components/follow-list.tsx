@@ -8,16 +8,16 @@ import { FollowApiError, getFollows, searchUsers, setFollowing } from "@/feature
 import type { FollowKind, FollowPageResponseDto, FollowUserResponseDto } from "@/features/follows/types";
 import FollowButton from "./follow-button";
 import UserSearch from "./user-search";
+import ImageWithFallback from "@/components/ui/image-with-fallback";
 import styles from "./follow-list.module.css";
 
 type Props = { userId: number; kind: FollowKind; page: number; basePath: string };
 
 function Avatar({ user }: { user: FollowUserResponseDto }) {
-  const [broken, setBroken] = useState(false);
-  return user.profileImageUrl && !broken ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img className={styles.avatar} src={user.profileImageUrl} alt="" loading="lazy" onError={() => setBroken(true)} />
-  ) : <span className={styles.avatar} aria-hidden="true">{user.nickname.slice(0, 1).toUpperCase()}</span>;
+  return <ImageWithFallback
+    src={user.profileImageUrl} alt="" className={styles.avatar}
+    fallback={<span className={styles.avatar} aria-hidden="true">{user.nickname.slice(0, 1).toUpperCase()}</span>}
+  />;
 }
 
 export default function FollowList(props: Props) {

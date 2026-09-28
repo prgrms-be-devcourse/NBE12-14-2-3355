@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -89,6 +90,7 @@ public class UserGameService {
         Long gameId,
         UserGameReqBody reqBody
     ){
+        validatePlayDates(reqBody);
         Platform platform = findPlatform(reqBody.platformId());
 
         return userGameRepository.findByUser_IdAndGame_Id(userId, gameId)
@@ -110,6 +112,7 @@ public class UserGameService {
             Long gameId,
             UserGameReqBody reqBody
     ) {
+        validatePlayDates(reqBody);
         UserGame userGame = findUserGame(userId, gameId);
         Platform platform = findPlatform(reqBody.platformId());
 
@@ -166,6 +169,52 @@ public class UserGameService {
                 reqBody.completedAt(),
                 reqBody.lastPlayedAt()
         );
+    }
+
+    private void validatePlayDates(UserGameReqBody reqBody) {
+        LocalDate today = LocalDate.now();
+
+        if (reqBody.startedAt() != null
+                && reqBody.startedAt().isAfter(today)) {
+            throw new ServiceException(
+                    "400-9",
+                    "시작일은 오늘보다 미래일 수 없습니다."
+            );
+        }
+
+        if (reqBody.startedAt() != null
+                && reqBody.completedAt() != null
+                && reqBody.completedAt().isBefore(reqBody.startedAt())) {
+            throw new ServiceException(
+                    "400-6",
+                    "완료일은 시작일보다 빠를 수 없습니다."
+            );
+        }
+
+        if (reqBody.completedAt() != null
+                && reqBody.completedAt().isAfter(today)) {
+            throw new ServiceException(
+                    "400-8",
+                    "완료일은 오늘보다 미래일 수 없습니다."
+            );
+        }
+
+        if (reqBody.lastPlayedAt() != null
+                && reqBody.lastPlayedAt().toLocalDate().isAfter(today)) {
+            throw new ServiceException(
+                    "400-7",
+                    "마지막 플레이 날짜는 오늘보다 미래일 수 없습니다."
+            );
+        }
+
+        if (reqBody.startedAt() != null
+                && reqBody.lastPlayedAt() != null
+                && reqBody.lastPlayedAt().toLocalDate().isBefore(reqBody.startedAt())) {
+            throw new ServiceException(
+                    "400-10",
+                    "마지막 플레이 날짜는 시작일보다 빠를 수 없습니다."
+            );
+        }
     }
 
     private User findUser(Long userId) {

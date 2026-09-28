@@ -3,6 +3,18 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { coverUrl, demoGames, demoOptions, emptyFilters, type Filters, type Game, type GamePage, type Option } from "@/features/games/model";
+import SelectDropdown from "@/components/ui/select-dropdown";
+import ImageWithFallback from "@/components/ui/image-with-fallback";
+import GameCoverFallback from "@/components/ui/game-cover-fallback";
+
+const catalogSortOptions: { value: string; label: string }[] = [
+  { value: "", label: "기본순" },
+  { value: "LATEST", label: "최신 출시일순" },
+  { value: "TITLE", label: "제목순" },
+  { value: "RATING", label: "GameLog 평점순" },
+  { value: "LIBRARY", label: "라이브러리 등록순" },
+  { value: "PLAY_TIME", label: "평균 플레이 타임순" },
+];
 
 function Icon({ name, size = 20 }: { name: "search" | "game" | "filter" | "arrow" | "close"; size?: number }) {
   const paths = {
@@ -16,13 +28,10 @@ function Icon({ name, size = 20 }: { name: "search" | "game" | "filter" | "arrow
 }
 
 function Cover({ game }: { game: Game }) {
-  const [broken, setBroken] = useState(false);
-  const url = coverUrl(game.coverImageUrl);
-  return url && !broken
-    // Covers are served by IGDB or the preview CDN, with an explicit missing-image fallback.
-    // eslint-disable-next-line @next/next/no-img-element
-    ? <img src={url} alt={`${game.title} 커버`} loading="lazy" onError={() => setBroken(true)}/>
-    : <div className="cover-fallback"><Icon name="game" size={36}/><span>{game.title}</span><small>커버 준비 중</small></div>;
+  return <ImageWithFallback
+    src={coverUrl(game.coverImageUrl)} alt={`${game.title} 커버`}
+    fallback={<GameCoverFallback title={game.title} />}
+  />;
 }
 
 function Detail({ game, onClose }: { game: Game; onClose: () => void }) {
@@ -49,7 +58,6 @@ export default function GameCatalog({ initialKeyword = "" }: { initialKeyword?: 
   const [options, setOptions] = useState<{ genres: Option[]; platforms: Option[] }>({ genres: [], platforms: [] });
   const [optionsError, setOptionsError] = useState("");
   const [keyword, setKeyword] = useState(initialKeyword.trim());
-  const [draft, setDraft] = useState<Filters>(emptyFilters);
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [sort, setSort] = useState("");
   const [page, setPage] = useState(0);
@@ -107,17 +115,18 @@ export default function GameCatalog({ initialKeyword = "" }: { initialKeyword?: 
 
   const available = demo ? demoOptions : options;
   function toggleFilter(type: keyof Filters, id: number) {
-    setDraft(current => ({ ...current, [type]: current[type].includes(id) ? current[type].filter(x => x !== id) : [...current[type], id] }));
+    setFilters(current => ({ ...current, [type]: current[type].includes(id) ? current[type].filter(x => x !== id) : [...current[type], id] }));
+    setPage(0);
   }
-  function reset() { setDraft(emptyFilters); setFilters(emptyFilters); setKeyword(""); setPage(0); }
+  function reset() { setFilters(emptyFilters); setKeyword(""); setPage(0); }
   function switchMode() { setDemo(!demo); reset(); setResult(null); setLoading(true); }
   function openGame(game: Game) {
     if (demo) setSelected(game);
     else router.push(`/games/${game.id}`);
   }
   function removeFilter(type: keyof Filters, id: number) {
-    const next = { ...filters, [type]: filters[type].filter(x => x !== id) };
-    setFilters(next); setDraft(next); setPage(0);
+    setFilters(current => ({ ...current, [type]: current[type].filter(x => x !== id) }));
+    setPage(0);
   }
   const totalPages = result?.totalPages || 0;
   const firstPage = Math.max(0, Math.min(page - 2, totalPages - 5));
@@ -129,19 +138,18 @@ export default function GameCatalog({ initialKeyword = "" }: { initialKeyword?: 
       <div className="workspace">
         <aside className={`filter-panel ${mobileFilters ? "is-open" : ""}`} id="filters">
           <div className="filter-heading"><h2><Icon name="filter"/>필터</h2><button className="text-button" onClick={reset}>초기화 ↺</button></div>
-          <p className="filter-help">어떤 세계를 찾고 있나요?</p>
+          <p className="filter-help">선택한 필터가 바로 적용됩니다.</p>
           {!demo && optionsError && <p className="filter-error" role="status">{optionsError}<button className="text-button" onClick={() => setRetry(x => x + 1)}>다시 불러오기</button></p>}
           {(["genres", "platforms"] as const).map(type => <fieldset key={type}><legend>{type === "genres" ? "장르" : "플랫폼"}<span>여러 개 선택 가능</span></legend><div className="filter-options">
-            {available[type].map(option => <label key={option.id} className={draft[type].includes(option.id) ? "checked" : ""}><input type="checkbox" checked={draft[type].includes(option.id)} onChange={() => toggleFilter(type, option.id)}/><span>{option.name}</span></label>)}
+            {available[type].map(option => <label key={option.id} className={filters[type].includes(option.id) ? "checked" : ""}><input type="checkbox" checked={filters[type].includes(option.id)} onChange={() => toggleFilter(type, option.id)}/><span>{option.name}</span></label>)}
             {!available[type].length && <span className="muted">{optionsError ? "선택 항목 없음" : "필터를 불러오는 중…"}</span>}
           </div></fieldset>)}
-          <button className="apply-button" onClick={() => { setFilters(draft); setPage(0); setMobileFilters(false); }}>필터 적용하기 <Icon name="arrow" size={18}/></button>
           <div className="filter-foot"><span className="dot"/> 취향에 맞는 발견의 시작</div>
         </aside>
 
         <section className="catalog" id="catalog" aria-label="게임 목록">
           <div className="catalog-toolbar"><div><h2>{keyword ? `“${keyword}” 검색 결과` : "모든 게임"}<span className="count">{loading ? "…" : (result?.totalElements ?? 0).toLocaleString()}</span></h2><p>{filterCount ? `${filterCount}개의 필터가 적용되었어요` : "마음에 드는 커버에서 새로운 이야기를 시작해 보세요."}</p></div>
-            <div className="toolbar-actions"><button className="mobile-filter" aria-expanded={mobileFilters} aria-controls="filters" onClick={() => setMobileFilters(!mobileFilters)}><Icon name="filter" size={16}/>필터</button><label className="sort-label">정렬<select aria-label="게임 정렬" value={sort} onChange={e => { setSort(e.target.value); setPage(0); }}><option value="">기본순</option><option value="LATEST">최신 출시일순</option><option value="TITLE">제목순</option><option value="RATING">GameLog 평점순</option><option value="LIBRARY">라이브러리 등록순</option><option value="PLAY_TIME">평균 플레이 타임순</option></select></label></div>
+            <div className="toolbar-actions"><button className="mobile-filter" aria-expanded={mobileFilters} aria-controls="filters" onClick={() => setMobileFilters(!mobileFilters)}><Icon name="filter" size={16}/>필터</button><label className="sort-label">정렬<SelectDropdown ariaLabel="게임 정렬" value={sort} options={catalogSortOptions} onChange={value => { setSort(value); setPage(0); }} /></label></div>
           </div>
           {(filterCount > 0 || keyword) && <div className="chips active-chips">{keyword && <button onClick={() => { setKeyword(""); setPage(0); }}>검색: {keyword} ×</button>}{(["genres", "platforms"] as const).flatMap(type => filters[type].map(id => <button key={`${type}-${id}`} onClick={() => removeFilter(type, id)}>{available[type].find(o => o.id === id)?.name || id} ×</button>))}</div>}
           {demo && <div className="preview-notice"><span><span className="dot"/> 디자인 미리보기 · 샘플 게임 데이터</span><button onClick={switchMode}>실제 게임 불러오기 ↗</button></div>}

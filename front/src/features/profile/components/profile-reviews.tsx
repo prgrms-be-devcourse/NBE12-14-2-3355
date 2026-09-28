@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getUserReviews, ReviewApiError } from "@/features/reviews/api";
 import type { PlayStatus, Review, ReviewPage } from "@/features/reviews/types";
 import { coverUrl } from "@/features/games/model";
+import SelectDropdown from "@/components/ui/select-dropdown";
 import styles from "./profile.module.css";
 
 const PAGE_SIZE = 5;
@@ -19,6 +20,10 @@ const PLAY_STATUS: Record<PlayStatus, { label: string; className: string }> = {
 };
 
 type SortOrder = "lastModifiedDate,desc" | "lastModifiedDate,asc";
+const reviewSortOptions: { value: SortOrder; label: string }[] = [
+  { value: "lastModifiedDate,desc", label: "최신순" },
+  { value: "lastModifiedDate,asc", label: "오래된순" },
+];
 
 function formatDate(value: string) {
   const date = new Date(value);
@@ -145,16 +150,10 @@ export default function ProfileReviews({
         </div>
         <label className={styles.profileReviewsSort}>
           <span>정렬</span>
-          <select
-            value={sort}
-            onChange={(event) => {
-              setSort(event.target.value as SortOrder);
-              setPage(0);
-            }}
-          >
-            <option value="lastModifiedDate,desc">최신순</option>
-            <option value="lastModifiedDate,asc">오래된순</option>
-          </select>
+          <SelectDropdown
+            ariaLabel="정렬" value={sort} options={reviewSortOptions}
+            onChange={(value) => { setSort(value); setPage(0); }}
+          />
         </label>
       </div>
 
@@ -190,7 +189,7 @@ export default function ProfileReviews({
                     {review.platformName ? <span className={styles.profileReviewPlatform}>{review.platformName}</span> : null}
                   </div>
                   {review.spoiler ? <span className={styles.profileReviewSpoiler}>스포일러 포함</span> : null}
-                  <p>{review.content || "작성한 리뷰 내용이 없습니다."}</p>
+                  <p>{review.content?.trim() || "별점만 남긴 리뷰입니다."}</p>
                   <footer className={styles.profileReviewFooter}>
                     <span>♥ {review.likeCount.toLocaleString()} 좋아요</span>
                     <Link href={`/games/${review.gameId}`}>리뷰 열기 →</Link>

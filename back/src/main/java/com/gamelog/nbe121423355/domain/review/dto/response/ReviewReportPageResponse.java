@@ -1,12 +1,11 @@
 package com.gamelog.nbe121423355.domain.review.dto.response;
 
-import com.gamelog.nbe121423355.domain.review.entity.ReviewReport;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
 
 public record ReviewReportPageResponse(
-        List<ReviewReportResponse> reports,
+        List<ReviewReportGroupResponse> reports,
         int page,
         int size,
         long totalElements,
@@ -14,19 +13,17 @@ public record ReviewReportPageResponse(
         boolean hasNext
 ) {
 
-    public static ReviewReportPageResponse from(Page<ReviewReport> reportPage) {
-        List<ReviewReportResponse> reports = reportPage.getContent()
-                .stream()
-                .map(ReviewReportResponse::from)
-                .toList();
-
+    public static ReviewReportPageResponse from(
+            Page<Long> reviewIdPage,
+            List<ReviewReportGroupResponse> reports
+    ) {
         return new ReviewReportPageResponse(
                 reports,
-                reportPage.getNumber(),
-                reportPage.getSize(),
-                reportPage.getTotalElements(),
-                reportPage.getTotalPages(),
-                reportPage.hasNext()
+                reviewIdPage.getNumber(),
+                reviewIdPage.getSize(),
+                reviewIdPage.getTotalElements(),
+                reviewIdPage.getTotalPages(),
+                reviewIdPage.hasNext()
         );
     }
 }

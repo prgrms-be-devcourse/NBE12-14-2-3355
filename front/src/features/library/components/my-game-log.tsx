@@ -8,6 +8,7 @@ import type {
   PlayStatus,
 } from "@/features/reviews/types";
 import type { Option } from "@/features/games/model";
+import SelectDropdown from "@/components/ui/select-dropdown";
 import styles from "./my-game-log.module.css";
 
 type Props = {
@@ -68,7 +69,7 @@ function initialForm(detail: DetailedReview | null): FormState {
     masterTimeHours: textNumber(record?.masterTimeHours),
     startedAt: record?.startedAt ?? "",
     completedAt: record?.completedAt ?? "",
-    lastPlayedAt: record?.lastPlayedAt?.slice(0, 16) ?? "",
+    lastPlayedAt: record?.lastPlayedAt?.slice(0, 10) ?? "",
     rating: textNumber(review?.rating),
     content: review?.content ?? "",
     spoiler: review?.spoiler ?? false,
@@ -77,6 +78,39 @@ function initialForm(detail: DetailedReview | null): FormState {
 
 function optionalNumber(value: string) {
   return value === "" ? null : Number(value);
+}
+
+function localDateString(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+const TODAY = localDateString(new Date());
+
+function validateDates(form: FormState) {
+  if (form.startedAt && form.startedAt > localDateString(new Date())) {
+    return "시작일은 오늘보다 미래일 수 없습니다.";
+  }
+
+  if (form.startedAt && form.completedAt && form.completedAt < form.startedAt) {
+    return "완료일은 시작일보다 빠를 수 없습니다.";
+  }
+
+  if (form.completedAt && form.completedAt > localDateString(new Date())) {
+    return "완료일은 오늘보다 미래일 수 없습니다.";
+  }
+
+  if (form.lastPlayedAt && form.lastPlayedAt.slice(0, 10) > localDateString(new Date())) {
+    return "마지막 플레이 날짜는 오늘보다 미래일 수 없습니다.";
+  }
+
+  if (form.startedAt && form.lastPlayedAt && form.lastPlayedAt < form.startedAt) {
+    return "마지막 플레이 날짜는 시작일보다 빠를 수 없습니다.";
+  }
+
+  return null;
 }
 
 function toRequest(form: FormState): DetailedReviewSaveBody {
@@ -94,7 +128,7 @@ function toRequest(form: FormState): DetailedReviewSaveBody {
       masterTimeHours: optionalNumber(form.masterTimeHours),
       startedAt: form.startedAt || null,
       completedAt: form.completedAt || null,
-      lastPlayedAt: form.lastPlayedAt ? `${form.lastPlayedAt}:00` : null,
+      lastPlayedAt: form.lastPlayedAt ? `${form.lastPlayedAt}T00:00:00` : null,
     },
     review: hasReview ? {
       rating: optionalNumber(form.rating),
@@ -241,6 +275,11 @@ export default function MyGameLog({
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!accessToken || !tokenVerified) return;
+    const dateError = validateDates(form);
+    if (dateError) {
+      setMessage(dateError);
+      return;
+    }
     const hasReview = form.rating !== "" || form.content.trim() !== "";
     setSaving(true);
     setMessage("");
@@ -428,7 +467,15 @@ export default function MyGameLog({
                   <output className={styles.ratingOutput} aria-live="polite">{ratingPreview ? `${ratingPreview.toFixed(1)}점` : "선택 안 함"}</output>
                 </div>
               </div>
-              <label className={styles.platformField}>플랫폼<select value={form.platformId} onChange={(event) => update("platformId", event.target.value)} disabled={platforms.length === 0}><option value="">{platforms.length ? "플랫폼 선택" : "등록된 플랫폼 정보 없음"}</option>{platforms.map((platform) => <option key={platform.id} value={platform.id}>{platform.name}</option>)}</select></label>
+              <label className={styles.platformField}>플랫폼
+                <SelectDropdown
+                  ariaLabel="플랫폼 선택" disabled={platforms.length === 0}
+                  placeholder={platforms.length ? "플랫폼 선택" : "등록된 플랫폼 정보 없음"}
+                  value={form.platformId}
+                  onChange={(value) => update("platformId", value)}
+                  options={[{ value: "", label: "선택 안 함" }, ...platforms.map((platform) => ({ value: String(platform.id), label: platform.name }))]}
+                />
+              </label>
             </div>
 
             <label className={styles.playTimeField}>
@@ -452,13 +499,21 @@ export default function MyGameLog({
 
             <label className={styles.dateToggle}><input type="checkbox" checked={showDates} onChange={(event) => setShowDates(event.target.checked)} />플레이 날짜 기록하기</label>
             {showDates && <div className={styles.dateGrid}>
-              <label>시작일<input type="date" value={form.startedAt} onChange={(event) => update("startedAt", event.target.value)} /></label>
-              <label>완료일<input type="date" value={form.completedAt} onChange={(event) => update("completedAt", event.target.value)} /></label>
-              <label>마지막 플레이<input type="datetime-local" value={form.lastPlayedAt} onChange={(event) => update("lastPlayedAt", event.target.value)} /></label>
+              <label>시작일<input type="date" max={form.completedAt && form.completedAt < TODAY ? form.completedAt : TODAY} value={form.startedAt} onChange={(event) => update("startedAt", event.target.value)} /></label>
+              <label>완료일<input type="date" min={form.startedAt || undefined} max={TODAY} value={form.completedAt} onChange={(event) => update("completedAt", event.target.value)} /></label>
+              <label>마지막 플레이<input type="date" min={form.startedAt || undefined} max={TODAY} value={form.lastPlayedAt} onChange={(event) => update("lastPlayedAt", event.target.value)} /></label>
             </div>}
 
-            <label className={styles.reviewLabel}>리뷰 <small>선택</small><textarea rows={7} value={form.content} onChange={(event) => update("content", event.target.value)} placeholder="이 게임은 어땠나요? 별점이나 글 없이 게임 상태만 저장해도 됩니다." /></label>
-            <label className={styles.spoiler}><input type="checkbox" checked={form.spoiler} onChange={(event) => update("spoiler", event.target.checked)} />스포일러가 포함되어 있어요</label>
+            <div className={styles.reviewField}>
+              <div className={styles.reviewFieldHeader}>
+                <label htmlFor="review-content" className={styles.reviewFieldLabel}>리뷰</label>
+                <label className={styles.spoiler}>
+                  스포일러 포함
+                  <input type="checkbox" checked={form.spoiler} onChange={(event) => update("spoiler", event.target.checked)} />
+                </label>
+              </div>
+              <textarea id="review-content" rows={7} value={form.content} onChange={(event) => update("content", event.target.value)} placeholder={"이 게임은 어땠나요? 별점이나 글 없이 게임 상태만 저장해도 됩니다.\n선택사항입니다."} />
+            </div>
           </div>
         </div>
 

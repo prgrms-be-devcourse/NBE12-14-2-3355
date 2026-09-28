@@ -15,6 +15,7 @@ import FollowList from "@/features/follows/components/follow-list";
 import { getProfile, updateFavoriteGames, getMyLibraryGames } from "@/features/profile/api";
 import type { FavoriteGame, GenreDistribution, ProfileResponse, ProfileStats, RecentGame, RecentReview, ScatterGame, TasteResponse } from "@/features/profile/types";
 import { coverUrl, type Game} from "@/features/games/model";
+import ImageWithFallback from "@/components/ui/image-with-fallback";
 
 import styles from "./profile.module.css";
 import { PublicUserDto } from "@/features/auth/types";
@@ -86,30 +87,16 @@ function GameCover({
   alt: string;
   className?: string;
 }) {
-  const [broken, setBroken] = useState(false);
-
-  const url = coverUrl(src ?? null);
-
-  if (!url || broken) {
-    return (
-      <div
-        className={`${styles.gameCoverFallback} ${
-          className ?? ""
-        }`}
-      >
-        <span aria-hidden="true">🎮</span>
-      </div>
-    );
-  }
-
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      className={className}
-      src={url}
+    <ImageWithFallback
+      src={coverUrl(src ?? null)}
       alt={alt}
-      loading="lazy"
-      onError={() => setBroken(true)}
+      className={className}
+      fallback={
+        <div className={`${styles.gameCoverFallback} ${className ?? ""}`}>
+          <span aria-hidden="true">🎮</span>
+        </div>
+      }
     />
   );
 }
@@ -1360,8 +1347,8 @@ function RecentReviews({
               </div>
 
               <p>
-                {review.content ||
-                  "작성한 리뷰가 없습니다."}
+                {review.content?.trim() ||
+                  "별점만 남긴 리뷰입니다."}
               </p>
 
               <time>
