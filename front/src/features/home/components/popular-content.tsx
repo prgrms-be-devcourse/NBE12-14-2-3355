@@ -107,8 +107,10 @@ function PopularGameCard({ game }: { game: PopularGame }) {
           {genres.slice(0, 2).map(genre => <span key={genre.id} title={genre.name}>{genre.name}</span>)}
           {genres.length > 2 && <span title={genres.slice(2).map(genre => genre.name).join(", ")}>+{genres.length - 2}</span>}
         </div>
-        <p className={styles.gameLike}><span aria-hidden="true">♥</span> 좋아요 {numberFormat.format(game.likeCount)}</p>
-        <span className={gameStyles.detailLink}>게임 살펴보기 <span aria-hidden="true">↗</span></span>
+        <div className={gameStyles.cardFooter}>
+          <p className={styles.gameLike}><span aria-hidden="true">♥</span> 좋아요 {numberFormat.format(game.likeCount)}</p>
+          <span className={gameStyles.detailLink}>게임 살펴보기 <span aria-hidden="true">↗</span></span>
+        </div>
       </div>
     </Link>
   </li>;

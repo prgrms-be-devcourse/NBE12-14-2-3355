@@ -31,7 +31,9 @@ function RecommendationCard({ game }: { game: RelatedGame }) {
           {genres.slice(0, 2).map(genre => <span key={genre.id} title={genre.name}>{genre.name}</span>)}
           {genres.length > 2 && <span title={genres.slice(2).map(genre => genre.name).join(", ")}>+{genres.length - 2}</span>}
         </div>
-        <span className={styles.detailLink}>게임 살펴보기 <span aria-hidden="true">↗</span></span>
+        <div className={styles.cardFooter}>
+          <span className={styles.detailLink}>게임 살펴보기 <span aria-hidden="true">↗</span></span>
+        </div>
       </div>
     </Link>
   </li>;
