@@ -89,10 +89,13 @@ export default function GameCatalog({ initialKeyword = "" }: { initialKeyword?: 
       setError("");
       try {
         if (demo) {
-          const games = demoGames.filter(g => g.title.toLowerCase().includes(keyword.toLowerCase())
+          const currentYear = new Date().getFullYear();
+          const games = demoGames.filter(g => g.releaseDate && Number(g.releaseDate.slice(0, 4)) >= 1970
+            && Number(g.releaseDate.slice(0, 4)) <= currentYear
+            && g.title.toLowerCase().includes(keyword.toLowerCase())
             && (!filters.genres.length || g.genres?.some(x => filters.genres.includes(x.id)))
             && (!filters.platforms.length || g.platforms?.some(x => filters.platforms.includes(x.id))));
-          games.sort((a, b) => (sort === "TITLE" ? a.title.localeCompare(b.title) : sort === "LATEST" ? (b.releaseDate || "").localeCompare(a.releaseDate || "") : 0) || a.id - b.id);
+          games.sort((a, b) => (sort === "" ? (b.igdbRating ?? -1) - (a.igdbRating ?? -1) : sort === "TITLE" ? a.title.localeCompare(b.title) : sort === "LATEST" ? (b.releaseDate || "").localeCompare(a.releaseDate || "") : 0) || a.id - b.id);
           setResult({ content: games.slice(page * size, (page + 1) * size), totalElements: games.length, totalPages: Math.ceil(games.length / size), number: page });
         } else {
           const query = new URLSearchParams({ page: String(page), size: String(size) });

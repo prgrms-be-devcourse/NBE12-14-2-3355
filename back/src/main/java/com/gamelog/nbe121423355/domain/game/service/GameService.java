@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -47,6 +48,8 @@ public class GameService {
                         filterPlatforms,
                         queryPlatformIds,
                         request.sort() == null ? "" : request.sort().name(),
+                        LocalDate.of(1970, 1, 1),
+                        LocalDate.now().withDayOfYear(1).plusYears(1),
                         request.toPageable()
                 )
                 .map(GameListResponse::new);

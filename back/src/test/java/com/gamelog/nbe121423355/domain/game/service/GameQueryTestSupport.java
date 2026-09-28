@@ -56,7 +56,7 @@ abstract class GameQueryTestSupport {
 
     protected void saveGame(Long igdbId, String title, List<Genre> genres, List<Platform> platforms) {
         Game game = Game.createFromIgdb(new IgdbGameResponse(
-                igdbId, title, null, null, null, null,
+                igdbId, title, null, null, 1704067200L, null,
                 List.of(), List.of(), List.of(), List.of()));
         entityManager.persist(game);
         genres.forEach(genre -> entityManager.persist(new GameGenre(game, genre)));
