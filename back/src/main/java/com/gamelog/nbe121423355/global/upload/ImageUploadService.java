@@ -35,7 +35,7 @@ public class ImageUploadService {
             Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
             return (String) result.get("secure_url");
         } catch (IOException | RuntimeException e) {
-            throw new ServiceException("500-2", "이미지 업로드에 실패했습니다.");
+            throw new ServiceException("500-2", "이미지 업로드에 실패했습니다.", e);
         }
     }
 

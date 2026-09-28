@@ -82,6 +82,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ServiceException.class)
     @ResponseBody
     public RsData<Void> handleException(ServiceException e) {
+        if(e.getResultCode().startsWith("500")) {
+            log.error("서비스 오류 발생: resultCode={}", e.getResultCode(), e);
+        }
         return new RsData<>(
                 e.getResultCode(),
                 e.getMsg()
