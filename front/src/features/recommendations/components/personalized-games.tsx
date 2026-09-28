@@ -10,7 +10,7 @@ import GameCoverFallback from "@/components/ui/game-cover-fallback";
 import styles from "./related-games.module.css";
 import personalizedStyles from "./personalized-games.module.css";
 
-// 메인 추천 영역에서 사용할 커버·장르·임시 추천 점수 카드
+// 메인 추천 영역에서 사용할 커버·장르 카드
 function RecommendationCard({ game }: { game: PersonalizedGame }) {
   const genres = game.genres ?? [];
 
@@ -29,9 +29,9 @@ function RecommendationCard({ game }: { game: PersonalizedGame }) {
           {genres.slice(0, 2).map(genre => <span key={genre.id} title={genre.name}>{genre.name}</span>)}
           {genres.length > 2 && <span title={genres.slice(2).map(genre => genre.name).join(", ")}>+{genres.length - 2}</span>}
         </div>
-        {/* TODO: 추천 결과 확인 후 임시 recommendationScore 표시 제거 */}
-        <p className={personalizedStyles.debugScore}>임시: recommendationScore {game.recommendationScore.toFixed(3)}점</p>
-        <span className={styles.detailLink}>게임 살펴보기 <span aria-hidden="true">↗</span></span>
+        <div className={styles.cardFooter}>
+          <span className={styles.detailLink}>게임 살펴보기 <span aria-hidden="true">↗</span></span>
+        </div>
       </div>
     </Link>
   </li>;
