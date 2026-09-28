@@ -58,7 +58,6 @@ export default function GameCatalog({ initialKeyword = "" }: { initialKeyword?: 
   const [options, setOptions] = useState<{ genres: Option[]; platforms: Option[] }>({ genres: [], platforms: [] });
   const [optionsError, setOptionsError] = useState("");
   const [keyword, setKeyword] = useState(initialKeyword.trim());
-  const [draft, setDraft] = useState<Filters>(emptyFilters);
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [sort, setSort] = useState("");
   const [page, setPage] = useState(0);
@@ -116,17 +115,18 @@ export default function GameCatalog({ initialKeyword = "" }: { initialKeyword?: 
 
   const available = demo ? demoOptions : options;
   function toggleFilter(type: keyof Filters, id: number) {
-    setDraft(current => ({ ...current, [type]: current[type].includes(id) ? current[type].filter(x => x !== id) : [...current[type], id] }));
+    setFilters(current => ({ ...current, [type]: current[type].includes(id) ? current[type].filter(x => x !== id) : [...current[type], id] }));
+    setPage(0);
   }
-  function reset() { setDraft(emptyFilters); setFilters(emptyFilters); setKeyword(""); setPage(0); }
+  function reset() { setFilters(emptyFilters); setKeyword(""); setPage(0); }
   function switchMode() { setDemo(!demo); reset(); setResult(null); setLoading(true); }
   function openGame(game: Game) {
     if (demo) setSelected(game);
     else router.push(`/games/${game.id}`);
   }
   function removeFilter(type: keyof Filters, id: number) {
-    const next = { ...filters, [type]: filters[type].filter(x => x !== id) };
-    setFilters(next); setDraft(next); setPage(0);
+    setFilters(current => ({ ...current, [type]: current[type].filter(x => x !== id) }));
+    setPage(0);
   }
   const totalPages = result?.totalPages || 0;
   const firstPage = Math.max(0, Math.min(page - 2, totalPages - 5));
@@ -138,13 +138,12 @@ export default function GameCatalog({ initialKeyword = "" }: { initialKeyword?: 
       <div className="workspace">
         <aside className={`filter-panel ${mobileFilters ? "is-open" : ""}`} id="filters">
           <div className="filter-heading"><h2><Icon name="filter"/>필터</h2><button className="text-button" onClick={reset}>초기화 ↺</button></div>
-          <p className="filter-help">어떤 세계를 찾고 있나요?</p>
+          <p className="filter-help">선택한 필터가 바로 적용됩니다.</p>
           {!demo && optionsError && <p className="filter-error" role="status">{optionsError}<button className="text-button" onClick={() => setRetry(x => x + 1)}>다시 불러오기</button></p>}
           {(["genres", "platforms"] as const).map(type => <fieldset key={type}><legend>{type === "genres" ? "장르" : "플랫폼"}<span>여러 개 선택 가능</span></legend><div className="filter-options">
-            {available[type].map(option => <label key={option.id} className={draft[type].includes(option.id) ? "checked" : ""}><input type="checkbox" checked={draft[type].includes(option.id)} onChange={() => toggleFilter(type, option.id)}/><span>{option.name}</span></label>)}
+            {available[type].map(option => <label key={option.id} className={filters[type].includes(option.id) ? "checked" : ""}><input type="checkbox" checked={filters[type].includes(option.id)} onChange={() => toggleFilter(type, option.id)}/><span>{option.name}</span></label>)}
             {!available[type].length && <span className="muted">{optionsError ? "선택 항목 없음" : "필터를 불러오는 중…"}</span>}
           </div></fieldset>)}
-          <button className="apply-button" onClick={() => { setFilters(draft); setPage(0); setMobileFilters(false); }}>필터 적용하기 <Icon name="arrow" size={18}/></button>
           <div className="filter-foot"><span className="dot"/> 취향에 맞는 발견의 시작</div>
         </aside>
 
