@@ -540,4 +540,5 @@ public class UserGameServiceProfileTest {
 
         return games;
     }
+    
 }
