@@ -9,6 +9,9 @@ export async function POST(request: NextRequest) {
   if (authorization) headers.set("Authorization", authorization);
   const contentType = request.headers.get("content-type");
   if (contentType) headers.set("Content-Type", contentType);
+  // accessToken 만료 시 백엔드 자동 재발급 필터가 refreshToken 쿠키를 읽을 수 있도록 전달
+  const cookie = request.headers.get("cookie");
+  if (cookie) headers.set("Cookie", cookie);
 
   try {
     const upstream = await fetch(url, {
