@@ -156,6 +156,14 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("토큰 재발급 실패 - refreshToken 없음(null)")
+    void refresh_fail_nullToken() {
+        assertThatThrownBy(() -> userService.refresh(null))
+                .isInstanceOf(ServiceException.class)
+                .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("401-2"));
+    }
+
+    @Test
     @DisplayName("토큰 재발급 실패 - 유효하지 않은 토큰")
     void refresh_fail_invalidToken() {
         assertThatThrownBy(() -> userService.refresh("invalid-token"))

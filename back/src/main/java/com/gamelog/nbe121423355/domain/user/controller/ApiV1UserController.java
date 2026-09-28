@@ -99,7 +99,7 @@ public class ApiV1UserController {
     @PostMapping("/refresh")
     @Operation(summary = "accessToken 재발급", description = "HttpOnly refreshToken 쿠키를 사용해 새로운 accessToken을 발급합니다.")
     public RsData<TokenResponseDto> refresh(
-            @CookieValue("refreshToken")
+            @CookieValue(value = "refreshToken", required = false)
             String refreshToken
     ){
         TokenResponseDto tokenResponseDto = userService.refresh(refreshToken);
