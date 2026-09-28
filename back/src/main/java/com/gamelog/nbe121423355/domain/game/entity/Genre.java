@@ -22,6 +22,8 @@ public class Genre {
     @Column(nullable = false, unique = true, length = 50)
     private String name;
 
+    public void updateName(String name) { this.name = name; }
+
     public static Genre createFromIgdb(Long igdbId, String name) {
         Genre genre = new Genre();
         genre.igdbGenreId = igdbId;

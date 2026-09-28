@@ -23,6 +23,8 @@ public class Platform {
     @Column(nullable = false, unique = true, length = 255)
     private String name;
 
+    public void updateName(String name) { this.name = name; }
+
     public static Platform createFromIgdb(Long igdbId, String name) {
         Platform platform = new Platform();
         platform.igdbPlatformsId = igdbId;
