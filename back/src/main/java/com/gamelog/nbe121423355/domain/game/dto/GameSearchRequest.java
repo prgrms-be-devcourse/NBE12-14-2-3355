@@ -18,7 +18,7 @@ public record GameSearchRequest(
         @Max(100)
         Integer size,
 
-        @Schema(description = "정렬 기준", example = "LATEST", allowableValues = {"LATEST", "TITLE", "RATING", "LIBRARY", "PLAY_TIME"})
+        @Schema(description = "정렬 기준 (미지정 시 IGDB 평점 내림차순)", example = "LATEST", allowableValues = {"LATEST", "TITLE", "RATING", "LIBRARY", "PLAY_TIME"})
         GameSort sort,
         @Schema(description = "게임 제목 검색어", example = "Baldur", nullable = true)
         String keyword,
@@ -33,6 +33,7 @@ public record GameSearchRequest(
     }
 
     public Pageable toPageable() {
+        // 기본 IGDB 평점과 집계 정렬은 Repository에서 처리하며 동점은 ID순입니다.
         Sort order = sort == null ? Sort.by("id").ascending() : switch (sort) {
             case LATEST -> Sort.by(Sort.Order.desc("releaseDate"), Sort.Order.asc("id"));
             case TITLE -> Sort.by(Sort.Order.asc("title"), Sort.Order.asc("id"));

@@ -79,6 +79,9 @@ public class UserService {
 
     // 토큰 갱신 메소드
     public TokenResponseDto refresh(String refreshToken) {
+        if(refreshToken == null) {
+            throw new ServiceException("401-2", "로그인 정보가 없습니다.");
+        }
         if(!jwtProvider.validateToken(refreshToken)) {
             throw new ServiceException("401-2", "유효하지 않은 토큰 입니다.");
         }

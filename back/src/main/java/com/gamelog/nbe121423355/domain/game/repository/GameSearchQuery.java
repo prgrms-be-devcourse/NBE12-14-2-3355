@@ -7,7 +7,9 @@ final class GameSearchQuery {
 
     static final String FROM_AND_FILTERS = """
                 FROM Game g
-                WHERE (
+                WHERE g.releaseDate >= :minReleaseDate
+                AND g.releaseDate < :maxReleaseDateExclusive
+                AND (
                     :keyword IS NULL
                     OR LOWER(g.title) LIKE LOWER(:keyword) ESCAPE '!'
                 )
@@ -33,6 +35,7 @@ final class GameSearchQuery {
 
     static final String COMMUNITY_ORDER = """
                 ORDER BY CASE
+                    WHEN :metric = '' THEN COALESCE(g.igdbRating, -1.0)
                     WHEN :metric = 'RATING' THEN
                         (SELECT COALESCE(AVG(r.rating), 0.0) FROM Review r
                          WHERE r.userGame.game = g

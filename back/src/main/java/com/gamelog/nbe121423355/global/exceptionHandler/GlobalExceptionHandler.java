@@ -6,10 +6,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.Comparator;
@@ -58,6 +60,17 @@ public class GlobalExceptionHandler {
         );
     }
 
+    // PathVariable/RequestParam 타입 불일치 (예: /games/abc)
+    // ErrorResponse를 구현하지 않는 예외라 아래 Exception 핸들러의 4xx 분기에 걸리지 않아 별도 처리
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ResponseBody
+    public RsData<Void> handleException(MethodArgumentTypeMismatchException e) {
+        return new RsData<Void>(
+                "400-0",
+                "잘못된 요청입니다."
+        );
+    }
+
     // 이미지 파일 크기 초과시 예외사항
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     @ResponseBody
@@ -92,13 +105,31 @@ public class GlobalExceptionHandler {
     }
 
     // 위에서 처리하지 못한 나머지 모든 예외 (500)
+    // 단, Spring MVC가 던지는 클라이언트 오류(없는 경로, 타입 불일치, 지원하지 않는 메서드 등)는
+    // 예외에 담긴 원래 4xx 상태로 응답하고 로그는 남기지 않음
     @ExceptionHandler(Exception.class)
     @ResponseBody
     public RsData<Void> handleException(Exception e) {
+        if (e instanceof ErrorResponse errorResponse && errorResponse.getStatusCode().is4xxClientError()) {
+            int status = errorResponse.getStatusCode().value();
+            return new RsData<Void>(
+                    status + "-0",
+                    clientErrorMessage(status)
+            );
+        }
+
         log.error("처리되지 않은 예외 발생", e);
         return new RsData<Void>(
                 "500-1",
                 "서버 내부 오류가 발생했습니다."
         );
+    }
+
+    private String clientErrorMessage(int status) {
+        return switch (status) {
+            case 404 -> "요청한 경로를 찾을 수 없습니다.";
+            case 405 -> "허용되지 않은 요청 방식입니다.";
+            default -> "잘못된 요청입니다.";
+        };
     }
 }
