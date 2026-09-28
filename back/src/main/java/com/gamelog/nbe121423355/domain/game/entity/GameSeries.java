@@ -21,6 +21,8 @@ public class GameSeries {
     @Column(nullable = false, length = 255)
     private String name;
 
+    public void updateName(String name) { this.name = name; }
+
     public static GameSeries createFromIgdb(Long igdbId, String name) {
         GameSeries series = new GameSeries();
         series.igdbId = igdbId;
