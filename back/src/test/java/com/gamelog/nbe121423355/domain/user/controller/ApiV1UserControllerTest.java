@@ -190,6 +190,14 @@ class ApiV1UserControllerTest {
     }
 
     @Test
+    @DisplayName("토큰 재발급 실패 - refreshToken 쿠키 없음(비로그인 상태) 시 500이 아닌 401")
+    void refresh_fail_noCookie() throws Exception {
+        mockMvc.perform(post("/api/v1/users/refresh"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.resultCode").value("401-2"));
+    }
+
+    @Test
     @DisplayName("로그아웃 성공 - refreshToken 쿠키가 즉시 만료되고, 이후 그 토큰으로 재발급 시도하면 401")
     void logout_success() throws Exception {
         saveUser("test@test.com", "nickname", "password123");

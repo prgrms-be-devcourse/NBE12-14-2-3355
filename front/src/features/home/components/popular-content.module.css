@@ -3,7 +3,7 @@
 .heading span{display:block;margin-bottom:10px;color:var(--lime);font-size:10px;font-weight:700;letter-spacing:2.2px}
 .heading h2{font-size:24px}
 .heading p{color:var(--muted);font-size:12px}
-.gameLike{display:flex;align-items:center;gap:6px;margin-top:10px;color:var(--muted);font-size:11px}.gameLike span{color:var(--lime);font-size:14px}
+.gameLike{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:11px}.gameLike span{color:var(--lime);font-size:14px}
 .staticLike{cursor:default!important}
 .reviewHeader{display:grid;grid-template-columns:minmax(250px,1fr) minmax(210px,.8fr) auto;align-items:center;gap:24px;padding-bottom:18px;border-bottom:1px solid var(--line)}
 .reviewHeader time{color:#95a092;font-size:12px;white-space:nowrap}

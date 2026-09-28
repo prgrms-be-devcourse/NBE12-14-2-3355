@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.time.LocalDate;
 import java.util.Optional;
 
 public interface GameRepository extends JpaRepository<Game,Long> {
@@ -39,6 +40,8 @@ public interface GameRepository extends JpaRepository<Game,Long> {
             @Param("filterPlatforms") boolean filterPlatforms,
             @Param("platformIds") List<Long> platformIds,
             @Param("metric") String metric,
+            @Param("minReleaseDate") LocalDate minReleaseDate,
+            @Param("maxReleaseDateExclusive") LocalDate maxReleaseDateExclusive,
             Pageable pageable
     );
 }

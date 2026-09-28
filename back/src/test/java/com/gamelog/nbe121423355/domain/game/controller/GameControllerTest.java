@@ -176,7 +176,8 @@ class GameControllerTest {
                 .andExpect(jsonPath("$.data.content[0].title").value("New B"))
                 .andExpect(jsonPath("$.data.content[1].title").value("New A"))
                 .andExpect(jsonPath("$.data.content[2].title").value("Old"))
-                .andExpect(jsonPath("$.data.content[3].title").value("Unknown"));
+                .andExpect(jsonPath("$.data.content.length()").value(3))
+                .andExpect(jsonPath("$.data.totalElements").value(3));
     }
 
     private Game createGame(Long igdbId, String title, Long releaseTimestamp) {

@@ -16,6 +16,7 @@ public class RelatedGameQueryRepository {
 
     // 연관 추천 게임 5개를 선별하고 계산하기 위한 CTE 기반 Native SQL 구문
     // TODO: 평점 데이터가 충분해지면 최소 평점 개수(5)와 평균 평점 기준(3.5)을 재조정
+    // JOIN_FIXED_ORDER로 IGDB 평점 필터를 먼저 적용해 대량의 장르 후보에 대한 games PK 반복 조회를 방지
     private static final String RELATED_GAMES_SQL = """
             WITH base_genres AS (
                 SELECT genre_id
@@ -23,11 +24,12 @@ public class RelatedGameQueryRepository {
                 WHERE game_id = :gameId
             ),
             candidates AS (
-                SELECT gg.game_id,
+                SELECT /*+ JOIN_FIXED_ORDER() */
+                       gg.game_id,
                        COUNT(*) AS shared_genre_count
-                FROM game_genres gg
+                FROM games g
+                JOIN game_genres gg ON gg.game_id = g.id
                 JOIN base_genres bg ON bg.genre_id = gg.genre_id
-                JOIN games g ON g.id = gg.game_id
                 WHERE gg.game_id <> :gameId
                   AND g.igdb_rating >= 70.0
                 GROUP BY gg.game_id

@@ -16,6 +16,7 @@ import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
 import com.gamelog.nbe121423355.domain.usergame.repository.UserGameRepository;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +33,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserGameService {
@@ -61,6 +63,16 @@ public class UserGameService {
 
     @Transactional(readOnly = true)
     public Page<UserGameListResponse> getUserGameList(Long userId, UserGameSearchRequest request) {
+        log.debug(
+                "라이브러리 게임 목록 조회 - userId={}, page={}, size={}, keyword={}, status={}, sort={}",
+                userId,
+                request.getPage(),
+                request.getSize(),
+                request.getKeyword(),
+                request.getStatus(),
+                request.getSort()
+        );
+
         String keyword = request.getKeyword();
         String pattern = keyword == null || keyword.isBlank() ? null
                 : "%" + keyword.strip().replace("!", "!!").replace("%", "!%")
@@ -77,6 +89,13 @@ public class UserGameService {
 
     @Transactional(readOnly = true)
     public Page<UserGameListResponse> getPublicUserGameList(Long userId, UserGameSearchRequest request) {
+        log.debug(
+                "공개 프로필 게임 목록 조회 - targetUserId={}, page={}, size={}",
+                userId,
+                request.getPage(),
+                request.getSize()
+        );
+
         if (!userRepository.existsById(userId)) {
             throw new ServiceException("404-1", "존재하지 않는 유저입니다.");
         }
@@ -90,6 +109,12 @@ public class UserGameService {
         Long gameId,
         UserGameReqBody reqBody
     ){
+        log.info(
+                "게임 기록 저장 요청 - userId={}, gameId={}",
+                userId,
+                gameId
+        );
+
         validatePlayDates(reqBody);
         Platform platform = findPlatform(reqBody.platformId());
 
@@ -97,10 +122,22 @@ public class UserGameService {
                 .map(userGame -> {
                     applyPlayRecord(userGame, reqBody, platform);
 
+                    log.info(
+                            "게임 기록 수정 완료 - userId={}, gameId={}",
+                            userId,
+                            gameId
+                    );
+
                     return new UserGameSaveResult(userGame, false);
                 })
                 .orElseGet(() -> {
                     UserGame userGame = createUserGame(userId, gameId, reqBody, platform);
+
+                    log.info(
+                            "게임 라이브러리 등록 완료 - userId={}, gameId={}",
+                            userId,
+                            gameId
+                    );
 
                     return new UserGameSaveResult(userGame,true);
                 });
@@ -117,6 +154,12 @@ public class UserGameService {
         Platform platform = findPlatform(reqBody.platformId());
 
         applyPlayRecord(userGame, reqBody, platform);
+
+        log.info(
+                "게임 플레이 기록 수정 완료 - userId={}, gameId={}",
+                userId,
+                gameId
+        );
 
         return userGame;
     }
@@ -219,16 +262,16 @@ public class UserGameService {
 
     private User findUser(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new ServiceException("404-1", "사용자를 찾을 수 없습니다.")
-                );
+                .orElseThrow(() -> {
+                    return new ServiceException("404-1", "사용자를 찾을 수 없습니다.");
+                });
     }
 
     private Game findGame(Long gameId) {
         return gameRepository.findById(gameId)
-                .orElseThrow(() ->
-                        new ServiceException("404-2", "게임을 찾을 수 없습니다.")
-                );
+                .orElseThrow(() -> {
+                    return new ServiceException("404-2", "게임을 찾을 수 없습니다.");
+                });
     }
 
     private UserGame findUserGame(Long userId, Long gameId) {
@@ -244,9 +287,9 @@ public class UserGameService {
         }
 
         return platformRepository.findById(platformId)
-                .orElseThrow(() ->
-                        new ServiceException("404-4", "플랫폼을 찾을 수 없습니다.")
-                );
+                .orElseThrow(() -> {
+                    return new ServiceException("404-4", "플랫폼을 찾을 수 없습니다.");
+                });
     }
 
     private UserGame createUserGame(Long userId, Long gameId) {
@@ -293,6 +336,12 @@ public class UserGameService {
         }
 
         if (!status) {
+            log.warn(
+                    "라이브러리에 등록되지 않은 게임의 상태 해제 요청 - userId={}, gameId={}",
+                    userId,
+                    gameId
+            );
+
             throw new ServiceException(
                     "404-3",
                     "라이브러리에 등록되지 않은 게임입니다."
@@ -311,11 +360,24 @@ public class UserGameService {
             UserGame userGame = findUserGame(userId, gameId);
             userGame.clearPlayStatus();
 
+            log.info(
+                    "플레이 상태 해제 - userId={}, gameId={}",
+                    userId,
+                    gameId
+            );
+
             return null;
         }
 
         UserGame userGame = getOrCreateUserGame(userId, gameId);
         userGame.changePlayStatus(playStatus);
+
+        log.info(
+                "플레이 상태 변경 - userId={}, gameId={}, playStatus={}",
+                userId,
+                gameId,
+                playStatus
+        );
 
         return playStatus;
     }
@@ -329,6 +391,13 @@ public class UserGameService {
 
         userGame.changePlaying(playing);
 
+        log.info(
+                "플레이 중 상태 변경 - userId={}, gameId={}, playing={}",
+                userId,
+                gameId,
+                playing
+        );
+
         return playing;
     }
 
@@ -340,6 +409,13 @@ public class UserGameService {
         );
 
         userGame.changeWishlist(wishlist);
+
+        log.info(
+                "위시리스트 상태 변경 - userId={}, gameId={}, wishlist={}",
+                userId,
+                gameId,
+                wishlist
+        );
 
         return wishlist;
     }
@@ -353,6 +429,13 @@ public class UserGameService {
 
         userGame.changeBacklog(backlog);
 
+        log.info(
+                "백로그 상태 변경 - userId={}, gameId={}, backlog={}",
+                userId,
+                gameId,
+                backlog
+        );
+
         return backlog;
     }
 
@@ -365,12 +448,25 @@ public class UserGameService {
 
         userGame.changeLiked(liked);
 
+        log.info(
+                "좋아요 상태 변경 - userId={}, gameId={}, liked={}",
+                userId,
+                gameId,
+                liked
+        );
+
         return liked;
     }
 
     //프로필 탭
     @Transactional(readOnly = true)
     public UserProfileResponse profileTab(Long targetUserId, Long currentUserId){
+        log.debug(
+                "프로필 조회 - targetUserId={}, currentUserId={}",
+                targetUserId,
+                currentUserId
+        );
+
         if (!userRepository.existsById(targetUserId)) {
             throw new ServiceException("404-1", "존재하지 않는 유저입니다.");
         }
@@ -511,6 +607,12 @@ public class UserGameService {
                         .toList();
 
         userFavoriteGameRepository.saveAll(favoriteGames);
+
+        log.info(
+                "인생게임 수정 완료 - userId={}, gameCount={}",
+                userId,
+                gameIds.size()
+        );
 
         return favoriteGames.stream()
                 .map(UserFavoriteGameResponse::new)
