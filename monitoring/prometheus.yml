@@ -6,3 +6,6 @@ scrape_configs:
     metrics_path: /actuator/prometheus
     static_configs:
       - targets: ["host.docker.internal:8080"]
+
+remote_write:
+  - url: http://localhost:9090/api/v1/write

@@ -51,7 +51,7 @@ spring:
     activate:
       on-profile: local
   datasource:
-    url: jdbc:mysql://localhost:3306/gamelog?serverTimezone=UTC&characterEncoding=UTF-8
+    url: jdbc:mysql://localhost:3306/gamelog_retry?serverTimezone=UTC&characterEncoding=UTF-8
     username: ${DB_USERNAME:gamelog}
     password: ${DB_PASSWORD:gamelog1234}
   jpa:
@@ -63,7 +63,7 @@ spring:
         format_sql: true
   sql:
     init:
-      mode: always   # data.sql 항상 실행 (중복 방지 필요하면 always -> never로 바꾸고 수동 실행)
+      mode: never   # data.sql 항상 실행 (중복 방지 필요하면 always -> never로 바꾸고 수동 실행)
 
 ---
 # ===== 테스트 (H2 인메모리) =====

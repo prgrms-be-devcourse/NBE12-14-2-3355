@@ -227,15 +227,6 @@ public class UserGameController {
         );
     }
 
-    @GetMapping("/recentGames")
-    @Operation(summary = "최근 플레이 게임 조회", security = @SecurityRequirement(name = "bearerAuth"))
-    public RsData<List<UserGameListResponse>> recentGameList(
-            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser user
-    ) {
-        return new RsData<>("200-1", "최근 플레이한 게임을 불러왔습니다",
-                userGameService.getRecentPlayedGames(user.getId()));
-    }
-
     @PutMapping("/favorite-games")
     @Operation(summary = "인생 게임 수정", description = "프로필에 노출할 인생 게임 목록과 순서를 저장합니다.", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<List<UserFavoriteGameResponse>> updateFavoriteGames(
