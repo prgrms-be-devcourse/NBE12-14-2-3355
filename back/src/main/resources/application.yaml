@@ -51,7 +51,7 @@ spring:
     activate:
       on-profile: local
   datasource:
-    url: jdbc:mysql://localhost:3306/gamelog_retry?serverTimezone=UTC&characterEncoding=UTF-8
+    url: jdbc:mysql://localhost:3306/gamelog?serverTimezone=UTC&characterEncoding=UTF-8
     username: ${DB_USERNAME:gamelog}
     password: ${DB_PASSWORD:gamelog1234}
   jpa:
