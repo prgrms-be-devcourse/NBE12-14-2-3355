@@ -1,5 +1,3 @@
-# GameLog
-
 <div align="center">
   <h1>
     <img src="front/public/gamelog-logo-console.png" alt="GameLog Logo" width="54" align="absmiddle" />
