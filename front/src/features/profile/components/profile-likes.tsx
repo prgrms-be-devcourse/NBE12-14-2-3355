@@ -103,7 +103,7 @@ export default function ProfileLikes({ accessToken, userId }: { accessToken?: st
         <div>
           <span className={styles.sectionEyebrow}>MY LIKES</span>
           <h2 id="profile-likes-title"><strong>{result?.totalElements ?? 0}</strong>개의 좋아하는 게임</h2>
-          <p>게임 상세에서 하트를 누른 게임을 모았어요.</p>
+          <p>게임 상세에서 하트를 누른 게임을 모았습니다.</p>
         </div>
         <label className={styles.profileReviewsSort}>
           <span>정렬</span>

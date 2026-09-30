@@ -43,7 +43,7 @@ function usePopularContent<T>(loader: (signal: AbortSignal) => Promise<T[]>) {
         if (!controller.signal.aborted) {
           setState({
             status: "error",
-            message: reason instanceof Error ? reason.message : "인기 콘텐츠를 불러오지 못했어요.",
+            message: reason instanceof Error ? reason.message : "인기 콘텐츠를 불러오지 못했습니다.",
           });
         }
       });
@@ -141,7 +141,7 @@ function PopularReviewCard({ review }: { review: PopularReview }) {
         </Link>
         <div className={reviewStyles.reviewerDetails}>
           <div className={reviewStyles.reviewerName}>
-            <Link className={reviewStyles.reviewerProfileLink} href={`/profile/${review.userId}`}>{nickname}</Link><span>님이 리뷰를 남겼어요</span>
+            <Link className={reviewStyles.reviewerProfileLink} href={`/profile/${review.userId}`}>{nickname}</Link><span>님이 리뷰를 남겼습니다</span>
           </div>
           <div className={reviewStyles.reviewerMeta}>
             {review.rating == null
@@ -165,7 +165,7 @@ function PopularReviewCard({ review }: { review: PopularReview }) {
     <div className={reviewStyles.reviewBody}>
       <div className={styles.reviewCopy}>
         {hidden && <div className={reviewStyles.spoilerCover}>
-          <span>스포일러가 포함된 리뷰예요.</span>
+          <span>스포일러가 포함된 리뷰입니다.</span>
           <button type="button" onClick={() => setRevealed(true)}>내용 보기</button>
         </div>}
         <p className={hidden ? reviewStyles.blurred : undefined} aria-hidden={hidden}>{review.content}</p>
@@ -186,7 +186,7 @@ export function PopularGamesSection() {
     <SectionHeading type="games" />
     {state.status === "loading" ? <LoadingState type="games" />
       : state.status === "error" ? <StateMessage retry={retry} type="games">{state.message}</StateMessage>
-      : state.data.length === 0 ? <StateMessage type="games">아직 좋아요를 받은 게임이 없어요.</StateMessage>
+      : state.data.length === 0 ? <StateMessage type="games">아직 좋아요를 받은 게임이 없습니다.</StateMessage>
       : <ul className={gameStyles.grid}>{state.data.map(game => <PopularGameCard game={game} key={game.gameId} />)}</ul>}
   </section>;
 }
@@ -198,7 +198,7 @@ export function PopularReviewsSection() {
     <SectionHeading type="reviews" />
     {state.status === "loading" ? <LoadingState type="reviews" />
       : state.status === "error" ? <StateMessage retry={retry} type="reviews">{state.message}</StateMessage>
-      : state.data.length === 0 ? <StateMessage type="reviews">아직 좋아요를 받은 리뷰가 없어요.</StateMessage>
+      : state.data.length === 0 ? <StateMessage type="reviews">아직 좋아요를 받은 리뷰가 없습니다.</StateMessage>
       : <div className={reviewStyles.list}>{state.data.map(review => <PopularReviewCard review={review} key={review.reviewId} />)}</div>}
   </section>;
 }

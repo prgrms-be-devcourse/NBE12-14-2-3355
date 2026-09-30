@@ -220,7 +220,7 @@ function ReviewEditor({
       </label>
       <label className={styles.checkLabel}>
         <input type="checkbox" checked={spoiler} onChange={(event) => setSpoiler(event.target.checked)} />
-        스포일러가 포함되어 있어요
+        스포일러가 포함되어 있습니다
       </label>
       {error && <p className={styles.formError} role="alert">{error}</p>}
       <div className={styles.editorActions}>
@@ -320,7 +320,7 @@ export default function GameReviewSection({
         <div>
           <span className={styles.eyebrow}>PLAYER NOTES</span>
           <h2 id={`game-${gameId}-reviews`}>플레이어 리뷰</h2>
-          <p>{reviews.totalElements.toLocaleString()}명이 이 게임의 경험을 남겼어요.</p>
+          <p>{reviews.totalElements.toLocaleString()}명이 이 게임의 경험을 남겼습니다.</p>
         </div>
         <button
           type="button"
@@ -348,7 +348,7 @@ export default function GameReviewSection({
         <div className={styles.loading} aria-live="polite">리뷰를 불러오는 중…</div>
       ) : reviews.reviews.length === 0 ? (
         <div className={styles.empty}>
-          <strong>아직 작성된 리뷰가 없어요.</strong>
+          <strong>아직 작성된 리뷰가 없습니다.</strong>
           <p>첫 번째 플레이 기록을 남겨보세요.</p>
         </div>
       ) : (

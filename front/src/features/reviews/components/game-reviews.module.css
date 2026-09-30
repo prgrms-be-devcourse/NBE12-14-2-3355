@@ -55,14 +55,15 @@
 .likeCount:not(:disabled):hover,.likeCount.liked{color:var(--lime)}
 .likeArea{display:flex;align-items:center;gap:9px;min-width:0}
 .likeError{max-width:280px;color:#e89882;font-size:11px;line-height:1.4}
-.hideButton{margin-left:auto;padding:5px 0;color:var(--muted);font-size:12px}
+.actionButtons{display:flex;align-items:center;gap:12px;margin-left:auto}
+.hideButton{padding:5px 0;color:var(--muted);font-size:12px}
 .hideButton:hover{color:var(--lime)}
-.deleteButton{margin-left:auto;padding:8px 12px;border:1px solid #754a4a;border-radius:4px;color:#e9a0a0;font-size:12px}
+.deleteButton{padding:8px 12px;border:1px solid #754a4a;border-radius:4px;color:#e9a0a0;font-size:12px}
 .deleteButton:hover:not(:disabled){background:#442929;color:#ffc2c2}
 .deleteButton:disabled{cursor:wait;opacity:.55}
 .actionError{margin-bottom:12px;padding:11px 13px;border:1px solid #754a4a;border-radius:5px;background:#352323;color:#f2adad;font-size:13px;line-height:1.5}
 .actionNotice{margin-bottom:12px;padding:11px 13px;border:1px solid #557244;border-radius:5px;background:#263422;color:var(--lime);font-size:13px;line-height:1.5}
-.reportButton{margin-left:auto;padding:7px 10px;color:#9da8a0;font-size:12px}
+.reportButton{padding:7px 10px;color:#9da8a0;font-size:12px}
 .reportButton:hover{color:#e7a1a1}
 .reportBackdrop{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;padding:20px;background:#050706dc}
 .reportDialog{width:min(520px,100%);padding:26px;border:1px solid #53634d;border-radius:10px;background:#171d1a;box-shadow:0 24px 70px #000c}

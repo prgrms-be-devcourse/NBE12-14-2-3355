@@ -167,11 +167,13 @@ function Stats({ stats }: { stats: ProfileStats }) {
 function FavoriteGameSearchModal({
   favorites,
   onAdd,
+  onRemove,
   onClose,
   accessToken,
 }: {
   favorites: FavoriteGame[];
   onAdd: (game: Game) => void;
+  onRemove: (gameId: number) => void;
   onClose: () => void;
   accessToken: string;
 }) {
@@ -185,6 +187,7 @@ function FavoriteGameSearchModal({
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [showLimitNotice, setShowLimitNotice] = useState(false);
 
   useEffect(() => {
     const value = keyword.trim();
@@ -304,8 +307,16 @@ function FavoriteGameSearchModal({
     favorites.map((game) => game.gameId),
   );
 
+  const isFull = favorites.length >= 5;
+
   function handleAdd(game: Game) {
     if (favoriteIds.has(game.id)) {
+      return;
+    }
+
+    // 5개가 이미 차 있으면 추가하지 않고 안내를 띄운다.
+    if (isFull) {
+      setShowLimitNotice(true);
       return;
     }
 
@@ -366,6 +377,14 @@ function FavoriteGameSearchModal({
           />
         </div>
 
+        {showLimitNotice && isFull && (
+          <p className={styles.modalLimitNotice} role="alert">
+            인생게임은 최대 5개까지 등록할 수 있습니다.
+            아래 목록에서 &quot;제거&quot;를 누르면 자리를
+            비우고 다른 게임을 추가할 수 있습니다.
+          </p>
+        )}
+
         <div ref={resultRef}
           className={styles.favoriteSearchResult}>
         {loading ? (
@@ -379,8 +398,8 @@ function FavoriteGameSearchModal({
         ) : !games.length ? (
           <div className={styles.modalEmpty}>
             {keyword.trim()
-              ? "검색 결과가 없어요."
-              : "기록한 게임이 없어요."}
+              ? "검색 결과가 없습니다."
+              : "기록한 게임이 없습니다."}
           </div>
         ) : (
             <div className={styles.searchGameList}>
@@ -421,15 +440,18 @@ function FavoriteGameSearchModal({
                     <button
                       type="button"
                       className={
-                        styles.searchGameAdd
+                        alreadyFavorite
+                          ? `${styles.searchGameAdd} ${styles.searchGameRemove}`
+                          : styles.searchGameAdd
                       }
-                      disabled={alreadyFavorite}
                       onClick={() =>
-                        handleAdd(game)
+                        alreadyFavorite
+                          ? onRemove(game.id)
+                          : handleAdd(game)
                       }
                     >
                       {alreadyFavorite
-                        ? "등록됨"
+                        ? "제거"
                         : "추가"}
                     </button>
                   </div>
@@ -447,7 +469,7 @@ function FavoriteGameSearchModal({
 
         <p className={styles.modalNotice}>
           ※ 내 라이브러리에 등록된 게임만
-          인생게임으로 저장할 수 있어요.
+          인생게임으로 저장할 수 있습니다.
         </p>
       </div>
     </div>
@@ -492,10 +514,8 @@ function FavoriteGames({
   }
 
   function handleAddGame(game: Game) {
+    // 5개 초과는 모달에서 추가 버튼 비활성화로 막지만, 안전을 위해 한 번 더 확인한다.
     if (draftFavorites.length >= 5) {
-      alert(
-        "인생게임은 최대 5개까지 등록할 수 있습니다.",
-      );
       return;
     }
 
@@ -516,6 +536,12 @@ function FavoriteGames({
         displayOrder: prev.length + 1,
       },
     ]);
+  }
+
+  function handleRemoveGame(gameId: number) {
+    setDraftFavorites((prev) =>
+      prev.filter((item) => item.gameId !== gameId),
+    );
   }
 
   function handleDragStart(
@@ -723,16 +749,9 @@ function FavoriteGames({
                       styles.favoriteRemove
                     }
                     aria-label={`${game.title} 인생게임에서 제거`}
-                    onClick={() => {
-                      setDraftFavorites(
-                        (prev) =>
-                          prev.filter(
-                            (item) =>
-                              item.gameId !==
-                              game.gameId,
-                          ),
-                      );
-                    }}
+                    onClick={() =>
+                      handleRemoveGame(game.gameId)
+                    }
                   >
                     ×
                   </button>
@@ -747,6 +766,7 @@ function FavoriteGames({
         <FavoriteGameSearchModal
           favorites={draftFavorites}
           onAdd={handleAddGame}
+          onRemove={handleRemoveGame}
           onClose={() =>
             setShowAddModal(false)
           }
@@ -1189,7 +1209,7 @@ function GenreDistribution({
 
       {!data.length ? (
         <div className={styles.emptyBox}>
-          아직 장르 데이터가 없어요.
+          아직 장르 데이터가 없습니다.
         </div>
       ) : (
         <div className={styles.genreLayout}>

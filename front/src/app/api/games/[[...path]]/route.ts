@@ -12,6 +12,6 @@ export async function GET(request: NextRequest, context: { params: Promise<{ pat
     const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(8000) });
     return Response.json(await response.json(), { status: response.status });
   } catch {
-    return Response.json({ msg: "게임 서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요." }, { status: 502 });
+    return Response.json({ msg: "게임 서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요." }, { status: 502 });
   }
 }

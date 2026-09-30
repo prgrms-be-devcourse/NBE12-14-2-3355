@@ -39,11 +39,11 @@ type FormState = {
 };
 
 const playStatusOptions: Array<{ value: PlayStatus; label: string; description: string }> = [
-  { value: "PLAYED", label: "플레이함", description: "구체적인 완료 상태 없이 플레이했어요." },
-  { value: "COMPLETED", label: "플레이 완료", description: "게임의 주요 목표나 엔딩을 완료했어요." },
-  { value: "RETIRED", label: "끝냄", description: "명확한 엔딩이 없는 게임을 충분히 즐겼어요." },
-  { value: "SHELVED", label: "잠시 보류", description: "나중에 다시 플레이할 예정이에요." },
-  { value: "DROPPED", label: "플레이 포기", description: "더 이상 플레이하지 않을 예정이에요." },
+  { value: "PLAYED", label: "플레이함", description: "구체적인 완료 상태 없이 플레이했습니다." },
+  { value: "COMPLETED", label: "플레이 완료", description: "게임의 주요 목표나 엔딩을 완료했습니다." },
+  { value: "RETIRED", label: "끝냄", description: "명확한 엔딩이 없는 게임을 충분히 즐겼습니다." },
+  { value: "SHELVED", label: "잠시 보류", description: "나중에 다시 플레이할 예정입니다." },
+  { value: "DROPPED", label: "플레이 포기", description: "더 이상 플레이하지 않을 예정입니다." },
 ];
 
 const playStatusLabels = Object.fromEntries(

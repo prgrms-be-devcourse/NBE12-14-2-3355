@@ -22,7 +22,7 @@ type Props<T> = {
 // 게임/유저 검색 등 "입력 -> 자동완성 드롭다운" 화면 전체에서 재사용하는 검색 콤보박스
 export default function SearchCombobox<T>({
   value, onChange, onSearch, onSelect, fetchResults, getKey, renderItem, ariaLabel, placeholder,
-  emptyText = "검색 결과가 없어요.", errorText = "검색 후보를 불러오지 못했어요. 엔터로 다시 검색해 주세요.",
+  emptyText = "검색 결과가 없습니다.", errorText = "검색 후보를 불러오지 못했습니다. 엔터로 다시 검색해 주세요.",
   maxLength = 255, debounceMs = 300, className,
 }: Props<T>) {
   const listId = useId();

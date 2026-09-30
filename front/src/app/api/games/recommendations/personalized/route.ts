@@ -19,6 +19,6 @@ export async function GET(request: NextRequest) {
     relayAuthHeaders(upstream, responseHeaders);
     return new Response(await upstream.text(), { status: upstream.status, headers: responseHeaders });
   } catch {
-    return Response.json({ msg: "추천 게임을 불러오지 못했어요." }, { status: 502 });
+    return Response.json({ msg: "추천 게임을 불러오지 못했습니다." }, { status: 502 });
   }
 }

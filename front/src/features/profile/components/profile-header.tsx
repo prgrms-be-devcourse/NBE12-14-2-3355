@@ -62,7 +62,7 @@ export default function ProfileHeader({ user, accessToken, editable, onSaved }: 
     <div className={styles.profileIdentity}>
       <span className={styles.profileEyebrow}>{editable ? "MY GAME LOG" : "GAME LOG"}</span>
       <h1 className={styles.nickname}>{user.nickname}</h1>
-      <p className={styles.profileBio}>{user.bio?.trim() || "아직 한줄 소개가 없어요."}</p>
+      <p className={styles.profileBio}>{user.bio?.trim() || "아직 한줄 소개가 없습니다."}</p>
       {editable && <div className={styles.profileHeaderActions}>
         <button type="button" className={styles.profileEditButton} onClick={() => setEditing(true)}>프로필 수정</button>
         <button type="button" className={styles.profileEditButton} onClick={() => setChangingPassword(true)}>비밀번호 변경</button>
