@@ -484,8 +484,8 @@ export default function MyGameLog({
                 <input
                   type="number"
                   min="0"
-                  max="999999.99"
-                  step="0.5"
+                  max="999999.9"
+                  step="0.1"
                   inputMode="decimal"
                   value={form.playTimeHours}
                   onChange={(event) => update("playTimeHours", event.target.value)}

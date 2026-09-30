@@ -145,7 +145,7 @@ export default function ProfileReviews({
         <div>
           <span className={styles.sectionEyebrow}>MY REVIEWS</span>
           <h2 id="profile-reviews-title">
-            <strong>{result?.totalLikes ?? 0}</strong>개의 좋아요 · <strong>{result?.totalElements ?? 0}</strong>개의 리뷰
+            <strong>{result?.totalElements ?? 0}</strong>개의 리뷰
           </h2>
         </div>
         <label className={styles.profileReviewsSort}>

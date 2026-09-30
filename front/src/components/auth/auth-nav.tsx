@@ -13,6 +13,9 @@ export default function AuthNav() {
     return (
       <div className="auth-nav">
 {isAdmin && (
+  <Link href="/admin/igdb">게임 데이터 관리</Link>
+)}
+{isAdmin && (
   <Link href="/admin/reports">신고 관리</Link>
 )}
 <Link href="/profile" className="auth-nav-avatar-link" aria-label="프로필">

@@ -47,3 +47,6 @@ out/
 
 ### macOS ###
 .DS_Store
+
+# Local database recovery snapshots
+/.local-backups/

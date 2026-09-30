@@ -1,0 +1,116 @@
+# GameLog - UserGame API (라이브러리 · 프로필 탭)
+# IntelliJ IDEA HTTP Client에서 http-client.env.json의 local 환경을 선택한 뒤 사용합니다.
+# accessToken은 user.http의 2번 로그인을 먼저 실행하면 자동으로 채워집니다.
+
+###
+# @name 게임 기록 목록
+GET {{baseUrl}}/api/v1/library/games
+Authorization: Bearer {{accessToken}}
+
+###
+# @name 라이브러리에 추가
+POST {{baseUrl}}/api/v1/library/games/1
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "playStatus": "COMPLETED",
+  "isPlaying": true,
+  "isBacklog": false,
+  "isWishlist": true,
+  "isLiked": true,
+  "platformId": 1,
+  "playTimeHours": 12.5,
+  "finishTimeHours": 25.0,
+  "masterTimeHours": 50.0,
+  "startedAt": "2026-09-01",
+  "completedAt": "2026-09-15",
+  "lastPlayedAt": "2026-09-15T21:30:00"
+}
+
+###
+# @name 게임 기록 수정
+PATCH {{baseUrl}}/api/v1/library/games/1
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "playStatus": "PLAYED",
+  "isPlaying": false,
+  "isBacklog": false,
+  "isWishlist": false,
+  "isLiked": false,
+  "platformId": 1,
+  "playTimeHours": 100.5,
+  "finishTimeHours": 35.0,
+  "masterTimeHours": 80.0,
+  "startedAt": "2026-08-01",
+  "completedAt": "2026-08-20",
+  "lastPlayedAt": "2026-08-20T21:30:00"
+}
+
+###
+# @name 플레이 상태 변경
+PUT {{baseUrl}}/api/v1/library/games/1/play-status?status=PLAYED
+Authorization: Bearer {{accessToken}}
+Content-Type: application/x-www-form-urlencoded
+
+###
+# @name 플레이 중 변경
+PATCH {{baseUrl}}/api/v1/library/games/1/playing?playing=true
+Authorization: Bearer {{accessToken}}
+Content-Type: application/x-www-form-urlencoded
+
+###
+# @name 위시리스트 변경
+PATCH {{baseUrl}}/api/v1/library/games/1/wishlist?wishlist=false
+Authorization: Bearer {{accessToken}}
+Content-Type: application/x-www-form-urlencoded
+
+###
+# @name 백로그 변경
+PATCH {{baseUrl}}/api/v1/library/games/1/backlog?backlog=true
+Authorization: Bearer {{accessToken}}
+Content-Type: application/x-www-form-urlencoded
+
+###
+# @name 좋아요 변경
+PATCH {{baseUrl}}/api/v1/library/games/1/liked?liked=true
+Authorization: Bearer {{accessToken}}
+Content-Type: application/x-www-form-urlencoded
+
+###
+# @name 프로필 탭
+GET {{baseUrl}}/api/v1/library/games/profile
+Authorization: Bearer {{accessToken}}
+
+###
+# @name 타인 프로필 탭
+GET {{baseUrl}}/api/v1/library/games/profile/6
+Authorization: Bearer {{accessToken}}
+
+###
+# @name 인생게임 수정
+PUT {{baseUrl}}/api/v1/library/games/favorite-games
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "gameIds": [2, 1]
+}
+
+###
+# @name 최근 플레이한 게임
+GET {{baseUrl}}/api/v1/library/games/recentGames
+Authorization: Bearer {{accessToken}}
+
+###
+# @name 타인 프로필 게임 목록
+# 로그인 없이 조회 가능합니다. status: ALL, PLAYED, PLAYING, BACKLOG, WISHLIST, LIKED
+# sort: RECENT_PLAYED, RATING, TITLE, PLAY_TIME
+GET {{baseUrl}}/api/v1/library/games/profile/6/games?status=ALL&sort=RECENT_PLAYED&page=0&size=20
+
+###
+# @name [검증] 타인 프로필 게임 목록 - 페이지 크기 초과
+# size가 최대 100을 초과하므로 400-1 응답이 반환되어야 합니다.
+GET {{baseUrl}}/api/v1/library/games/profile/6/games?page=0&size=101

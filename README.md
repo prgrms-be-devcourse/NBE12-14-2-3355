@@ -1,8 +1,9 @@
-# GameLog 🎮
-
 <div align="center">
-  <img src="front/public/gamelog-logo.svg" alt="GameLog Logo" width="280" />
-  <br><br>
+  <h1>
+    <img src="front/public/gamelog-logo-console.png" alt="GameLog Logo" width="54" align="absmiddle" />
+    GameLog.
+  </h1>
+  <br>
   <h3>플레이를 기록하고, 다음에 빠져들 게임을 발견하세요</h3>
   <p>게임 탐색부터 플레이 기록, 리뷰, 취향 기반 추천까지 연결하는 게임 기록 플랫폼</p>
 </div>
@@ -18,6 +19,18 @@
 처음 방문한 사용자는 온보딩에서 선호 장르와 게임을 선택해 추천을 받습니다. 플레이 기록이 쌓이면 실제 기록을 우선 활용해 개인화된 게임을 추천합니다.
 
 > 프로그래머스 백엔드 데브코스 팀 프로젝트 · `NBE12-14-2-3355`
+
+- **서비스:** https://nbe-12-14-2-3355.vercel.app/
+- **기간:** 2026.09.01 ~ 2026.09.30
+- **인원:** 5명 (팀 삼삼오오)
+
+| 팀원 | 담당 도메인 | 주요 작업 |
+|---|---|---|
+| 유시헌 | 회원 · 인증 · 보안 | JWT 인증·자동 재발급, 프로필·비밀번호 변경, 관리자 승격, 배포 환경, Sentry |
+| 문창원 | 게임 데이터 · 검색 | IGDB 수집·동기화, 게임 검색·필터·정렬, 한국어 번역, CI, Prometheus·Grafana |
+| 김기백 | 게임 상세 · 추천 | 게임 상세·통계, 연관·맞춤 추천, 메인 화면, 팔로우, 추천 쿼리 최적화 |
+| 송혜민 | 라이브러리 · 프로필 | 라이브러리 등록·상태 관리, 마이 프로필 탭(기록 산점도·장르 분포), 타 사용자 프로필 |
+| 이제혁 | 리뷰 | 리뷰 CRUD·작성 UI, 리뷰 좋아요, Swagger API 문서화 |
 
 ---
 
@@ -127,6 +140,13 @@ Next.js App Router와 React Context를 사용하며, 화면 스타일은 CSS Mod
 
 ---
 
+## 🗂 데이터베이스 구조 (ERD)
+
+[![GameLog ERD](docs/images/gamelog-erd.png)](docs/images/gamelog-erd.png)
+
+
+---
+
 ## 🛠 시작하기 (Getting Started)
 
 ### 1. 준비 사항
@@ -167,6 +187,11 @@ cd back
 기본 프로파일은 `local`입니다. 로컬 DB 계정을 변경했다면 `DB_USERNAME`, `DB_PASSWORD`도 설정하세요. 백엔드는 기본적으로 `.env` 파일을 자동으로 읽지 않으므로 셸 또는 IDE의 실행 환경변수로 주입합니다.
 
 **처음 게임 데이터를 수집할 때**는 일반 실행 대신 다음 명령을 사용합니다.
+
+관리자 계정은 상단 **게임 데이터 관리**(`/admin/igdb`)에서도 실행할 수 있습니다.
+최초 전체 동기화 이후에는 변경분과 새로 출시된 게임만 수집합니다.
+출시일은 1970년 1월 1일부터 실행 시점까지로 제한하며, 범위 밖으로 변경된 게임과 연결된 사용자 기록은 삭제합니다.
+진행 상태·실패 후 재개·백업 정보는 [IGDB 동기화 안내](back/docs/igdb-sync.md)를 참고하세요.
 
 ```powershell
 # back 디렉터리에서 실행
@@ -209,6 +234,8 @@ npm run dev
 
 백엔드는 `back` 디렉터리에서 실행합니다. `test` 프로파일은 H2와 테스트용 외부 서비스 설정을 사용합니다.
 
+도메인별 서비스·컨트롤러 테스트와 동시성 테스트(같은 이메일·닉네임 동시 가입, 같은 게임 동시 등록 시 한 건만 저장)를 포함하며, push와 PR마다 GitHub Actions에서 실행됩니다.
+
 ```powershell
 $env:SPRING_PROFILES_ACTIVE = "test"
 ./gradlew.bat build
@@ -245,6 +272,25 @@ npm run build
 
 현재 저장소의 워크플로우는 백엔드 빌드·테스트를 담당합니다. 자동 배포, 프론트엔드 검사, 커버리지 게이트는 이 워크플로우에 포함되어 있지 않습니다.
 
+### 부하 테스트 · 모니터링
+
+k6로 부하를 주고, Actuator가 공개한 서버 지표와 k6 결과를 Prometheus로 모아 Grafana에서 확인했습니다. 로컬 모니터링 환경은 `docker compose -f compose.monitoring.yml up -d`로 실행합니다(Prometheus `:9090`, Grafana `:3001`).
+
+**추천 쿼리 개선 전후** (로컬 환경, 가상 사용자 최대 10명, 에러율 0%)
+
+| 지표 | 맞춤 추천 | 게임 상세 연관 추천 |
+|---|---|---|
+| p95 응답 시간 | 9.1s → **1.4s** | 약 2.9s → **약 1.4s** |
+| p99 응답 시간 | 10.4s → **1.6s** | 약 2.9s → **약 1.5s** |
+| 처리량 (RPS) | 1.1 → **4.0** | 약 2.5 → **약 3.9** |
+
+| | 개선 전 | 개선 후 |
+|---|---|---|
+| 맞춤 추천 | ![맞춤 추천 개선 전 Grafana](docs/images/grafana-recommend-before.png) | ![맞춤 추천 개선 후 Grafana](docs/images/grafana-recommend-after.png) |
+| 게임 상세 연관 추천 | ![연관 추천 개선 전 Grafana](docs/images/grafana-related-before.png) | ![연관 추천 개선 후 Grafana](docs/images/grafana-related-after.png) |
+
+기준 게임 여러 개의 연관 게임을 쿼리 한 번으로 일괄 조회하고, `JOIN_FIXED_ORDER` 힌트로 IGDB 평점 필터를 먼저 적용했습니다. 로컬 PC에서 측정한 값이라 개선 전후 비교용입니다.
+
 ### 운영 프로파일
 
 `prod`는 Railway MySQL 환경변수(`MYSQLHOST`, `MYSQLPORT`, `MYSQLDATABASE`, `MYSQLUSER`, `MYSQLPASSWORD`)를 사용합니다. `JWT_SECRET`, `CORS_ALLOWED_ORIGINS`와 외부 API 환경변수도 설정해야 합니다.
@@ -258,7 +304,7 @@ npm run build
 ```text
 NBE12-14-2-3355/
 ├── .github/workflows/          # 백엔드 CI
-├── docs/                      # 시스템 구성도 이미지
+├── docs/                      # 시스템 구성도, ERD 및 모니터링 이미지
 ├── back/
 │   ├── src/main/java/com/gamelog/nbe121423355/
 │   │   ├── domain/
@@ -281,5 +327,4 @@ NBE12-14-2-3355/
 └── docker-compose.yml         # 로컬 MySQL
 ```
 
-<!-- 공개 전 추가할 자료: 실제 서비스 URL, 주요 화면 캡처, ERD, 팀원 및 담당 역할.
-     측정 결과가 확보되면 성능 테스트 및 커버리지 섹션을 추가합니다. -->
+<!-- 공개 전 추가할 자료: 주요 화면 캡처 -->

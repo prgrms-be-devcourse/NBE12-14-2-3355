@@ -1,0 +1,14 @@
+.main { max-width: 1000px; margin: 0 auto; padding: 48px 24px; }
+.main header { margin-bottom: 28px; }
+.main header span { color: var(--lime); font-size: 12px; letter-spacing: 2px; }
+.main h1 { font-size: 30px; margin: 12px 0; }
+.main h2 { font-size: 18px; margin-bottom: 16px; }
+.main p { color: var(--muted); line-height: 1.8; margin: 12px 0; font-size: 14px; }
+.panel { border: 1px solid var(--line); background: var(--panel); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+.panel button { background: var(--lime); color: #172014; padding: 12px 20px; border-radius: 8px; font-weight: 700; margin: 16px 0; cursor: pointer; }
+.panel button:disabled { opacity: .5; cursor: default; }
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 16px; }
+.metrics dt { color: var(--muted); font-size: 12px; }
+.metrics dd { font-size: 22px; margin: 8px 0; }
+.main .error { color: #ffabab; }
+.main > a { color: var(--lime); }
