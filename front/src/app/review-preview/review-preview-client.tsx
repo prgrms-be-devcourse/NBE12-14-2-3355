@@ -18,7 +18,7 @@ export default function ReviewPreviewClient({ gameId }: { gameId: number }) {
     }
     setAccessToken(normalized);
     setDraftToken("");
-    setNotice("토큰이 연결됐습니다. 이제 리뷰 작성과 좋아요를 테스트할 수 있어요.");
+    setNotice("토큰이 연결됐습니다. 이제 리뷰 작성과 좋아요를 테스트할 수 있습니다.");
   }
 
   function disconnect() {

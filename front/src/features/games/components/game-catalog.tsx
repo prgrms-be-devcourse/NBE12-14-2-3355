@@ -78,7 +78,7 @@ export default function GameCatalog({ initialKeyword = "" }: { initialKeyword?: 
       if (!r.ok) throw new Error();
       setOptions(body.data);
       setOptionsError("");
-    }).catch(e => { if (e.name !== "AbortError") setOptionsError("필터 목록을 불러오지 못했어요."); });
+    }).catch(e => { if (e.name !== "AbortError") setOptionsError("필터 목록을 불러오지 못했습니다."); });
     return () => controller.abort();
   }, [demo, retry]);
 
@@ -105,7 +105,7 @@ export default function GameCatalog({ initialKeyword = "" }: { initialKeyword?: 
           filters.platforms.forEach(id => query.append("platformIds", String(id)));
           const response = await fetch(`/api/games/page?${query}`, { signal: controller.signal });
           const body = await response.json();
-          if (!response.ok) throw new Error(body.msg || "게임을 불러오지 못했어요.");
+          if (!response.ok) throw new Error(body.msg || "게임을 불러오지 못했습니다.");
           setResult(body.data);
         }
       } catch (e) {
@@ -151,13 +151,13 @@ export default function GameCatalog({ initialKeyword = "" }: { initialKeyword?: 
         </aside>
 
         <section className="catalog" id="catalog" aria-label="게임 목록">
-          <div className="catalog-toolbar"><div><h2>{keyword ? `“${keyword}” 검색 결과` : "모든 게임"}<span className="count">{loading ? "…" : (result?.totalElements ?? 0).toLocaleString()}</span></h2><p>{filterCount ? `${filterCount}개의 필터가 적용되었어요` : "마음에 드는 커버에서 새로운 이야기를 시작해 보세요."}</p></div>
+          <div className="catalog-toolbar"><div><h2>{keyword ? `“${keyword}” 검색 결과` : "모든 게임"}<span className="count">{loading ? "…" : (result?.totalElements ?? 0).toLocaleString()}</span></h2><p>{filterCount ? `${filterCount}개의 필터가 적용되었습니다` : "마음에 드는 커버에서 새로운 이야기를 시작해 보세요."}</p></div>
             <div className="toolbar-actions"><button className="mobile-filter" aria-expanded={mobileFilters} aria-controls="filters" onClick={() => setMobileFilters(!mobileFilters)}><Icon name="filter" size={16}/>필터</button><label className="sort-label">정렬<SelectDropdown ariaLabel="게임 정렬" value={sort} options={catalogSortOptions} onChange={value => { setSort(value); setPage(0); }} /></label></div>
           </div>
           {(filterCount > 0 || keyword) && <div className="chips active-chips">{keyword && <button onClick={() => { setKeyword(""); setPage(0); }}>검색: {keyword} ×</button>}{(["genres", "platforms"] as const).flatMap(type => filters[type].map(id => <button key={`${type}-${id}`} onClick={() => removeFilter(type, id)}>{available[type].find(o => o.id === id)?.name || id} ×</button>))}</div>}
           {demo && <div className="preview-notice"><span><span className="dot"/> 디자인 미리보기 · 샘플 게임 데이터</span><button onClick={switchMode}>실제 게임 불러오기 ↗</button></div>}
           <div aria-live="polite" aria-busy={loading}>
-            {loading ? <div className="game-grid skeleton-grid" aria-label="게임을 불러오는 중">{Array.from({ length: size }, (_, i) => <div className="skeleton" key={i}/>)}</div> : error ? <div className="empty-state"><Icon name="game" size={44}/><h3>잠시 연결이 끊겼어요</h3><p>{error}</p><div><button className="apply-button" onClick={() => setRetry(x => x + 1)}>다시 시도</button><button className="outline-button" onClick={switchMode}>디자인 미리보기</button></div></div> : !result?.content.length ? <div className="empty-state"><Icon name="search" size={44}/><h3>검색 결과가 없어요</h3><p>다른 검색어를 입력하거나 필터를 조금 줄여보세요.</p><button className="outline-button" onClick={reset}>검색 조건 초기화</button></div> : <div className="game-grid">{result.content.map(game => <article className="game-card" key={game.id}>
+            {loading ? <div className="game-grid skeleton-grid" aria-label="게임을 불러오는 중">{Array.from({ length: size }, (_, i) => <div className="skeleton" key={i}/>)}</div> : error ? <div className="empty-state"><Icon name="game" size={44}/><h3>잠시 연결이 끊겼습니다</h3><p>{error}</p><div><button className="apply-button" onClick={() => setRetry(x => x + 1)}>다시 시도</button><button className="outline-button" onClick={switchMode}>디자인 미리보기</button></div></div> : !result?.content.length ? <div className="empty-state"><Icon name="search" size={44}/><h3>검색 결과가 없습니다</h3><p>다른 검색어를 입력하거나 필터를 조금 줄여보세요.</p><button className="outline-button" onClick={reset}>검색 조건 초기화</button></div> : <div className="game-grid">{result.content.map(game => <article className="game-card" key={game.id}>
               <button className="cover-button" onClick={() => openGame(game)} aria-label={`${game.title} 상세 보기`}><Cover game={game}/><span className="cover-overlay"><span>게임 살펴보기</span><Icon name="arrow"/></span></button>
               <div className="card-caption"><button onClick={() => openGame(game)}>{game.title}</button><span>{game.releaseDate?.slice(0, 4) || "출시일 미정"}</span></div>
               {game.platforms?.length ? <p className="card-platforms">{game.platforms.map(p => p.name).join(" · ")}</p> : null}

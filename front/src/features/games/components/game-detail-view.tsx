@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { coverUrl, type GameDetail, type GameStatistics } from "@/features/games/model";
@@ -56,7 +55,7 @@ function GameStats({ statistics }: { statistics: GameStatistics }) {
   return <section className={styles.statsSection} aria-labelledby="stats-title">
     <div className={styles.sectionHeading}>
       <div><span className={styles.eyebrow}>THE COMMUNITY AT A GLANCE</span><h2 id="stats-title">이 게임의 기록</h2></div>
-      <p>GameLog 사용자들의 기록을 모았어요.</p>
+      <p>GameLog 사용자들의 기록을 모았습니다.</p>
     </div>
     <div className={styles.statsGrid}>
       <div className={`${styles.statCard} ${styles.ratingCard}`}>
@@ -108,14 +107,14 @@ export default function GameDetailView({ gameId }: { gameId: string }) {
         const response = await fetch(`/api/games/${gameId}`, { signal: controller.signal });
         const body = (await response.json()) as DetailResponse;
         if (!response.ok || !body.data) {
-          throw new Error(response.status === 404 ? "게임 정보를 찾지 못했어요." : body.msg || "게임 정보를 불러오지 못했어요.");
+          throw new Error(response.status === 404 ? "게임 정보를 찾지 못했습니다." : body.msg || "게임 정보를 불러오지 못했습니다.");
         }
         setGame(body.data);
         loadedGameIdRef.current = gameId;
       } catch (reason) {
         if (!controller.signal.aborted && initialLoad) {
           setGame(null);
-          setError(reason instanceof Error ? reason.message : "게임 정보를 불러오지 못했어요.");
+          setError(reason instanceof Error ? reason.message : "게임 정보를 불러오지 못했습니다.");
         }
       } finally {
         if (!controller.signal.aborted && initialLoad) setLoading(false);
@@ -128,14 +127,12 @@ export default function GameDetailView({ gameId }: { gameId: string }) {
 
   return (
     <main className={styles.main} aria-busy={loading}>
-      <Link className={styles.backLink} href="/games">← 전체 게임으로 돌아가기</Link>
-
       {loading ? <div className={styles.hero} aria-label="게임 정보를 불러오는 중" role="status">
         <div className={styles.skeletonCover} />
         <div className={styles.loadingCopy}><div className={styles.skeletonLine} /><div className={styles.skeletonLine} /><p>게임 정보를 불러오는 중...</p></div>
       </div> : error ? <div className={styles.errorState} role="alert">
         <span className={styles.eyebrow}>GAME DETAILS</span>
-        <h1>게임 정보를 표시할 수 없어요.</h1>
+        <h1>게임 정보를 표시할 수 없습니다.</h1>
         <p>{error}</p>
         <button className="apply-button" onClick={() => setRetry(value => value + 1)}>다시 시도 ↗</button>
       </div> : game ? <section className={styles.hero} aria-labelledby="game-title">

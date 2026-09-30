@@ -88,10 +88,10 @@ export default function RelatedGames({ gameId }: { gameId: string }) {
         </div>)}
       </div>
     </div> : state.status === "error" ? <div className={styles.state} role="alert">
-      <p>추천 게임을 불러오지 못했어요.</p>
+      <p>추천 게임을 불러오지 못했습니다.</p>
       <button type="button" onClick={retry}>다시 시도 <span aria-hidden="true">↗</span></button>
     </div> : state.games.length === 0 ? <div className={styles.state} role="status">
-      <p>아직 추천할 게임이 없어요.</p>
+      <p>아직 추천할 게임이 없습니다.</p>
       <span>다른 게임도 둘러보며 취향에 맞는 게임을 찾아보세요.</span>
     </div> : <ul className={styles.grid}>
       {state.games.map(game => <RecommendationCard key={game.id} game={game} />)}

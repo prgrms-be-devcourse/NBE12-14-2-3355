@@ -40,7 +40,7 @@ export default function ProfileEditor({ user, accessToken, onSaved, onClose }: {
         const profileImageUrl = file ? await uploadProfileImage(file, accessToken) : removeImage ? null : user.profileImageUrl;
         const updated = await updateProfile({ nickname: value, bio: bio.trim() || null, profileImageUrl: profileImageUrl || null }, accessToken);
         onSaved(updated); onClose();
-      } catch (reason) { setError(reason instanceof Error ? reason.message : "프로필 저장에 실패했어요."); }
+      } catch (reason) { setError(reason instanceof Error ? reason.message : "프로필 저장에 실패했습니다."); }
       finally { setSaving(false); }
     }}>
       <h2 id="profile-editor-title">프로필 수정</h2>

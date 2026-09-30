@@ -49,7 +49,7 @@ export default function LibraryGames({ accessToken, userId }: { accessToken?: st
       const body = await response.json();
       if (!response.ok) throw new Error(body.msg);
       setOptions(body.data); setOptionsError("");
-    }).catch(() => { if (!controller.signal.aborted) setOptionsError("필터 목록을 불러오지 못했어요."); });
+    }).catch(() => { if (!controller.signal.aborted) setOptionsError("필터 목록을 불러오지 못했습니다."); });
     return () => controller.abort();
   }, [retry]);
 
@@ -79,10 +79,10 @@ export default function LibraryGames({ accessToken, userId }: { accessToken?: st
         // const response = await fetch(`/api/library/games?${query}`, { headers: { Authorization: `Bearer ${accessToken}` }, signal: controller.signal, cache: "no-store" });
         acceptRefreshedToken(response);
         const body = await response.json();
-        if (!response.ok) throw new Error(body.msg || "게임 목록을 불러오지 못했어요.");
+        if (!response.ok) throw new Error(body.msg || "게임 목록을 불러오지 못했습니다.");
         if (!controller.signal.aborted) setResult(body.data);
       } catch (reason) {
-        if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : "게임 목록을 불러오지 못했어요.");
+        if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : "게임 목록을 불러오지 못했습니다.");
       } finally { if (!controller.signal.aborted) setLoading(false); }
     }
     void load();
@@ -105,7 +105,7 @@ export default function LibraryGames({ accessToken, userId }: { accessToken?: st
     <div className={styles.libraryFilters}>{(["platforms", "genres"] as const).map(type => <details key={type}><summary>{type === "genres" ? "장르" : "플랫폼"} · {filters[type].length}개 선택</summary><fieldset><legend>여러 개 선택 가능</legend>{options[type].map(option => <label key={option.id}><input type="checkbox" checked={filters[type].includes(option.id)} onChange={() => { setFilters(previous => ({ ...previous, [type]: previous[type].includes(option.id) ? previous[type].filter(id => id !== option.id) : [...previous[type], option.id] })); setPage(0); }} />{option.name}</label>)}{!options[type].length && <p>선택 가능한 항목이 없습니다.</p>}</fieldset></details>)}<button type="button" className={styles.linkBtn} onClick={reset}>조건 초기화</button></div>
     {optionsError && <p className={styles.error} role="alert">{optionsError} <button type="button" onClick={() => setRetry(value => value + 1)}>다시 시도</button></p>}
     {keyword && <p className={styles.searchSummary}>검색어: {keyword}</p>}
-    {loading ? <p className={styles.loading} role="status">게임을 불러오는 중…</p> : error ? <div className={styles.emptyBox} role="alert">{error}<button type="button" className={styles.linkBtn} onClick={() => setRetry(value => value + 1)}>다시 시도</button></div> : !result?.userGames.length ? <div className={styles.emptyBox}>조건에 맞는 게임이 없어요. 검색·필터 조건을 바꾸거나 게임을 등록해 주세요.</div> : <>
+    {loading ? <p className={styles.loading} role="status">게임을 불러오는 중…</p> : error ? <div className={styles.emptyBox} role="alert">{error}<button type="button" className={styles.linkBtn} onClick={() => setRetry(value => value + 1)}>다시 시도</button></div> : !result?.userGames.length ? <div className={styles.emptyBox}>조건에 맞는 게임이 없습니다. 검색·필터 조건을 바꾸거나 게임을 등록해 주세요.</div> : <>
       <div className={styles.libraryGrid}>{result.userGames.map(game => <Link key={game.gameId} href={`/games/${game.gameId}`} className={styles.libraryCard}>
         <LibraryCover game={game} />
         <strong>{game.title}</strong><div className={styles.libraryBadges}>{game.playStatus && <span>Played</span>}{game.playing && <span>Playing</span>}{game.backlog && <span>Backlog</span>}{game.wishlist && <span>Wishlist</span>}{game.liked && <span>♥</span>}</div>

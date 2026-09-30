@@ -234,7 +234,7 @@ export default function OnboardingClient() {
           <section className={styles.step}>
             <span className={styles.eyebrow}>GET STARTED</span>
             <h1 className={styles.title}>좋아하는 장르를 선택해 주세요</h1>
-            <p className={styles.subtitle}>최대 {MAX_GENRES}개까지 고를 수 있어요 ({selectedGenreIds.length}/{MAX_GENRES})</p>
+            <p className={styles.subtitle}>최대 {MAX_GENRES}개까지 고를 수 있습니다 ({selectedGenreIds.length}/{MAX_GENRES})</p>
             <div className={styles.genreGrid}>
               {genreLoading ? (
                 [72, 88, 60, 96, 76, 68, 84, 64].map((width, index) => (
@@ -262,7 +262,7 @@ export default function OnboardingClient() {
           <section className={styles.step}>
             <span className={styles.eyebrow}>ALMOST DONE</span>
             <h1 className={styles.title}>좋아하는 게임을 선택해 주세요</h1>
-            <p className={styles.subtitle}>최대 {MAX_GAMES}개까지 고를 수 있어요 ({selectedGames.length}/{MAX_GAMES})</p>
+            <p className={styles.subtitle}>최대 {MAX_GAMES}개까지 고를 수 있습니다 ({selectedGames.length}/{MAX_GAMES})</p>
 
             <input
               className={styles.searchInput}
@@ -303,7 +303,7 @@ export default function OnboardingClient() {
                     </li>
                   );
                 }) : (
-                  <li className={styles.resultEmpty}>검색 결과가 없어요.</li>
+                  <li className={styles.resultEmpty}>검색 결과가 없습니다.</li>
                 )}
               </ul>
             )}
@@ -311,7 +311,7 @@ export default function OnboardingClient() {
             {!keyword && (
               <>
                 {curatedLoading && <p className={styles.hint}>게임을 불러오는 중…</p>}
-                {!curatedLoading && curatedGames.length === 0 && <p className={styles.hint}>추천할 게임을 찾지 못했어요.</p>}
+                {!curatedLoading && curatedGames.length === 0 && <p className={styles.hint}>추천할 게임을 찾지 못했습니다.</p>}
                 <div className={styles.gameGrid}>
                   {curatedGames.map((game) => {
                     const cover = coverUrl(game.coverImageUrl);
