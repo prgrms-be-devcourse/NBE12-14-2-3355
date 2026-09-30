@@ -34,7 +34,7 @@ async function proxy(request: NextRequest, context: RouteContext) {
     });
   } catch {
     return Response.json(
-      { data: null, msg: "리뷰 서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.", resultCode: "502-1" },
+      { data: null, msg: "리뷰 서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.", resultCode: "502-1" },
       { status: 502 },
     );
   }

@@ -36,8 +36,8 @@ async function getPopularContent<T>(path: string, signal: AbortSignal): Promise<
   const body = (await response.json()) as ApiResponse<T[]>;
   signal.throwIfAborted();
 
-  if (!response.ok) throw new Error(body.msg || "인기 콘텐츠를 불러오지 못했어요.");
-  if (!Array.isArray(body.data)) throw new Error("인기 콘텐츠 응답 형식이 올바르지 않아요.");
+  if (!response.ok) throw new Error(body.msg || "인기 콘텐츠를 불러오지 못했습니다.");
+  if (!Array.isArray(body.data)) throw new Error("인기 콘텐츠 응답 형식이 올바르지 않습니다.");
 
   return body.data;
 }

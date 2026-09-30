@@ -44,7 +44,7 @@ function ReviewLikeCount({ reviewId, accessToken }: { reviewId: number; accessTo
         if (active) {
           setLikeCount(null);
           setLiked(false);
-          setError(reason instanceof Error ? reason.message : "좋아요 정보를 불러오지 못했어요.");
+          setError(reason instanceof Error ? reason.message : "좋아요 정보를 불러오지 못했습니다.");
         }
       });
 
@@ -60,7 +60,7 @@ function ReviewLikeCount({ reviewId, accessToken }: { reviewId: number; accessTo
       setLikeCount(status.likeCount);
       setLiked(status.liked);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "좋아요를 처리하지 못했어요.");
+      setError(reason instanceof Error ? reason.message : "좋아요를 처리하지 못했습니다.");
     } finally {
       setPending(false);
     }
@@ -115,7 +115,7 @@ function ReviewCard({
         </Link>
         <div className={styles.reviewerDetails}>
           <div className={styles.reviewerName}>
-            <Link className={styles.reviewerProfileLink} href={`/profile/${review.userId}`}>{nickname}</Link><span>님이 리뷰를 남겼어요</span>
+            <Link className={styles.reviewerProfileLink} href={`/profile/${review.userId}`}>{nickname}</Link><span>님이 리뷰를 남겼습니다</span>
             {mine && <span className={styles.mineBadge}>내 리뷰</span>}
           </div>
           <div className={styles.reviewerMeta}>
@@ -131,7 +131,7 @@ function ReviewCard({
     </div>
     <div className={styles.reviewBody}>
       {hidden && <div className={styles.spoilerCover}>
-        <span>스포일러가 포함된 리뷰예요.</span>
+        <span>스포일러가 포함된 리뷰입니다.</span>
         <button onClick={() => setRevealed(true)}>내용 보기</button>
       </div>}
       <p className={hidden ? styles.blurred : undefined} aria-hidden={hidden}>
@@ -140,11 +140,13 @@ function ReviewCard({
     </div>
     <div className={styles.cardActions}>
       <ReviewLikeCount reviewId={review.reviewId} accessToken={accessToken} />
-      {mine && onDelete && <button type="button" className={styles.deleteButton} onClick={onDelete} disabled={deleting}>
-        {deleting ? "삭제 중…" : "리뷰 삭제"}
-      </button>}
-      {!mine && accessToken && onReport && <button type="button" className={styles.reportButton} onClick={onReport}>신고</button>}
-      {review.spoiler && revealed && <button className={styles.hideButton} onClick={() => setRevealed(false)}>다시 가리기</button>}
+      <div className={styles.actionButtons}>
+        {review.spoiler && revealed && <button type="button" className={styles.hideButton} onClick={() => setRevealed(false)}>다시 가리기</button>}
+        {mine && onDelete && <button type="button" className={styles.deleteButton} onClick={onDelete} disabled={deleting}>
+          {deleting ? "삭제 중…" : "리뷰 삭제"}
+        </button>}
+        {!mine && accessToken && onReport && <button type="button" className={styles.reportButton} onClick={onReport}>신고</button>}
+      </div>
     </div>
   </article>;
 }
@@ -212,13 +214,13 @@ export default function GameReviews({
             : Promise.resolve(null),
         ]);
         const body = (await response.json()) as ReviewResponse;
-        if (!response.ok || !body.data) throw new Error(body.msg || "리뷰를 불러오지 못했어요.");
+        if (!response.ok || !body.data) throw new Error(body.msg || "리뷰를 불러오지 못했습니다.");
         setResult(body.data);
         setMyDetail(detail);
       } catch (reason) {
         if (!controller.signal.aborted) {
           setResult(null);
-          setError(reason instanceof Error ? reason.message : "리뷰를 불러오지 못했어요.");
+          setError(reason instanceof Error ? reason.message : "리뷰를 불러오지 못했습니다.");
         }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
@@ -249,7 +251,7 @@ export default function GameReviews({
       setActionNotice("리뷰를 삭제했습니다. 게임 기록은 그대로 유지됩니다.");
       onDeleted?.();
     } catch (reason) {
-      setActionError(reason instanceof Error ? reason.message : "리뷰를 삭제하지 못했어요.");
+      setActionError(reason instanceof Error ? reason.message : "리뷰를 삭제하지 못했습니다.");
     } finally {
       setDeletingReviewId(null);
     }
@@ -269,7 +271,7 @@ export default function GameReviews({
       setReportReason("");
       setActionNotice("리뷰 신고가 접수되었습니다. 관리자가 내용을 확인할 예정입니다.");
     } catch (reasonValue) {
-      setActionError(reasonValue instanceof Error ? reasonValue.message : "리뷰 신고를 접수하지 못했어요.");
+      setActionError(reasonValue instanceof Error ? reasonValue.message : "리뷰 신고를 접수하지 못했습니다.");
     } finally {
       setReporting(false);
     }
@@ -285,7 +287,7 @@ export default function GameReviews({
   return <section className={styles.section} aria-labelledby="reviews-title" aria-busy={loading}>
     <div className={styles.heading}>
       <div><span className={styles.eyebrow}>PLAYER REVIEWS</span><h2 id="reviews-title">플레이어 리뷰 <span>{result ? numberFormat.format(result.totalElements) : ""}</span></h2>
-        <p>이 게임을 플레이한 사람들이 남긴 이야기예요.</p></div>
+        <p>이 게임을 플레이한 사람들이 남긴 이야기입니다.</p></div>
       <div className={styles.sort}><span>정렬</span><div className={styles.sortControl} ref={sortMenuRef}>
         <button type="button" className={styles.sortTrigger} aria-label="리뷰 정렬 방식" aria-expanded={sortOpen} aria-controls="review-sort-options" onClick={() => setSortOpen(value => !value)}>
           {sort === "newest" ? "최신순" : "높은 평점순"}<span className={styles.chevron} aria-hidden="true" />
@@ -304,8 +306,8 @@ export default function GameReviews({
     {actionNotice && <p className={styles.actionNotice} role="status">{actionNotice}</p>}
 
     {loading ? <div className={styles.loading} role="status">리뷰를 불러오는 중...</div>
-      : error ? <div className={styles.emptyState} role="alert"><h3>리뷰를 불러오지 못했어요.</h3><p>{error}</p><button onClick={() => setRetry(value => value + 1)}>다시 시도 ↗</button></div>
-      : !visibleReviews.length ? <div className={styles.emptyState}><h3>아직 등록된 리뷰가 없어요.</h3><p>이 게임의 첫 번째 이야기를 기다리고 있어요.</p></div>
+      : error ? <div className={styles.emptyState} role="alert"><h3>리뷰를 불러오지 못했습니다.</h3><p>{error}</p><button onClick={() => setRetry(value => value + 1)}>다시 시도 ↗</button></div>
+      : !visibleReviews.length ? <div className={styles.emptyState}><h3>아직 등록된 리뷰가 없습니다.</h3><p>이 게임의 첫 번째 이야기를 기다리고 있습니다.</p></div>
       : <>
         <div className={styles.list}>{visibleReviews.map(review => <ReviewCard
           key={review.reviewId}

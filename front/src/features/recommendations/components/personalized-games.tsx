@@ -78,7 +78,7 @@ function RecommendationResults({ accessToken }: { accessToken: string }) {
 
   if (state.status === "loading") return <LoadingCards />;
   if (state.status === "unauthorized") return <LoginGuide />;
-  if (state.status === "error") return <p role="alert">추천 게임을 불러오지 못했어요. 아래 버튼으로 다시 시도해 주세요.</p>;
+  if (state.status === "error") return <p role="alert">추천 게임을 불러오지 못했습니다. 아래 버튼으로 다시 시도해 주세요.</p>;
   if (!state.games.length) return <div className={styles.state} role="status">
     <p>게임을 기록하고 나만의 추천을 받아보세요.</p>
     <Link className={personalizedStyles.action} href="/games">기록할 게임 찾아보기 ↗</Link>

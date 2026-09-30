@@ -60,7 +60,7 @@ export const demoGames: Game[] = samples.map(([title, app, releaseDate, genres, 
   coverImageUrl: `https://cdn.cloudflare.steamstatic.com/steam/apps/${app}/library_600x900.jpg`,
   genres: demoOptions.genres.filter(x => genres.includes(x.id)),
   platforms: demoOptions.platforms.filter(x => platforms.includes(x.id)),
-  description: "디자인 미리보기용 게임입니다. 실제 게임 정보는 서버 연결 후 확인할 수 있어요.",
+  description: "디자인 미리보기용 게임입니다. 실제 게임 정보는 서버 연결 후 확인할 수 있습니다.",
 }));
 export function coverUrl(url: string | null) {
   if (!url) return null;

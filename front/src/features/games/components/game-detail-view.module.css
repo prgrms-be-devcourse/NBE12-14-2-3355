@@ -1,8 +1,6 @@
 /* 게임 상세 화면 */
 .currentNav{color:var(--lime);font-size:13px;font-weight:600}
 .main{max-width:1440px;min-height:calc(100vh - 83px);margin:0 auto;padding:34px 42px 80px}
-.backLink{display:inline-flex;align-items:center;min-height:32px;color:var(--muted);font-size:12px;transition:color .2s}
-.backLink:hover{color:var(--lime)}
 .hero{display:grid;grid-template-columns:minmax(200px,240px) minmax(0,1fr);gap:clamp(28px,3.5vw,48px);align-items:start;margin-top:26px;padding:40px;border:1px solid var(--line);border-radius:12px;background:radial-gradient(ellipse at 80% 0,#293c2a73,transparent 46%),linear-gradient(135deg,#202722,#171b1a 56%,#141817)}
 .posterColumn{min-width:0}
 .cover,.skeletonCover{width:100%;aspect-ratio:2/3;overflow:hidden;border-radius:8px;background:#273029;box-shadow:0 24px 44px #0006}

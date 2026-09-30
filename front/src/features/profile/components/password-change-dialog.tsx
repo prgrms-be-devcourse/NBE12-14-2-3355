@@ -24,14 +24,14 @@ export default function PasswordChangeDialog({ accessToken, onClose }: {
     <form className={styles.editorForm} onSubmit={async event => {
       event.preventDefault();
       setError("");
-      if (newPassword.length < 8) { setError("새 비밀번호는 8자 이상이어야 해요."); return; }
-      if (newPassword !== newPasswordConfirm) { setError("새 비밀번호가 서로 일치하지 않아요."); return; }
+      if (newPassword.length < 8) { setError("새 비밀번호는 8자 이상이어야 합니다."); return; }
+      if (newPassword !== newPasswordConfirm) { setError("새 비밀번호가 서로 일치하지 않습니다."); return; }
       setSaving(true);
       try {
         await changePassword({ currentPassword, newPassword }, accessToken);
         onClose();
       } catch (reason) {
-        setError(reason instanceof AuthApiError ? reason.message : "비밀번호 변경에 실패했어요.");
+        setError(reason instanceof AuthApiError ? reason.message : "비밀번호 변경에 실패했습니다.");
       } finally {
         setSaving(false);
       }
