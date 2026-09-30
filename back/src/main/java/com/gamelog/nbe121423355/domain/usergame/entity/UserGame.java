@@ -56,13 +56,13 @@ public class UserGame extends BaseEntity {
     @JoinColumn(name = "platform_id")
     private Platform platform;
 
-    @Column(name = "play_time_hours", precision = 8, scale = 2)
+    @Column(name = "play_time_hours", precision = 8, scale = 1)
     private BigDecimal playTimeHours;
 
-    @Column(name = "finish_time_hours", precision = 8, scale = 2)
+    @Column(name = "finish_time_hours", precision = 8, scale = 1)
     private BigDecimal finishTimeHours;
 
-    @Column(name = "master_time_hours", precision = 8, scale = 2)
+    @Column(name = "master_time_hours", precision = 8, scale = 1)
     private BigDecimal masterTimeHours;
 
     @Column(name = "started_at")
