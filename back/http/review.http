@@ -5,8 +5,10 @@
 @baseUrl = http://localhost:8080
 @gameId = 6
 @userId = 1
-@email = librarytest222222@test.com
-@password = test1234!
+# reportReviewId: 신고 테스트용, 로그인 사용자가 아닌 다른 사용자가 작성한 리뷰 ID
+@reportReviewId = 1
+@email = testA@test.com
+@password = 12345678
 
 ###
 # @name login
@@ -146,6 +148,59 @@ Authorization: Bearer {{accessToken}}
 # 13. 리뷰 좋아요 취소
 DELETE {{baseUrl}}/api/v1/reviews/{{reviewId}}/likes
 Authorization: Bearer {{accessToken}}
+
+###
+# @name reportOtherUserReview
+# 13-1. 다른 사용자의 리뷰 신고
+# reportReviewId는 파일 상단에서 다른 사용자가 작성한 리뷰 ID로 맞춰주세요.
+# 성공하면 admin.http의 신고 처리 테스트에서 사용할 reportId를 자동 저장합니다.
+POST {{baseUrl}}/api/v1/reviews/{{reportReviewId}}/reports
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "reason": "욕설 및 비방이 포함된 리뷰입니다."
+}
+
+> {%
+    if (response.body.resultCode === "201-1") {
+        client.global.set("reportId", response.body.data.reportId);
+        client.log("reportId 저장 완료: " + response.body.data.reportId);
+    }
+%}
+
+###
+# @name rejectDuplicateReport
+# 13-2. [실패 검증] 같은 리뷰를 다시 신고하면 409-1 응답
+POST {{baseUrl}}/api/v1/reviews/{{reportReviewId}}/reports
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "reason": "중복 신고 테스트입니다."
+}
+
+###
+# @name rejectSelfReport
+# 13-3. [실패 검증] 본인이 작성한 리뷰를 신고하면 400-3 응답
+POST {{baseUrl}}/api/v1/reviews/{{reviewId}}/reports
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "reason": "본인 리뷰 신고 테스트입니다."
+}
+
+###
+# @name rejectBlankReportReason
+# 13-4. [실패 검증] 신고 사유가 비어 있으면 400-1 응답
+POST {{baseUrl}}/api/v1/reviews/{{reportReviewId}}/reports
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "reason": ""
+}
 
 ###
 # @name saveGameRecordOnly

@@ -89,3 +89,19 @@ GET {{baseUrl}}/api/v1/users/{{profileUserId}}/following?page=-1&size=10
 # @name 8. Followers 목록 조회 실패 - 페이지 크기 초과
 # size가 최대 크기 50을 초과하므로 400-8 응답이 반환되어야 합니다.
 GET {{baseUrl}}/api/v1/users/{{profileUserId}}/followers?page=0&size=51
+
+###
+# @name 9. 사용자 검색
+# 닉네임으로 검색하고, 로그인 상태라면 각 사용자의 팔로우 여부도 함께 반환합니다.
+GET {{baseUrl}}/api/v1/users/search?keyword=test&page=0&size=10
+Authorization: Bearer {{accessToken}}
+
+###
+# @name 9-1. 사용자 검색 - 비로그인
+# 로그인 없이도 검색은 가능하며, 팔로우 여부는 false로 반환됩니다.
+GET {{baseUrl}}/api/v1/users/search?keyword=test&page=0&size=10
+
+###
+# @name 10. 사용자 검색 실패 - 검색어 길이 초과
+# keyword가 50자를 초과하므로 400-9 응답이 반환되어야 합니다.
+GET {{baseUrl}}/api/v1/users/search?keyword=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&page=0&size=10
