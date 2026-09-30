@@ -1,8 +1,11 @@
-# GameLog 🎮
+# GameLog
 
 <div align="center">
-  <img src="front/public/gamelog-logo.svg" alt="GameLog Logo" width="280" />
-  <br><br>
+  <h1>
+    <img src="front/public/gamelog-logo-console.png" alt="GameLog Logo" width="54" align="absmiddle" />
+    GameLog.
+  </h1>
+  <br>
   <h3>플레이를 기록하고, 다음에 빠져들 게임을 발견하세요</h3>
   <p>게임 탐색부터 플레이 기록, 리뷰, 취향 기반 추천까지 연결하는 게임 기록 플랫폼</p>
 </div>
@@ -136,6 +139,13 @@ Next.js App Router와 React Context를 사용하며, 화면 스타일은 CSS Mod
 브라우저의 서비스 요청은 **Vercel의 Next.js API 프록시**를 거쳐 **Railway의 Spring Boot API**에 전달됩니다. 백엔드는 Railway MySQL에 데이터를 저장하고 Cloudinary로 이미지를 업로드합니다.
 
 이미지 하단은 로컬 데이터 준비 과정입니다. IGDB 수집과 DeepL 번역은 `local` 프로파일에서 각각의 실행 옵션을 활성화했을 때 시작 시 수행합니다.
+
+---
+
+## 🗂 데이터베이스 구조 (ERD)
+
+[![GameLog ERD](docs/images/gamelog-erd.png)](docs/images/gamelog-erd.png)
+
 
 ---
 
@@ -296,7 +306,7 @@ k6로 부하를 주고, Actuator가 공개한 서버 지표와 k6 결과를 Prom
 ```text
 NBE12-14-2-3355/
 ├── .github/workflows/          # 백엔드 CI
-├── docs/                      # 시스템 구성도 이미지
+├── docs/                      # 시스템 구성도, ERD 및 모니터링 이미지
 ├── back/
 │   ├── src/main/java/com/gamelog/nbe121423355/
 │   │   ├── domain/
