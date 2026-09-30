@@ -357,7 +357,7 @@ class ApiV1UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"genreIds\": [%d, %d, %d, %d]}".formatted(g1, g2, g3, g4)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.resultCode").value("400-2"));
+                .andExpect(jsonPath("$.resultCode").value("400-12"));
     }
 
     @Test

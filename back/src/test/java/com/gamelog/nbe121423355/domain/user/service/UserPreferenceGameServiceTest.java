@@ -104,7 +104,7 @@ class UserPreferenceGameServiceTest {
         assertThatThrownBy(() -> userPreferenceGameService.updatePreferredGames(
                 user.getId(), List.of(g1.getId(), g2.getId(), g3.getId(), g4.getId())))
                 .isInstanceOf(ServiceException.class)
-                .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("400-2"));
+                .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("400-12"));
     }
 
     @Test
@@ -126,7 +126,7 @@ class UserPreferenceGameServiceTest {
         assertThatThrownBy(() -> userPreferenceGameService.updatePreferredGames(
                 user.getId(), List.of(witcher.getId(), 999_999L)))
                 .isInstanceOf(ServiceException.class)
-                .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("400-1"));
+                .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("400-11"));
     }
 
     @Test

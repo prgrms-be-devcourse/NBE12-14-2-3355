@@ -95,7 +95,7 @@ public class ReviewService {
             if (review.isDeletedByUser()) {
                 review.restore(request.rating(), request.content(), request.spoiler());
             } else if (!review.isActive()) {
-                throw new ServiceException("409-3", "관리자에 의해 숨김 처리된 리뷰는 다시 작성할 수 없습니다.");
+                throw new ServiceException("409-5", "관리자에 의해 숨김 처리된 리뷰는 다시 작성할 수 없습니다.");
             } else {
                 review.edit(request.rating(), request.content(), request.spoiler());
             }
