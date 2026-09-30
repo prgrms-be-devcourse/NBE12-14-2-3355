@@ -26,13 +26,13 @@ public class UserPreferenceGameService {
     @Transactional
     public List<PreferredGameResponseDto> updatePreferredGames(Long userId, List<Long> genreIds) {
         if(genreIds.size() > 3) {
-            throw new ServiceException("400-2", "선호 게임은 최대 3개까지 선택 가능합니다."); // 온보딩 장르 최대 3개 선택
+            throw new ServiceException("400-12", "선호 게임은 최대 3개까지 선택 가능합니다."); // 온보딩 장르 최대 3개 선택
         }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ServiceException("404-1", "존재하지 않는 유저 입니다."));
         List<Game> games = gameRepository.findAllById(genreIds);
         if(games.size() != genreIds.size()) {
-            throw new ServiceException("400-1", "존재하지 않는 게임이 포함되어 있습니다.");
+            throw new ServiceException("400-11", "존재하지 않는 게임이 포함되어 있습니다.");
         }
         userPreferenceGameRepository.deleteByUser_Id(userId);
 

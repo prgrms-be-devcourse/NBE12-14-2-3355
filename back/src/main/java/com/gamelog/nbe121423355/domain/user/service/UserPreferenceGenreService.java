@@ -25,13 +25,13 @@ public class UserPreferenceGenreService {
     @Transactional
     public List<PreferredGenreResponseDto> updatePreferredGenres(Long userId, List<Long> genreIds) {
         if(genreIds.size() > 3) {
-            throw new ServiceException("400-2", "선호 장르는 최대 3개까지 선택 가능합니다."); // 온보딩 장르 최대 3개 선택
+            throw new ServiceException("400-12", "선호 장르는 최대 3개까지 선택 가능합니다."); // 온보딩 장르 최대 3개 선택
         }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ServiceException("404-1", "존재하지 않는 유저 입니다."));
         List<Genre> genres = genreRepository.findAllById(genreIds);
         if(genres.size() != genreIds.size()) {
-            throw new ServiceException("400-1", "존재하지 않는 장르가 포함되어 있습니다.");
+            throw new ServiceException("400-11", "존재하지 않는 장르가 포함되어 있습니다.");
         }
         userPreferenceGenreRepository.deleteByUser_Id(userId);
 
