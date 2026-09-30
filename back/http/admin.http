@@ -116,6 +116,76 @@ GET {{baseUrl}}/api/v1/admin/review-reports?page=0&size=20
 Authorization: Bearer {{userAccessToken}}
 
 ###
+# @name getPendingReviewReportsAsAdmin
+# 9-1. admin 토큰으로 처리 대기 중인 신고만 조회 - 200 기대
+GET {{baseUrl}}/api/v1/admin/review-reports?status=PENDING&page=0&size=20
+Authorization: Bearer {{adminAccessToken}}
+
+###
+# @name approveReviewReport
+# 9-2. 신고 승인 - 200 기대 (같은 리뷰의 대기 신고가 모두 승인되고 리뷰는 숨김 처리됨)
+# reportId는 review.http의 13-1 신고 요청을 먼저 실행하면 자동 저장됩니다.
+PUT {{baseUrl}}/api/v1/admin/review-reports/{{reportId}}/status
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "status": "APPROVED"
+}
+
+###
+# @name rejectAlreadyProcessedReport
+# 9-3. [실패 검증] 이미 처리된 신고를 다시 처리 - 409-4 기대
+PUT {{baseUrl}}/api/v1/admin/review-reports/{{reportId}}/status
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "status": "REJECTED"
+}
+
+###
+# @name rejectPendingAsResult
+# 9-4. [실패 검증] 처리 결과로 PENDING 지정 - 400-5 기대
+PUT {{baseUrl}}/api/v1/admin/review-reports/{{reportId}}/status
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "status": "PENDING"
+}
+
+###
+# @name rejectReportStatusUpdateAsUser
+# 9-5. [실패 검증] 일반 USER 토큰으로 신고 처리 - 403 기대
+PUT {{baseUrl}}/api/v1/admin/review-reports/{{reportId}}/status
+Authorization: Bearer {{userAccessToken}}
+Content-Type: application/json
+
+{
+  "status": "APPROVED"
+}
+
+###
+# @name getIgdbSyncStatus
+# 9-6. IGDB 동기화 상태 조회 - 200 기대
+GET {{baseUrl}}/api/v1/admin/igdb-sync
+Authorization: Bearer {{adminAccessToken}}
+
+###
+# @name rejectIgdbSyncStatusAsUser
+# 9-7. [실패 검증] 일반 USER 토큰으로 동기화 상태 조회 - 403 기대
+GET {{baseUrl}}/api/v1/admin/igdb-sync
+Authorization: Bearer {{userAccessToken}}
+
+###
+# @name startIgdbSync
+# 9-8. IGDB 동기화 시작 - 202 기대, 이미 실행 중이면 409-1
+# 주의: 실제 IGDB API를 호출해 게임 데이터를 갱신합니다. 시간이 오래 걸리니 필요할 때만 실행하세요.
+POST {{baseUrl}}/api/v1/admin/igdb-sync
+Authorization: Bearer {{adminAccessToken}}
+
+###
 # @name promotedUserMustReloginNote
 # 10. 참고: targetUserId 계정이 방금 승격됐다면, 그 계정 자신의 기존 access token은
 # 여전히 role=USER 클레임을 갖고 있습니다. targetUserId로 admin 기능을 테스트하려면
