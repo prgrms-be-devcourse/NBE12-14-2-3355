@@ -113,7 +113,7 @@ function FollowListContent({ userId, kind, page, basePath, keyword }: Props & { 
         const term = draft.trim();
         router.push(term ? `${path}?page=0&keyword=${encodeURIComponent(term)}` : path, { scroll: false });
       }}
-      onSelect={user => router.push(`/profile/${user.userId}/following`)}
+      onSelect={user => router.push(`/profile/${user.userId}`)}
     />}
     {!keyword && <nav className={styles.tabs} aria-label="팔로우 목록 종류">
       <Link href={`${basePath}/following`} aria-current={kind === "following" ? "page" : undefined}>Following</Link>
