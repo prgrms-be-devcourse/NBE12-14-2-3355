@@ -839,7 +839,8 @@ function ScatterPlot({
         </div>
 
         <div className={styles.emptyBox}>
-          게임을 기록해보세요!
+          게임을 기록해주세요! <br/>
+          별점과 플레이 시간을 모두 기록한 게임이 표시됩니다.
         </div>
       </section>
     );
