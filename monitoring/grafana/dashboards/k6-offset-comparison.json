@@ -1,0 +1,408 @@
+{
+  "uid": "gamelog-k6-offset",
+  "title": "검색 OFFSET 개선 전후 비교",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "tags": [
+    "k6",
+    "gamelog"
+  ],
+  "timezone": "browser",
+  "refresh": "5s",
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "benchmark",
+        "label": "비교 묶음",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "gamelog-k6-prometheus"
+        },
+        "query": {
+          "query": "label_values(k6_http_reqs_total{benchmark!=\"manual\"}, benchmark)",
+          "refId": "benchmark"
+        },
+        "refresh": 1,
+        "sort": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "phase",
+        "label": "개선 단계",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "gamelog-k6-prometheus"
+        },
+        "query": {
+          "query": "label_values(k6_http_reqs_total{benchmark!=\"manual\"}, phase)",
+          "refId": "phase"
+        },
+        "refresh": 1,
+        "sort": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {
+          "text": [
+            "after"
+          ],
+          "value": [
+            "after"
+          ]
+        }
+      },
+      {
+        "name": "keyword",
+        "label": "검색어",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "gamelog-k6-prometheus"
+        },
+        "query": {
+          "query": "label_values(k6_http_reqs_total{benchmark!=\"manual\"}, keyword)",
+          "refId": "keyword"
+        },
+        "refresh": 1,
+        "sort": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "page",
+        "label": "페이지 (0부터)",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "gamelog-k6-prometheus"
+        },
+        "query": {
+          "query": "label_values(k6_http_reqs_total{benchmark!=\"manual\"}, page)",
+          "refId": "page"
+        },
+        "refresh": 1,
+        "sort": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "testid",
+        "label": "테스트 실행",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "gamelog-k6-prometheus"
+        },
+        "query": {
+          "query": "label_values(k6_http_reqs_total, testid)",
+          "refId": "testid"
+        },
+        "refresh": 1,
+        "sort": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "options": {
+        "content": "검색 목록 API 전체 시간입니다(COUNT 포함). 같은 검색어·페이지·사용자 수의 완료된 실행끼리 비교하세요. HTTP 실패율 0%는 중단된 반복이 없다는 뜻이 아닙니다. 2026-10-16 before page=100 실행은 10회 중단되어 비교 기준에서 제외합니다. 현재 기본 화면은 개선 후(after)입니다.",
+        "mode": "markdown"
+      },
+      "title": "측정 범위",
+      "type": "text",
+      "id": 7,
+      "gridPos": {
+        "w": 24,
+        "h": 3,
+        "y": 0,
+        "x": 0
+      }
+    },
+    {
+      "id": 1,
+      "title": "평균 응답 시간",
+      "description": "누적 평균. 종료 시 마지막 값으로 해당 실행 결과를 확인합니다.",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gamelog-k6-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "last_over_time(k6_http_req_duration_avg{testid=~\"$testid\",benchmark=~\"$benchmark\",phase=~\"$phase\",keyword=~\"$keyword\",page=~\"$page\",name=\"game-search\"}[$__range])",
+          "legendFormat": "{{phase}} · {{keyword}} · page={{page}} · {{testid}}",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 2,
+      "title": "p95 응답 시간",
+      "description": "누적 p95. 실행별 값을 따로 표시하며 여러 실행의 p95를 평균내지 않습니다.",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gamelog-k6-prometheus"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 3,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "last_over_time(k6_http_req_duration_p95{testid=~\"$testid\",benchmark=~\"$benchmark\",phase=~\"$phase\",keyword=~\"$keyword\",page=~\"$page\",name=\"game-search\"}[$__range])",
+          "legendFormat": "{{phase}} · {{keyword}} · page={{page}} · {{testid}}",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 3,
+      "title": "HTTP 실패율",
+      "description": "HTTP 요청 실패 비율. 응답 내용 검사의 실패율과는 별개입니다.",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gamelog-k6-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 3,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "last_over_time(k6_http_req_failed_rate{testid=~\"$testid\",benchmark=~\"$benchmark\",phase=~\"$phase\",keyword=~\"$keyword\",page=~\"$page\",name=\"game-search\"}[$__range])",
+          "legendFormat": "{{phase}} · {{keyword}} · page={{page}} · {{testid}}",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 4,
+      "title": "완료 요청 수",
+      "description": "해당 실행의 누적 HTTP 요청 수.",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gamelog-k6-prometheus"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 3,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "last_over_time(k6_http_reqs_total{testid=~\"$testid\",benchmark=~\"$benchmark\",phase=~\"$phase\",keyword=~\"$keyword\",page=~\"$page\",name=\"game-search\"}[$__range])",
+          "legendFormat": "{{phase}} · {{keyword}} · page={{page}} · {{testid}}",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 5,
+      "title": "처리량 · 최근 20초",
+      "description": "최근 20초 평균 RPS. 터미널 전체 실행 평균과 집계 구간이 다릅니다.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gamelog-k6-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (testid, phase, keyword, page) (rate(k6_http_reqs_total{testid=~\"$testid\",benchmark=~\"$benchmark\",phase=~\"$phase\",keyword=~\"$keyword\",page=~\"$page\",name=\"game-search\"}[20s]))",
+          "legendFormat": "{{phase}} · {{keyword}} · page={{page}} · {{testid}}",
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "응답 검사 통과율",
+      "description": "상태 코드 및 응답 구조 검사 통과 비율. 한 요청에 두 검사이므로 요청 성공률과 다릅니다.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gamelog-k6-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "k6_checks_rate{testid=~\"$testid\",benchmark=~\"$benchmark\",phase=~\"$phase\",keyword=~\"$keyword\",page=~\"$page\"}",
+          "legendFormat": "{{phase}} · {{keyword}} · page={{page}} · {{testid}}",
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    }
+  ]
+}

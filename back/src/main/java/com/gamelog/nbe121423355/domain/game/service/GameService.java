@@ -5,6 +5,8 @@ import com.gamelog.nbe121423355.domain.game.dto.GameSearchRequest;
 import com.gamelog.nbe121423355.domain.game.repository.GameRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.support.PageableExecutionUtils;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +34,26 @@ public class GameService {
 
         boolean filterPlatforms =
                 platformIds != null && !platformIds.isEmpty();
+
+        // 검색어가 있고 필터가 없는 기본 정렬 검색은 ID를 먼저 조회합니다.
+        boolean useDefaultSearch =
+                keywordPattern != null
+                        && !filterGenres
+                        && !filterPlatforms
+                        && request.sort() == null;
+
+        if (useDefaultSearch) {
+            var pageable = PageRequest.of(request.page(), request.size());
+            var minDate = LocalDate.of(1970, 1, 1);
+            var maxDate = LocalDate.now().withDayOfYear(1).plusYears(1);
+            var content = gameRepository.findDefaultSearchContent(
+                    keywordPattern, minDate, maxDate, pageable.getPageSize(), pageable.getOffset());
+            // 마지막 부분 페이지는 크기로 총 개수를 알 수 있습니다.
+            // 범위를 벗어난 빈 페이지는 COUNT를 실행하여 실제 총 개수를 유지합니다.
+            return PageableExecutionUtils.getPage(content, pageable,
+                            () -> gameRepository.countDefaultSearch(keywordPattern, minDate, maxDate))
+                    .map(GameListResponse::new);
+        }
 
         // 필터 미선택 시에도 IN 절에는 비어 있지 않은 목록을 전달합니다.
         // 해당 조건은 filterGenres/filterPlatforms가 false이면 무시됩니다.

@@ -29,6 +29,47 @@ public interface GameRepository extends JpaRepository<Game,Long> {
 
     Optional<Game> findByIgdbId(Long igdbId);
 
+    // 정렬/페이지 선택을 먼저 수행하여 상세 행 조인을 페이지 크기로 제한합니다.
+    @Query(
+            value = """
+                    SELECT g.*
+                    FROM (
+                        SELECT id, igdb_rating
+                        FROM games
+                        WHERE release_date >= :minReleaseDate
+                          AND release_date < :maxReleaseDateExclusive
+                          AND LOWER(title) LIKE LOWER(:keyword) ESCAPE '!'
+                        ORDER BY COALESCE(igdb_rating, -1.0) DESC, id ASC
+                        LIMIT :pageSize OFFSET :pageOffset
+                    ) AS matched
+                    JOIN games g ON g.id = matched.id
+                    ORDER BY COALESCE(g.igdb_rating, -1.0) DESC, g.id ASC
+                    """,
+            nativeQuery = true
+    )
+    List<Game> findDefaultSearchContent(
+            @Param("keyword") String keyword,
+            @Param("minReleaseDate") LocalDate minReleaseDate,
+            @Param("maxReleaseDateExclusive") LocalDate maxReleaseDateExclusive,
+            @Param("pageSize") int pageSize,
+            @Param("pageOffset") long pageOffset
+    );
+
+    @Query(value = """
+                    SELECT COUNT(*)
+                    FROM games
+                    WHERE release_date >= :minReleaseDate
+                      AND release_date < :maxReleaseDateExclusive
+                      AND LOWER(title) LIKE LOWER(:keyword) ESCAPE '!'
+                    """,
+            nativeQuery = true
+    )
+    long countDefaultSearch(
+            @Param("keyword") String keyword,
+            @Param("minReleaseDate") LocalDate minReleaseDate,
+            @Param("maxReleaseDateExclusive") LocalDate maxReleaseDateExclusive
+    );
+
     @Query(
             value = "SELECT g " + GameSearchQuery.FROM_AND_FILTERS + GameSearchQuery.COMMUNITY_ORDER,
             countQuery = "SELECT COUNT(g) " + GameSearchQuery.FROM_AND_FILTERS
