@@ -1,0 +1,301 @@
+{
+  "uid": "gamelog-k6-search",
+  "title": "k6 검색 부하 테스트",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "tags": [
+    "k6",
+    "gamelog"
+  ],
+  "timezone": "browser",
+  "refresh": "5s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "testid",
+        "label": "테스트 실행",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "gamelog-k6-prometheus"
+        },
+        "query": {
+          "query": "label_values(k6_http_reqs_total, testid)",
+          "refId": "testid"
+        },
+        "refresh": 1,
+        "sort": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "평균 응답 시간",
+      "description": "누적 평균. 종료 시 마지막 값으로 해당 실행 결과를 확인합니다.",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gamelog-k6-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "last_over_time(k6_http_req_duration_avg{testid=~\"$testid\",name=\"game-search\"}[$__range])",
+          "legendFormat": "{{testid}}",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 2,
+      "title": "p95 응답 시간",
+      "description": "누적 p95. 실행별 값을 따로 표시하며 여러 실행의 p95를 평균내지 않습니다.",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gamelog-k6-prometheus"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "last_over_time(k6_http_req_duration_p95{testid=~\"$testid\",name=\"game-search\"}[$__range])",
+          "legendFormat": "{{testid}}",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 3,
+      "title": "HTTP 실패율",
+      "description": "HTTP 요청 실패 비율. 응답 내용 검사의 실패율과는 별개입니다.",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gamelog-k6-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "last_over_time(k6_http_req_failed_rate{testid=~\"$testid\",name=\"game-search\"}[$__range])",
+          "legendFormat": "{{testid}}",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 4,
+      "title": "완료 요청 수",
+      "description": "해당 실행의 누적 HTTP 요청 수.",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gamelog-k6-prometheus"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "last_over_time(k6_http_reqs_total{testid=~\"$testid\",name=\"game-search\"}[$__range])",
+          "legendFormat": "{{testid}}",
+          "range": false,
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 5,
+      "title": "처리량 · 최근 20초",
+      "description": "최근 20초 평균 RPS. 터미널 전체 실행 평균과 집계 구간이 다릅니다.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gamelog-k6-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (testid) (rate(k6_http_reqs_total{testid=~\"$testid\",name=\"game-search\"}[20s]))",
+          "legendFormat": "{{testid}}",
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "응답 검사 통과율",
+      "description": "상태 코드 및 응답 구조 검사 통과 비율. 한 요청에 두 검사이므로 요청 성공률과 다릅니다.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "gamelog-k6-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 5,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "k6_checks_rate{testid=~\"$testid\"}",
+          "legendFormat": "{{testid}}",
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    }
+  ]
+}
