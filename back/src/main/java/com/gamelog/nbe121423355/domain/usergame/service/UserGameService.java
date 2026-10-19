@@ -520,7 +520,7 @@ public class UserGameService {
         BigDecimal averageRating = reviewRepository.findAverageRating(targetUserId);
         BigDecimal totalPlayTime = playedGames.stream()
                 .map(UserGame::getPlayTimeHours)
-                .filter(Objects::nonNull)
+                .filter(time -> time != null && time.signum() > 0)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // 산점도
@@ -660,7 +660,7 @@ public class UserGameService {
 
         List<BigDecimal> playTimes = playedGames.stream()
                 .map(UserGame::getPlayTimeHours)
-                .filter(Objects::nonNull)
+                .filter(time -> time != null && time.signum() > 0)
                 .toList();
 
         if (playTimes.size() < MIN_DATA_COUNT) {

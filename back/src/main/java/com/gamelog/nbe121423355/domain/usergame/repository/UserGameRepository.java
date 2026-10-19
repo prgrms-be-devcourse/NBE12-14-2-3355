@@ -3,6 +3,7 @@ package com.gamelog.nbe121423355.domain.usergame.repository;
 import com.gamelog.nbe121423355.domain.usergame.dto.UserGameGenreDTO;
 import com.gamelog.nbe121423355.domain.usergame.dto.UserGameScatterDto;
 import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
+import com.gamelog.nbe121423355.domain.review.repository.ReviewRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,6 +14,13 @@ import java.util.List;
 import java.util.Optional;
 
 public interface UserGameRepository extends JpaRepository<UserGame, Long> {
+    String ACTIVE_REVIEW_JOIN = " LEFT JOIN Review r ON r.userGame = ug AND " + ReviewRepository.ACTIVE_REVIEW + " ";
+    String PLAYED_GAME = """
+            (ug.playStatus IS NOT NULL OR ug.playing = true OR ug.playTimeHours > 0
+                OR EXISTS (SELECT r.id FROM Review r WHERE r.userGame = ug
+                    AND r.rating IS NOT NULL AND
+            """ + ReviewRepository.ACTIVE_REVIEW + ")) ";
+
     Optional<UserGame> findByUser_IdAndGame_Id(Long userId, Long gameId);
     Page<UserGame> findAllByUser_IdAndInLibraryTrue(Long userId, Pageable pageable);
     List<UserGame> findAllByUser_IdAndGame_IdInAndInLibraryTrue(
@@ -24,7 +32,7 @@ public interface UserGameRepository extends JpaRepository<UserGame, Long> {
     String LIBRARY_FILTERS = """
             FROM UserGame ug
             JOIN ug.game g
-            LEFT JOIN Review r ON r.userGame = ug
+            """ + ACTIVE_REVIEW_JOIN + """
             WHERE ug.user.id = :userId
               AND (ug.inLibrary = true OR (:status = 'LIKED' AND ug.liked = true))
               AND (:status = 'ALL'
@@ -58,16 +66,7 @@ public interface UserGameRepository extends JpaRepository<UserGame, Long> {
             @Param("filterGenres") boolean filterGenres, @Param("genreIds") List<Long> genreIds,
             @Param("sort") String sort, Pageable pageable);
 
-    @Query("""
-    SELECT ug
-    FROM UserGame ug
-    WHERE ug.user.id = :userId
-      AND ug.inLibrary = true
-      AND (
-          ug.playStatus IS NOT NULL
-          OR ug.playing = true
-      )
-""")
+    @Query("SELECT ug FROM UserGame ug WHERE ug.user.id = :userId AND ug.inLibrary = true AND " + PLAYED_GAME)
     List<UserGame> findPlayedGames(@Param("userId") Long userId);
 
     @Query("""
@@ -80,14 +79,10 @@ public interface UserGameRepository extends JpaRepository<UserGame, Long> {
     )
     FROM UserGame ug
     JOIN ug.game g
-    LEFT JOIN Review r ON r.userGame = ug
+    """ + ACTIVE_REVIEW_JOIN + """
     WHERE ug.user.id = :userId
       AND ug.inLibrary = true
-      AND (
-          ug.playStatus IS NOT NULL
-          OR ug.playing = true
-      )
-      AND ug.playTimeHours IS NOT NULL
+      AND ug.playTimeHours > 0
       AND r.rating IS NOT NULL
 """)
     List<UserGameScatterDto> findPlayedGameScatterData(
@@ -106,10 +101,8 @@ public interface UserGameRepository extends JpaRepository<UserGame, Long> {
         JOIN gg.genre genre
         WHERE ug.user.id = :userId
           AND ug.inLibrary = true
-          AND (
-              ug.playStatus IS NOT NULL
-              OR ug.playing = true
-          )
+          AND
+        """ + PLAYED_GAME + """
         GROUP BY genre.id, genre.name
         ORDER BY COUNT(DISTINCT ug.game.id) DESC
     """)
