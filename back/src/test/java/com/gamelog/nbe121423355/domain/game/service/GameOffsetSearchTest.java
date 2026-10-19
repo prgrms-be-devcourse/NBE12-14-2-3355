@@ -14,6 +14,33 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class GameOffsetSearchTest extends GameQueryTestSupport {
     @Test
+    void unfilteredCatalogPreservesAllPagesAndTotalWithBlankKeywords() {
+        for (int i = 0; i < 45; i++) {
+            entityManager.persist(Game.createFromIgdb(new IgdbGameResponse(
+                    82000L + i, "CatalogProbe " + i, null, null, 1704067200L,
+                    i % 2 == 0 ? new BigDecimal("90.00") : null,
+                    List.of(), List.of(), List.of(), List.of())));
+        }
+        entityManager.flush();
+        entityManager.clear();
+        var expected = entityManager.createQuery(
+                "SELECT g FROM Game g ORDER BY COALESCE(g.igdbRating, -1.0) DESC, g.id", Game.class)
+                .getResultList().stream().map(GameListResponse::new).toList();
+        for (String keyword : new String[]{null, "", "   "}) {
+            List<GameListResponse> actual = new ArrayList<>();
+            for (int page = 0; page < 5; page++) {
+                var result = gameService.getGamesPage(new GameSearchRequest(
+                        page, 15, null, keyword, null, null));
+                assertThat(result.getTotalElements()).isEqualTo(expected.size());
+                assertThat(result.getSort()).isEqualTo(new GameSearchRequest(
+                        page, 15, null, keyword, null, null).toPageable().getSort());
+                actual.addAll(result.getContent());
+            }
+            assertThat(actual).containsExactlyElementsOf(expected);
+        }
+    }
+
+    @Test
     void pagesPreserveRatingAndIdOrderAndTotalIncludingEmptyPage() {
         List<Long> high = new ArrayList<>();
         List<Long> unrated = new ArrayList<>();

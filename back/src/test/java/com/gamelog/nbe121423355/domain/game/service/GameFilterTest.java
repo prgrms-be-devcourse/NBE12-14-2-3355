@@ -6,6 +6,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
 import com.gamelog.nbe121423355.domain.game.dto.GameSearchRequest;
+import com.gamelog.nbe121423355.domain.game.dto.GameSort;
 
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -17,6 +18,39 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class GameFilterTest extends GameQueryTestSupport {
+    @Test
+    void allSortsPreserveMultipleFiltersAndPageTotals() {
+        for (GameSort sort : GameSort.values()) {
+            List<String> expected = sort == GameSort.TITLE
+                    ? List.of("Mario Action", "Zelda Both", "Zelda RPG")
+                    : List.of("Zelda Both", "Zelda RPG", "Mario Action");
+            for (int page = 0; page < 4; page++) {
+                var result = gameService.getGamesPage(new GameSearchRequest(
+                        page, 1, sort, null,
+                        List.of(rpg.getId(), action.getId()), List.of(pc.getId(), console.getId())));
+                assertThat(result.getTotalElements()).isEqualTo(3);
+                assertThat(result.getTotalPages()).isEqualTo(3);
+                assertThat(result.getContent()).extracting(GameListResponse::title)
+                        .containsExactlyElementsOf(page < 3 ? List.of(expected.get(page)) : List.of());
+            }
+        }
+    }
+
+    @Test
+    void filteredSearchKeepsLikeCharactersLiteralForEverySort() {
+        saveGame(9500L, "Literal%_!", List.of(rpg), List.of(pc));
+        saveGame(9501L, "LiteralABC", List.of(rpg), List.of(pc));
+        entityManager.flush();
+        entityManager.clear();
+        for (GameSort sort : GameSort.values()) {
+            var result = gameService.getGamesPage(new GameSearchRequest(
+                    0, 1, sort, "%_!", List.of(rpg.getId()), List.of(pc.getId())));
+            assertThat(result.getTotalElements()).isEqualTo(1);
+            assertThat(result.getContent()).extracting(GameListResponse::title)
+                    .containsExactly("Literal%_!");
+        }
+    }
+
 
     @Test
     @DisplayName("검색어 없이 장르만 선택하면 해당 장르의 게임만 반환한다")
