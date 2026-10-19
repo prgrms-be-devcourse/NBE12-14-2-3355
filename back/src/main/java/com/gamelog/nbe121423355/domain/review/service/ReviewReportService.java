@@ -11,6 +11,7 @@ import com.gamelog.nbe121423355.domain.review.entity.ReviewReport;
 import com.gamelog.nbe121423355.domain.review.repository.ReviewReportRepository;
 import com.gamelog.nbe121423355.domain.review.repository.ReviewRepository;
 import com.gamelog.nbe121423355.domain.user.entity.User;
+import com.gamelog.nbe121423355.domain.usergame.service.UserGameService;
 import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,7 @@ public class ReviewReportService {
     private final ReviewReportRepository reviewReportRepository;
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
+    private final UserGameService userGameService;
 
     @Transactional
     public ReviewReportResponse createReport(
@@ -112,6 +114,7 @@ public class ReviewReportService {
 
         if (request.status() == ReportStatus.APPROVED) {
             report.getReview().hideByAdmin();
+            userGameService.synchronizeLibraryState(report.getReview().getUserGame());
         }
 
         pendingReports.forEach(pendingReport -> pendingReport.changeStatus(request.status()));

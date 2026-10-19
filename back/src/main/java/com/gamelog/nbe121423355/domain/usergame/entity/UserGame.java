@@ -147,8 +147,12 @@ public class UserGame extends BaseEntity {
     }
 
     private void updateLibraryStatus() {
+        updateLibraryStatus(false);
+    }
+
+    public void updateLibraryStatus(boolean hasActiveReview) {
         this.inLibrary =
-                playStatus != null
+                hasActiveReview || playStatus != null
                         || playing
                         || backlog
                         || wishlist

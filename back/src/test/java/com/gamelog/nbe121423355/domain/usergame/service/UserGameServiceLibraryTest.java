@@ -46,6 +46,9 @@ class UserGameServiceLibraryTest {
     @Mock
     private com.gamelog.nbe121423355.domain.user.repository.UserFavoriteGameRepository userFavoriteGameRepository;
 
+    @Mock
+    private com.gamelog.nbe121423355.domain.review.repository.ReviewRepository reviewRepository;
+
     @InjectMocks
     private UserGameService userGameService;
 
