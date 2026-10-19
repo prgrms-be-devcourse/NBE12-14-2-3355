@@ -103,6 +103,32 @@ class ApiV1UserControllerTest {
     }
 
     @Test
+    @DisplayName("회원가입 실패 - 비밀번호 72바이트 초과 (한글 30자 = 90바이트)")
+    void signUp_fail_passwordTooLongBytes() throws Exception {
+        String password = "가".repeat(30);
+        mockMvc.perform(post("/api/v1/users/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"nickname": "테스트유저", "email": "test@test.com", "password": "%s"}
+                                """.formatted(password)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.resultCode").value("400-1"));
+    }
+
+    @Test
+    @DisplayName("로그인 실패 - 비밀번호 72바이트 초과 시 500이 아닌 400")
+    void login_fail_passwordTooLongBytes() throws Exception {
+        String password = "a".repeat(73);
+        mockMvc.perform(post("/api/v1/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email": "test@test.com", "password": "%s"}
+                                """.formatted(password)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.resultCode").value("400-1"));
+    }
+
+    @Test
     @DisplayName("회원가입 실패 - 이메일 중복")
     void signUp_fail_duplicateEmail() throws Exception {
         saveUser("test@test.com", "other", "password123");
