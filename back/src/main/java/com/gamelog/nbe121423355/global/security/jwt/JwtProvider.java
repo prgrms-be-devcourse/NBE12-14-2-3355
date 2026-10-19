@@ -15,6 +15,11 @@ import java.util.UUID;
 @Component
 public class JwtProvider {
 
+    // 토큰 종류 구분용 클레임
+    private static final String TOKEN_TYPE = "token_type";
+    private static final String ACCESS = "Access";
+    private static final String REFRESH = "Refresh";
+
     private final JwtProperties jwtProperties;
     private final SecretKey secretKey;
 
@@ -32,6 +37,7 @@ public class JwtProvider {
 
         return Jwts.builder()
                 .subject(String.valueOf(userId))
+                .claim(TOKEN_TYPE, ACCESS)
                 .claim("role", role)
                 .issuedAt(now)
                 .expiration(expiration)
@@ -48,6 +54,7 @@ public class JwtProvider {
         return Jwts.builder()
                 .subject(String.valueOf(userId))
                 .id(UUID.randomUUID().toString())
+                .claim(TOKEN_TYPE, REFRESH)
                 .issuedAt(now)
                 .expiration(expiration)
                 .signWith(secretKey)
@@ -81,15 +88,24 @@ public class JwtProvider {
         }
     }
 
-    // 서명은 유효하지만 시간이 지나 만료된 토큰인지 판별
-    public boolean isExpired(String token) {
+    // 서명은 유효하지만 시간이 지나 만료된 accessToken인지 판별 (자동 재발급 대상 여부)
+    public boolean isExpiredAccessToken(String token) {
         try {
             parseClaims(token);
             return false;
         } catch (ExpiredJwtException e) {
-            return true;
+            return isAccessToken(e.getClaims());
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
+    }
+
+    // 토큰 종류 판별 (token_type 클레임이 없는 기존 토큰은 false)
+    public boolean isAccessToken(Claims claims) {
+        return ACCESS.equals(claims.get(TOKEN_TYPE, String.class));
+    }
+
+    public boolean isRefreshToken(Claims claims) {
+        return REFRESH.equals(claims.get(TOKEN_TYPE, String.class));
     }
 }
