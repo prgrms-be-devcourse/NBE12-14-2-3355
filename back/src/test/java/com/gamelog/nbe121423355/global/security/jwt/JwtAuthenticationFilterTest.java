@@ -71,7 +71,21 @@ class JwtAuthenticationFilterTest {
         SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtProperties.secret()));
         return Jwts.builder()
                 .subject(String.valueOf(userId))
+                .claim("token_type", "Access")
                 .claim("role", role)
+                .issuedAt(new Date(System.currentTimeMillis() - 1000 * 60 * 60))
+                .expiration(new Date(System.currentTimeMillis() - 1000 * 60))
+                .signWith(key)
+                .compact();
+    }
+
+    // 시간이 지나 만료된(서명은 정상) refreshToken을 직접 생성
+    private String expiredRefreshToken(Long userId) {
+        SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtProperties.secret()));
+        return Jwts.builder()
+                .subject(String.valueOf(userId))
+                .id("expired-refresh-jti")
+                .claim("token_type", "Refresh")
                 .issuedAt(new Date(System.currentTimeMillis() - 1000 * 60 * 60))
                 .expiration(new Date(System.currentTimeMillis() - 1000 * 60))
                 .signWith(key)
@@ -136,6 +150,43 @@ class JwtAuthenticationFilterTest {
         mockMvc.perform(get("/api/v1/users/me")
                         .header("Authorization", "Bearer " + tamperedAccessToken(user.getId(), user.getRole()))
                         .cookie(refreshTokenCookie))
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().doesNotExist("New-Access-Token"));
+    }
+
+    @Test
+    @DisplayName("유효한 refreshToken을 Authorization 헤더에 넣으면 → 인증되지 않고 401")
+    void authenticate_fail_refreshTokenAsBearer() throws Exception {
+        saveUser("autorefresh-test@test.com", "nickname", "password123");
+        Cookie refreshTokenCookie = loginAndGetRefreshTokenCookie();
+
+        mockMvc.perform(get("/api/v1/users/me")
+                        .header("Authorization", "Bearer " + refreshTokenCookie.getValue()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("만료된 refreshToken을 Authorization 헤더에 넣으면 + 유효한 refreshToken 쿠키 → 재발급 시도 자체를 안 하고 401")
+    void autoReissue_fail_expiredRefreshTokenAsBearer() throws Exception {
+        User user = saveUser("autorefresh-test@test.com", "nickname", "password123");
+        Cookie refreshTokenCookie = loginAndGetRefreshTokenCookie();
+
+        mockMvc.perform(get("/api/v1/users/me")
+                        .header("Authorization", "Bearer " + expiredRefreshToken(user.getId()))
+                        .cookie(refreshTokenCookie))
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().doesNotExist("New-Access-Token"));
+    }
+
+    @Test
+    @DisplayName("accessToken 만료 + refreshToken 쿠키에 accessToken이 들어있음 → 재발급 안 되고 401")
+    void autoReissue_fail_accessTokenInRefreshCookie() throws Exception {
+        User user = saveUser("autorefresh-test@test.com", "nickname", "password123");
+        String accessToken = jwtProvider.generateAccessToken(user.getId(), user.getRole());
+
+        mockMvc.perform(get("/api/v1/users/me")
+                        .header("Authorization", "Bearer " + expiredAccessToken(user.getId(), user.getRole()))
+                        .cookie(new Cookie("refreshToken", accessToken)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().doesNotExist("New-Access-Token"));
     }

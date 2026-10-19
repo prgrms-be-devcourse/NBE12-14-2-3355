@@ -1,5 +1,6 @@
 package com.gamelog.nbe121423355.domain.user.service;
 
+import com.gamelog.nbe121423355.domain.user.dto.ChangePasswordRequestDto;
 import com.gamelog.nbe121423355.domain.user.dto.LoginRequestDto;
 import com.gamelog.nbe121423355.domain.user.dto.SignupRequestDto;
 import com.gamelog.nbe121423355.domain.user.dto.TokenResponseDto;
@@ -196,6 +197,63 @@ class UserServiceTest {
         assertThatThrownBy(() -> userService.refresh(loginResult.refreshToken()))
                 .isInstanceOf(ServiceException.class)
                 .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("401-2"));
+    }
+
+    @Test
+    @DisplayName("토큰 재발급 실패 - refreshToken 자리에 accessToken을 넣으면 401-2")
+    void refresh_fail_accessToken() {
+        saveUser("test@test.com", "nickname", "password123");
+        UserService.LoginResult loginResult = userService.login(new LoginRequestDto("test@test.com", "password123"));
+
+        assertThatThrownBy(() -> userService.refresh(loginResult.accessToken()))
+                .isInstanceOf(ServiceException.class)
+                .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("401-2"));
+    }
+
+    @Test
+    @DisplayName("비밀번호 변경 성공 - 모든 기기의 RefreshToken이 삭제되고, 기존 토큰으로 재발급 시도하면 실패함")
+    void changePassword_success_revokesAllRefreshTokens() {
+        User user = saveUser("test@test.com", "nickname", "password123");
+        LoginRequestDto loginRequestDto = new LoginRequestDto("test@test.com", "password123");
+        UserService.LoginResult device1 = userService.login(loginRequestDto);
+        UserService.LoginResult device2 = userService.login(loginRequestDto);
+        String jti1 = jwtProvider.parseClaims(device1.refreshToken()).getId();
+        String jti2 = jwtProvider.parseClaims(device2.refreshToken()).getId();
+
+        userService.changePassword(user.getId(), new ChangePasswordRequestDto("password123", "newPassword123"));
+
+        assertThat(refreshTokenRepository.findByTokenId(jti1)).isEmpty();
+        assertThat(refreshTokenRepository.findByTokenId(jti2)).isEmpty();
+        assertThatThrownBy(() -> userService.refresh(device1.refreshToken()))
+                .isInstanceOf(ServiceException.class)
+                .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("401-2"));
+    }
+
+    @Test
+    @DisplayName("비밀번호 변경 성공 - 새 비밀번호로 로그인되고 기존 비밀번호로는 실패함")
+    void changePassword_success_newPasswordApplied() {
+        User user = saveUser("test@test.com", "nickname", "password123");
+        userService.login(new LoginRequestDto("test@test.com", "password123"));
+
+        userService.changePassword(user.getId(), new ChangePasswordRequestDto("password123", "newPassword123"));
+
+        assertDoesNotThrow(() -> userService.login(new LoginRequestDto("test@test.com", "newPassword123")));
+        assertThatThrownBy(() -> userService.login(new LoginRequestDto("test@test.com", "password123")))
+                .isInstanceOf(ServiceException.class)
+                .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("401-1"));
+    }
+
+    @Test
+    @DisplayName("비밀번호 변경 - 다른 유저의 RefreshToken은 삭제되지 않음")
+    void changePassword_keepsOtherUsersRefreshTokens() {
+        User user = saveUser("test@test.com", "nickname", "password123");
+        saveUser("other@test.com", "other", "password123");
+        UserService.LoginResult other = userService.login(new LoginRequestDto("other@test.com", "password123"));
+        String otherJti = jwtProvider.parseClaims(other.refreshToken()).getId();
+
+        userService.changePassword(user.getId(), new ChangePasswordRequestDto("password123", "newPassword123"));
+
+        assertThat(refreshTokenRepository.findByTokenId(otherJti)).isPresent();
     }
 
     @Test

@@ -49,7 +49,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if(token != null && jwtProvider.validateToken(token)) {
             authenticate(token);
-        } else if(token != null && jwtProvider.isExpired(token)) {
+        } else if(token != null && jwtProvider.isExpiredAccessToken(token)) {
             tryAutoReissue(servletRequest, serveletResponse);
         }
         filterChain.doFilter(servletRequest, serveletResponse);
@@ -59,6 +59,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private void authenticate(String token) {
         try {
             Claims claims = jwtProvider.parseClaims(token);
+            if(!jwtProvider.isAccessToken(claims)) {
+                return;
+            }
             Long userId = Long.parseLong(claims.getSubject());
             String role = claims.get("role", String.class);
             setSecurityContext(userId, role);
@@ -67,7 +70,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
     }
 
-    // accessToken이 만룐된 경우 refreshToken 쿠키로 조용히 재발급 시도
+    // accessToken이 만료된 경우 refreshToken 쿠키로 조용히 재발급 시도
     private void tryAutoReissue(HttpServletRequest servletRequest, HttpServletResponse response) {
         try {
             String refreshToken = resolveTokenFromCookie(servletRequest);
@@ -75,13 +78,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
-            String jti = jwtProvider.parseClaims(refreshToken).getId();
+            Claims claims = jwtProvider.parseClaims(refreshToken);
+            if (!jwtProvider.isRefreshToken(claims)) {
+                return;
+            }
+
+            String jti = claims.getId();
             Optional<RefreshToken> savedToken = refreshTokenRepository.findByTokenId(jti);
             if(savedToken.isEmpty()) {
                 return;
             }
 
-            Long userId = jwtProvider.getUserId(refreshToken);
+            Long userId = Long.parseLong(claims.getSubject());
             Optional<User> userOpt = userRepository.findById(userId);
             if(userOpt.isEmpty()) {
                 return;

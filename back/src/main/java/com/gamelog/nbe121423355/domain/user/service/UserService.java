@@ -85,10 +85,14 @@ public class UserService {
         if(!jwtProvider.validateToken(refreshToken)) {
             throw new ServiceException("401-2", "유효하지 않은 토큰 입니다.");
         }
-        String jti = jwtProvider.parseClaims(refreshToken).getId();
+        Claims claims = jwtProvider.parseClaims(refreshToken);
+        if(!jwtProvider.isRefreshToken(claims)) {
+            throw new ServiceException("401-2", "유효하지 않은 토큰 입니다.");
+        }
+        String jti = claims.getId();
         refreshTokenRepository.findByTokenId(jti)
                 .orElseThrow(() -> new ServiceException("401-2", "로그아웃된 토큰입니다."));
-        Long userId = jwtProvider.getUserId(refreshToken);
+        Long userId = Long.parseLong(claims.getSubject());
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ServiceException("401-2", "유효하지 않은 토큰입니다."));
 
@@ -167,6 +171,8 @@ public class UserService {
             throw new ServiceException("400-4", "새 비밀번호는 현재 비밀번호와 달라야 합니다.");
         }
         user.changePassword(passwordEncoder.encode(requestDto.newPassword()));
+        // 비밀번호 변경 시 모든 기기의 refreshToken 폐기 (재로그인 필요)
+        refreshTokenRepository.deleteAllByUserId(userId);
     }
 
     @Transactional
