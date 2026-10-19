@@ -1,6 +1,7 @@
 package com.gamelog.nbe121423355.domain.game.service;
 
 import com.gamelog.nbe121423355.domain.game.dto.GameListResponse;
+import com.gamelog.nbe121423355.domain.game.dto.IgdbGameResponse;
 import com.gamelog.nbe121423355.domain.game.entity.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,23 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class GameSuggestionTest extends GameQueryTestSupport {
+    @Test
+    void suggestionsKeepIdTieBreakAndIncludeUnknownReleaseDates() {
+        saveGame(9400L, "Needle", List.of(), List.of());
+        saveGame(9401L, "Needle", List.of(), List.of());
+        entityManager.persist(Game.createFromIgdb(new IgdbGameResponse(
+                9402L, "Needle Unknown", null, null, null, null,
+                List.of(), List.of(), List.of(), List.of())));
+        saveGame(9403L, "A Needle", List.of(), List.of());
+        entityManager.flush();
+        entityManager.clear();
+        var result = gameService.getSuggestions("needle");
+        assertThat(result).extracting(GameListResponse::title)
+                .containsExactly("Needle", "Needle", "Needle Unknown", "A Needle");
+        assertThat(result.get(0).id()).isLessThan(result.get(1).id());
+        assertThat(result.get(2).releaseDate()).isNull();
+    }
+
 
     @Test
     @DisplayName("검색 후보는 제한 전에 완전 일치, 시작 일치, 포함 일치 순으로 정렬한다")

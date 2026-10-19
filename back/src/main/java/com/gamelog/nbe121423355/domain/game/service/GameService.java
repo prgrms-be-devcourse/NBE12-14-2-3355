@@ -3,6 +3,7 @@ package com.gamelog.nbe121423355.domain.game.service;
 import com.gamelog.nbe121423355.domain.game.dto.GameListResponse;
 import com.gamelog.nbe121423355.domain.game.dto.GameSearchRequest;
 import com.gamelog.nbe121423355.domain.game.repository.GameRepository;
+import com.gamelog.nbe121423355.domain.game.repository.GameFilteredQueryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,6 +19,7 @@ import java.time.LocalDate;
 @RequiredArgsConstructor
 public class GameService {
     private final GameRepository gameRepository;
+    private final GameFilteredQueryRepository gameFilteredQueryRepository;
 
     @Transactional(readOnly = true)
     public Page<GameListResponse> getGamesPage(GameSearchRequest request) {
@@ -35,15 +37,17 @@ public class GameService {
         boolean filterPlatforms =
                 platformIds != null && !platformIds.isEmpty();
 
-        // 검색어가 있고 필터가 없는 기본 정렬 검색은 ID를 먼저 조회합니다.
+        // 전체 목록을 포함해 필터가 없는 기본 정렬은 ID를 먼저 조회합니다.
         boolean useDefaultSearch =
-                keywordPattern != null
-                        && !filterGenres
+                !filterGenres
                         && !filterPlatforms
                         && request.sort() == null;
 
         if (useDefaultSearch) {
-            var pageable = PageRequest.of(request.page(), request.size());
+            // 전체 목록의 기존 응답에 포함되던 pageable.sort 메타데이터도 유지합니다.
+            var pageable = keywordPattern == null
+                    ? request.toPageable()
+                    : PageRequest.of(request.page(), request.size());
             var minDate = LocalDate.of(1970, 1, 1);
             var maxDate = LocalDate.now().withDayOfYear(1).plusYears(1);
             var content = gameRepository.findDefaultSearchContent(
@@ -55,21 +59,11 @@ public class GameService {
                     .map(GameListResponse::new);
         }
 
-        // 필터 미선택 시에도 IN 절에는 비어 있지 않은 목록을 전달합니다.
-        // 해당 조건은 filterGenres/filterPlatforms가 false이면 무시됩니다.
-        List<Long> queryGenreIds =
-                filterGenres ? genreIds : List.of(0L);
-
-        List<Long> queryPlatformIds =
-                filterPlatforms ? platformIds : List.of(0L);
-
-        return gameRepository.findByFilters(
+        return gameFilteredQueryRepository.findPage(
                         keywordPattern,
-                        filterGenres,
-                        queryGenreIds,
-                        filterPlatforms,
-                        queryPlatformIds,
-                        request.sort() == null ? "" : request.sort().name(),
+                        genreIds,
+                        platformIds,
+                        request.sort(),
                         LocalDate.of(1970, 1, 1),
                         LocalDate.now().withDayOfYear(1).plusYears(1),
                         request.toPageable()
@@ -82,8 +76,7 @@ public class GameService {
         if (keyword == null || keyword.isBlank()) return List.of();
         String normalized = keyword.strip();
         String escaped = escapeLike(normalized);
-        return gameRepository.findSuggestions(normalized, escaped + "%", "%" + escaped + "%",
-                        org.springframework.data.domain.PageRequest.of(0, 6))
+        return gameRepository.findSuggestions(normalized, escaped + "%", "%" + escaped + "%")
                 .stream().map(GameListResponse::new).toList();
     }
 
