@@ -7,35 +7,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface UserGameRepository extends JpaRepository<UserGame, Long> {
-    String EXPECTED_MEMBERSHIP = """
-            CASE WHEN ug.playStatus IS NOT NULL OR ug.playing = true
-                OR ug.backlog = true OR ug.wishlist = true OR ug.platform IS NOT NULL
-                OR ug.playTimeHours IS NOT NULL OR ug.finishTimeHours IS NOT NULL
-                OR ug.masterTimeHours IS NOT NULL OR ug.startedAt IS NOT NULL
-                OR ug.completedAt IS NOT NULL OR ug.lastPlayedAt IS NOT NULL
-            THEN true ELSE false END
-            """;
-
-    @Query("SELECT ug FROM UserGame ug WHERE ug.inLibrary <> (" + EXPECTED_MEMBERSHIP + ") ORDER BY ug.id")
-    List<UserGame> findMembershipMismatches();
-
-    @Query("SELECT COUNT(ug) FROM UserGame ug WHERE ug.inLibrary <> (" + EXPECTED_MEMBERSHIP + ")")
-    long countMembershipMismatches();
-
-    @Transactional
-    @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query("UPDATE UserGame ug SET ug.inLibrary = (" + EXPECTED_MEMBERSHIP
-            + ") WHERE ug.inLibrary <> (" + EXPECTED_MEMBERSHIP + ")")
-    int repairMembershipMismatches();
-
     Optional<UserGame> findByUser_IdAndGame_Id(Long userId, Long gameId);
     Page<UserGame> findAllByUser_IdAndInLibraryTrue(Long userId, Pageable pageable);
     List<UserGame> findAllByUserIdAndGameIdIn(
