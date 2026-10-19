@@ -212,6 +212,15 @@ public class UserGameService {
                 reqBody.completedAt(),
                 reqBody.lastPlayedAt()
         );
+        removeFavoriteIfOutsideLibrary(userGame);
+    }
+
+    private void removeFavoriteIfOutsideLibrary(UserGame userGame) {
+        if (!userGame.isInLibrary()) {
+            userFavoriteGameRepository.deleteByUser_IdAndGame_Id(
+                    userGame.getUser().getId(), userGame.getGame().getId()
+            );
+        }
     }
 
     private void validatePlayDates(UserGameReqBody reqBody) {
@@ -359,6 +368,7 @@ public class UserGameService {
         if (playStatus == null) {
             UserGame userGame = findUserGame(userId, gameId);
             userGame.clearPlayStatus();
+            removeFavoriteIfOutsideLibrary(userGame);
 
             log.info(
                     "플레이 상태 해제 - userId={}, gameId={}",
@@ -371,6 +381,7 @@ public class UserGameService {
 
         UserGame userGame = getOrCreateUserGame(userId, gameId);
         userGame.changePlayStatus(playStatus);
+        removeFavoriteIfOutsideLibrary(userGame);
 
         log.info(
                 "플레이 상태 변경 - userId={}, gameId={}, playStatus={}",
@@ -390,6 +401,7 @@ public class UserGameService {
         );
 
         userGame.changePlaying(playing);
+        removeFavoriteIfOutsideLibrary(userGame);
 
         log.info(
                 "플레이 중 상태 변경 - userId={}, gameId={}, playing={}",
@@ -409,6 +421,7 @@ public class UserGameService {
         );
 
         userGame.changeWishlist(wishlist);
+        removeFavoriteIfOutsideLibrary(userGame);
 
         log.info(
                 "위시리스트 상태 변경 - userId={}, gameId={}, wishlist={}",
@@ -428,6 +441,7 @@ public class UserGameService {
         );
 
         userGame.changeBacklog(backlog);
+        removeFavoriteIfOutsideLibrary(userGame);
 
         log.info(
                 "백로그 상태 변경 - userId={}, gameId={}, backlog={}",
@@ -447,6 +461,7 @@ public class UserGameService {
         );
 
         userGame.changeLiked(liked);
+        removeFavoriteIfOutsideLibrary(userGame);
 
         log.info(
                 "좋아요 상태 변경 - userId={}, gameId={}, liked={}",
@@ -570,7 +585,7 @@ public class UserGameService {
 
         // 3. 사용자의 UserGame 조회
         List<UserGame> userGames =
-                userGameRepository.findAllByUserIdAndGameIdIn(
+                userGameRepository.findAllByUser_IdAndGame_IdInAndInLibraryTrue(
                         userId,
                         gameIds
                 );

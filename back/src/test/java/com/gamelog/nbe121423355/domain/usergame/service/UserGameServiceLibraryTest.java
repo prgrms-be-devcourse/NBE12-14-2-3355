@@ -43,6 +43,9 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class UserGameServiceLibraryTest {
 
+    @Mock
+    private com.gamelog.nbe121423355.domain.user.repository.UserFavoriteGameRepository userFavoriteGameRepository;
+
     @InjectMocks
     private UserGameService userGameService;
 

@@ -59,7 +59,7 @@ class UserGameServiceFavoriteTest {
         given(userGame1.getGame()).willReturn(game1);
         given(userGame2.getGame()).willReturn(game2);
 
-        given(userGameRepository.findAllByUserIdAndGameIdIn(
+        given(userGameRepository.findAllByUser_IdAndGame_IdInAndInLibraryTrue(
                 userId,
                 List.of(10L, 20L)
         )).willReturn(List.of(userGame1, userGame2));
@@ -138,7 +138,7 @@ class UserGameServiceFavoriteTest {
         given(userRepository.findById(userId))
                 .willReturn(Optional.of(user));
 
-        given(userGameRepository.findAllByUserIdAndGameIdIn(
+        given(userGameRepository.findAllByUser_IdAndGame_IdInAndInLibraryTrue(
                 userId,
                 List.of(10L, 20L)
         )).willReturn(List.of());
