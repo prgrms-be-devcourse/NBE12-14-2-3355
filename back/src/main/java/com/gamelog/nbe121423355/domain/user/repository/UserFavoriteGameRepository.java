@@ -9,4 +9,5 @@ import java.util.List;
 public interface UserFavoriteGameRepository extends JpaRepository<UserFavoriteGame, UserFavoriteGameId> {
     List<UserFavoriteGame> findAllByUserIdOrderByDisplayOrderAsc(Long userId);
     void deleteAllByUserId(Long userId);
+    void deleteByUser_IdAndGame_Id(Long userId, Long gameId);
 }

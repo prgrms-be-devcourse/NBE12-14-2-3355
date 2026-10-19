@@ -15,7 +15,7 @@ import java.util.Optional;
 public interface UserGameRepository extends JpaRepository<UserGame, Long> {
     Optional<UserGame> findByUser_IdAndGame_Id(Long userId, Long gameId);
     Page<UserGame> findAllByUser_IdAndInLibraryTrue(Long userId, Pageable pageable);
-    List<UserGame> findAllByUserIdAndGameIdIn(
+    List<UserGame> findAllByUser_IdAndGame_IdInAndInLibraryTrue(
             Long userId,
             List<Long> gameIds
     );
