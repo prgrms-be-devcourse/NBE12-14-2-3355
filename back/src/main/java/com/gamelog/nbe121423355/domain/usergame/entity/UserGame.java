@@ -153,13 +153,17 @@ public class UserGame extends BaseEntity {
                         || backlog
                         || wishlist
                         || platform != null
-                        || playTimeHours != null
-                        || finishTimeHours != null
-                        || masterTimeHours != null
+                        || hasPositiveHours(playTimeHours)
+                        || hasPositiveHours(finishTimeHours)
+                        || hasPositiveHours(masterTimeHours)
                         || startedAt != null
                         || completedAt != null
                         || lastPlayedAt != null;
         //liked 제외
+    }
+
+    private boolean hasPositiveHours(BigDecimal hours) {
+        return hours != null && hours.signum() > 0;
     }
 
     public void changePlayStatus(PlayStatus playStatus) {

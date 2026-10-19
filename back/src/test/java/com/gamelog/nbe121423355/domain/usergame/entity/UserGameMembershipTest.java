@@ -60,7 +60,7 @@ class UserGameMembershipTest {
     void anyRemainingRecordKeepsMembership(int field) {
         UserGame record = new UserGame(user, game, null, false, false, false, false,
                 field == 0 ? mock(Platform.class) : null,
-                field == 1 ? BigDecimal.ZERO : null,
+                field == 1 ? new BigDecimal("0.1") : null,
                 field == 2 ? BigDecimal.ONE : null,
                 field == 3 ? BigDecimal.ONE : null,
                 field == 4 ? LocalDate.now() : null,
@@ -74,4 +74,27 @@ class UserGameMembershipTest {
                 null, null, null, null, null, null, null);
         assertThat(record.isInLibrary()).isFalse();
     }
+    static Stream<BigDecimal> zeroHours() {
+        return Stream.of(BigDecimal.ZERO, new BigDecimal("0.0"), new BigDecimal("0.00"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("zeroHours")
+    void zeroHoursDoNotCountAcrossCreationAndUpdate(BigDecimal zero) {
+        UserGame record = new UserGame(user, game, null, false, false, false, true,
+                null, zero, zero, zero, null, null, null);
+        assertThat(record.isInLibrary()).isFalse();
+        record.changePlaying(true);
+        assertThat(record.isInLibrary()).isTrue();
+        record.changePlaying(false);
+        assertThat(record.isInLibrary()).isFalse();
+        record.updatePlayRecord(null, false, false, false, true,
+                null, BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE, null, null, null);
+        assertThat(record.isInLibrary()).isTrue();
+        record.updatePlayRecord(null, false, false, false, true,
+                null, zero, zero, zero, null, null, null);
+        assertThat(record.isInLibrary()).isFalse();
+        assertThat(record.isLiked()).isTrue();
+    }
+
 }
