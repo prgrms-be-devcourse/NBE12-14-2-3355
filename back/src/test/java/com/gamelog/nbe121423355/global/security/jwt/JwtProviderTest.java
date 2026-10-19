@@ -28,44 +28,45 @@ class JwtProviderTest {
     }
 
     @Test
-    @DisplayName("isExpiredAccessToken - 아직 만료되지 않은 accessToken이면 false")
-    void isExpiredAccessToken_false_whenNotExpired() {
+    @DisplayName("getExpiredAccessTokenClaims - 아직 만료되지 않은 accessToken이면 empty")
+    void getExpiredAccessTokenClaims_empty_whenNotExpired() {
         String token = jwtProvider.generateAccessToken(1L, "USER");
 
-        assertThat(jwtProvider.isExpiredAccessToken(token)).isFalse();
+        assertThat(jwtProvider.getExpiredAccessTokenClaims(token)).isEmpty();
     }
 
     @Test
-    @DisplayName("isExpiredAccessToken - 시간이 지나 만료된 accessToken이면 true")
-    void isExpiredAccessToken_true_whenExpired() {
+    @DisplayName("getExpiredAccessTokenClaims - 시간이 지나 만료된 accessToken이면 클레임 반환 (사용자 ID 포함)")
+    void getExpiredAccessTokenClaims_present_whenExpired() {
         String expiredToken = createToken(secretKey, "Access", expiredIssuedAt(), expiredExpiration());
 
-        assertThat(jwtProvider.isExpiredAccessToken(expiredToken)).isTrue();
+        assertThat(jwtProvider.getExpiredAccessTokenClaims(expiredToken))
+                .hasValueSatisfying(claims -> assertThat(claims.getSubject()).isEqualTo("1"));
     }
 
     @Test
-    @DisplayName("isExpiredAccessToken - 만료된 refreshToken이면 false (refreshToken으로 재발급 경로 진입 차단)")
-    void isExpiredAccessToken_false_whenExpiredRefreshToken() {
+    @DisplayName("getExpiredAccessTokenClaims - 만료된 refreshToken이면 empty (refreshToken으로 재발급 경로 진입 차단)")
+    void getExpiredAccessTokenClaims_empty_whenExpiredRefreshToken() {
         String expiredToken = createToken(secretKey, "Refresh", expiredIssuedAt(), expiredExpiration());
 
-        assertThat(jwtProvider.isExpiredAccessToken(expiredToken)).isFalse();
+        assertThat(jwtProvider.getExpiredAccessTokenClaims(expiredToken)).isEmpty();
     }
 
     @Test
-    @DisplayName("isExpiredAccessToken - token_type이 없는 기존 토큰이 만료되면 false")
-    void isExpiredAccessToken_false_whenNoTokenType() {
+    @DisplayName("getExpiredAccessTokenClaims - token_type이 없는 기존 토큰이 만료되면 empty")
+    void getExpiredAccessTokenClaims_empty_whenNoTokenType() {
         String expiredToken = createToken(secretKey, null, expiredIssuedAt(), expiredExpiration());
 
-        assertThat(jwtProvider.isExpiredAccessToken(expiredToken)).isFalse();
+        assertThat(jwtProvider.getExpiredAccessTokenClaims(expiredToken)).isEmpty();
     }
 
     @Test
-    @DisplayName("isExpiredAccessToken - 서명이 위조된 토큰이면 false (만료가 아니라 무효라서 재발급 대상 아님)")
-    void isExpiredAccessToken_false_whenTampered() {
+    @DisplayName("getExpiredAccessTokenClaims - 서명이 위조된 토큰이면 empty (만료가 아니라 무효라서 재발급 대상 아님)")
+    void getExpiredAccessTokenClaims_empty_whenTampered() {
         SecretKey wrongKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
         String tamperedToken = createToken(wrongKey, "Access", new Date(), new Date(System.currentTimeMillis() + 1000 * 60 * 60));
 
-        assertThat(jwtProvider.isExpiredAccessToken(tamperedToken)).isFalse();
+        assertThat(jwtProvider.getExpiredAccessTokenClaims(tamperedToken)).isEmpty();
     }
 
     @Test

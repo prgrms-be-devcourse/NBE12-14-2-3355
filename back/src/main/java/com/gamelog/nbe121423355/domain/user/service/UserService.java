@@ -26,6 +26,7 @@ public class UserService {
     private final JwtProvider jwtProvider;
     private final RefreshTokenRepository refreshTokenRepository;
     private final ImageUploadService imageUploadService;
+    private final TokenReissueService tokenReissueService;
 
     // 로그인 결과를 Controller에 전달하기 위한 내부 운반용 record
     public record LoginResult(UserDto user, String accessToken, String refreshToken) {}
@@ -77,27 +78,9 @@ public class UserService {
         }
     }
 
-    // 토큰 갱신 메소드
+    // 토큰 갱신 메소드 (재발급 로직은 TokenReissueService에서 필터와 공유)
     public TokenResponseDto refresh(String refreshToken) {
-        if(refreshToken == null) {
-            throw new ServiceException("401-2", "로그인 정보가 없습니다.");
-        }
-        if(!jwtProvider.validateToken(refreshToken)) {
-            throw new ServiceException("401-2", "유효하지 않은 토큰 입니다.");
-        }
-        Claims claims = jwtProvider.parseClaims(refreshToken);
-        if(!jwtProvider.isRefreshToken(claims)) {
-            throw new ServiceException("401-2", "유효하지 않은 토큰 입니다.");
-        }
-        String jti = claims.getId();
-        refreshTokenRepository.findByTokenId(jti)
-                .orElseThrow(() -> new ServiceException("401-2", "로그아웃된 토큰입니다."));
-        Long userId = Long.parseLong(claims.getSubject());
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ServiceException("401-2", "유효하지 않은 토큰입니다."));
-
-        String newAccessToken = jwtProvider.generateAccessToken(userId, user.getRole());
-        return new TokenResponseDto(newAccessToken);
+        return new TokenResponseDto(tokenReissueService.reissue(refreshToken).accessToken());
     }
 
     // 내정보 가져오기 - 온보딩 확인 여부

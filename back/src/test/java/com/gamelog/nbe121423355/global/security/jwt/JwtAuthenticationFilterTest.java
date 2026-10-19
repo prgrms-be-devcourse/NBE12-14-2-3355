@@ -179,6 +179,20 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
+    @DisplayName("A의 만료된 accessToken + B의 refreshToken 쿠키(두 탭 다른 계정) → B 토큰으로 재발급되지 않고 401")
+    void autoReissue_fail_userIdMismatch() throws Exception {
+        User userA = saveUser("other-user@test.com", "userA", "password123");
+        saveUser("autorefresh-test@test.com", "userB", "password123");
+        Cookie refreshTokenCookieOfB = loginAndGetRefreshTokenCookie();
+
+        mockMvc.perform(get("/api/v1/users/me")
+                        .header("Authorization", "Bearer " + expiredAccessToken(userA.getId(), userA.getRole()))
+                        .cookie(refreshTokenCookieOfB))
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().doesNotExist("New-Access-Token"));
+    }
+
+    @Test
     @DisplayName("accessToken 만료 + refreshToken 쿠키에 accessToken이 들어있음 → 재발급 안 되고 401")
     void autoReissue_fail_accessTokenInRefreshCookie() throws Exception {
         User user = saveUser("autorefresh-test@test.com", "nickname", "password123");
