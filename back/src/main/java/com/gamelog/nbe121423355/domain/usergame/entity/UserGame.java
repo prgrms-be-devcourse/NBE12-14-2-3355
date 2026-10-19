@@ -75,11 +75,12 @@ public class UserGame extends BaseEntity {
     private LocalDateTime lastPlayedAt;
 
     @Column(name = "is_in_library", nullable = false)
-    private boolean inLibrary=true;
+    private boolean inLibrary;
 
     public UserGame(User user, Game game) {
         this.user = Objects.requireNonNull(user, "user");
         this.game = Objects.requireNonNull(game, "game");
+        updateLibraryStatus();
     }
 
     public UserGame(
@@ -112,6 +113,7 @@ public class UserGame extends BaseEntity {
         this.startedAt = startedAt;
         this.completedAt = completedAt;
         this.lastPlayedAt = lastPlayedAt;
+        updateLibraryStatus();
     }
 
     public void updatePlayRecord(
@@ -151,36 +153,46 @@ public class UserGame extends BaseEntity {
                         || backlog
                         || wishlist
                         || platform != null
-                        || playTimeHours != null
-                        || finishTimeHours != null
-                        || masterTimeHours != null
+                        || hasPositiveHours(playTimeHours)
+                        || hasPositiveHours(finishTimeHours)
+                        || hasPositiveHours(masterTimeHours)
                         || startedAt != null
                         || completedAt != null
                         || lastPlayedAt != null;
         //liked 제외
     }
 
+    private boolean hasPositiveHours(BigDecimal hours) {
+        return hours != null && hours.signum() > 0;
+    }
+
     public void changePlayStatus(PlayStatus playStatus) {
         this.playStatus = playStatus;
+        updateLibraryStatus();
     }
 
     public void clearPlayStatus() {
         this.playStatus = null;
+        updateLibraryStatus();
     }
 
     public void changePlaying(boolean playing) {
         this.playing = playing;
+        updateLibraryStatus();
     }
 
     public void changeBacklog(boolean backlog) {
         this.backlog = backlog;
+        updateLibraryStatus();
     }
 
     public void changeWishlist(boolean wishlist) {
         this.wishlist = wishlist;
+        updateLibraryStatus();
     }
 
     public void changeLiked(boolean liked) {
         this.liked = liked;
+        updateLibraryStatus();
     }
 }
