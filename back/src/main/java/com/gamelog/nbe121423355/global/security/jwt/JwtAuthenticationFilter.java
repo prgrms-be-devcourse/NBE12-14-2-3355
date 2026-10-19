@@ -45,8 +45,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if(token != null && jwtProvider.validateToken(token)) {
             authenticate(token);
-        } else if(token != null && jwtProvider.isExpiredAccessToken(token)) {
-            tryAutoReissue(servletRequest, serveletResponse);
+        } else if(token != null) {
+            jwtProvider.getExpiredAccessTokenClaims(token)
+                    .ifPresent(expiredClaims -> tryAutoReissue(servletRequest, serveletResponse, expiredClaims));
         }
         filterChain.doFilter(servletRequest, serveletResponse);
     }
@@ -67,13 +68,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     // accessToken이 만료된 경우 refreshToken 쿠키로 조용히 재발급 시도
-    private void tryAutoReissue(HttpServletRequest servletRequest, HttpServletResponse response) {
+    // 만료된 accessToken과 refreshToken의 사용자가 같을 때만 재발급
+    private void tryAutoReissue(HttpServletRequest servletRequest, HttpServletResponse response, Claims expiredClaims) {
         String refreshToken = resolveTokenFromCookie(servletRequest);
         if (refreshToken == null) {
             return;
         }
         try {
-            ReissueResult result = tokenReissueService.reissue(refreshToken);
+            Long expectedUserId = Long.parseLong(expiredClaims.getSubject());
+            ReissueResult result = tokenReissueService.reissue(refreshToken, expectedUserId);
             setSecurityContext(result.userId(), result.role());
             response.setHeader("New-Access-Token", result.accessToken());
         } catch (ServiceException e) {

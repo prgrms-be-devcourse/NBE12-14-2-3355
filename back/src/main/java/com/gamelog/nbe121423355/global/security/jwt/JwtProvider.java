@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.Optional;
 import java.util.UUID;
 
 @Component
@@ -88,15 +89,16 @@ public class JwtProvider {
         }
     }
 
-    // 서명은 유효하지만 시간이 지나 만료된 accessToken인지 판별 (자동 재발급 대상 여부)
-    public boolean isExpiredAccessToken(String token) {
+    // 서명은 유효하지만 시간이 지나 만료된 accessToken이면 그 클레임을 반환 (자동 재발급 대상 여부 + 사용자 ID 비교용)
+    // 만료되지 않았거나, accessToken이 아니거나, 서명이 위조된 토큰이면 empty
+    public Optional<Claims> getExpiredAccessTokenClaims(String token) {
         try {
             parseClaims(token);
-            return false;
+            return Optional.empty();
         } catch (ExpiredJwtException e) {
-            return isAccessToken(e.getClaims());
+            return isAccessToken(e.getClaims()) ? Optional.of(e.getClaims()) : Optional.empty();
         } catch (JwtException | IllegalArgumentException e) {
-            return false;
+            return Optional.empty();
         }
     }
 
