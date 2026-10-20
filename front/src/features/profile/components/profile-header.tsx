@@ -7,6 +7,7 @@ import { searchUsers, setFollowing } from "@/features/follows/api";
 import FollowButton from "@/features/follows/components/follow-button";
 import ProfileEditor from "./profile-editor";
 import PasswordChangeDialog from "./password-change-dialog";
+import WithdrawDialog from "./withdraw-dialog";
 import styles from "./profile.module.css";
 
 type Props = {
@@ -20,6 +21,7 @@ export default function ProfileHeader({ user, accessToken, editable, onSaved }: 
   const auth = useAuth();
   const [editing, setEditing] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
   const [following, setFollowingState] = useState<boolean | null>(null);
   const [followPending, setFollowPending] = useState(false);
 
@@ -66,6 +68,7 @@ export default function ProfileHeader({ user, accessToken, editable, onSaved }: 
       {editable && <div className={styles.profileHeaderActions}>
         <button type="button" className={styles.profileEditButton} onClick={() => setEditing(true)}>프로필 수정</button>
         <button type="button" className={styles.profileEditButton} onClick={() => setChangingPassword(true)}>비밀번호 변경</button>
+        {(user as UserDto).role !== "ADMIN" && <button type="button" className={`${styles.profileEditButton} ${styles.profileLogoutButton}`} onClick={() => setWithdrawing(true)}>회원탈퇴</button>}
         <button type="button" className={`${styles.profileEditButton} ${styles.profileLogoutButton}`} onClick={() => { void handleLogout(); }}>로그아웃</button>
       </div>}
       {!editable && accessToken && following !== null && <div className={styles.profileHeaderActions}>
@@ -82,5 +85,6 @@ export default function ProfileHeader({ user, accessToken, editable, onSaved }: 
             setEditing(false);
           }} onClose={() => setEditing(false)} />}
     {changingPassword && <PasswordChangeDialog accessToken={accessToken ?? ""} onClose={() => setChangingPassword(false)} />}
+    {withdrawing && <WithdrawDialog accessToken={accessToken ?? ""} onClose={() => setWithdrawing(false)} />}
   </section>;
 }
