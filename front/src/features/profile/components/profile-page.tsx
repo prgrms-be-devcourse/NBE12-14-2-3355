@@ -494,12 +494,23 @@ function FavoriteGames({
     useState<FavoriteGame[]>(favorites);
 
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const saveErrorDialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = saveErrorDialogRef.current;
+    if (saveError && dialog && !dialog.open) {
+      dialog.showModal();
+    }
+  }, [saveError]);
 
   useEffect(() => {
     setDraftFavorites(favorites);
   }, [favorites]);
 
   async function handleSave() {
+    if (saving) return;
+    setSaveError("");
     try {
       setSaving(true);
 
@@ -508,6 +519,8 @@ function FavoriteGames({
       );
 
       setEditing(false);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "인생게임을 저장하지 못했습니다. 다시 시도해 주세요.");
     } finally {
       setSaving(false);
     }
@@ -645,6 +658,7 @@ function FavoriteGames({
                     styles.favoriteEditButton
                   }
                   onClick={() => {
+                    setSaveError("");
                     setDraftFavorites(favorites);
                     setEditing(true);
                   }}
@@ -660,6 +674,7 @@ function FavoriteGames({
                   <button
                     type="button"
                     onClick={() => {
+                      setSaveError("");
                       setDraftFavorites(favorites);
                       setEditing(false);
                     }}
@@ -761,6 +776,21 @@ function FavoriteGames({
           </div>
         )}
       </section>
+
+      <dialog
+        ref={saveErrorDialogRef}
+        className={styles.favoriteSaveErrorDialog}
+        role="alertdialog"
+        aria-labelledby="favorite-save-error-title"
+        aria-describedby="favorite-save-error-message"
+        onClose={() => setSaveError("")}
+      >
+        <h3 id="favorite-save-error-title">인생게임을 저장하지 못했어요</h3>
+        <p id="favorite-save-error-message">{saveError}</p>
+        <form method="dialog">
+          <button type="submit">확인</button>
+        </form>
+      </dialog>
 
       {editable && showAddModal && (
         <FavoriteGameSearchModal

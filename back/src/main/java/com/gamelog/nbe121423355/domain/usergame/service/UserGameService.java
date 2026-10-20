@@ -592,8 +592,9 @@ public class UserGameService {
 
         // 4. 모든 게임이 사용자의 라이브러리에 있는지 검증
         if (userGames.size() != gameIds.size()) {
-            throw new IllegalArgumentException(
-                    "내 라이브러리에 등록된 게임만 인생게임으로 선택할 수 있습니다."
+            throw new ServiceException(
+                    "400-11",
+                    "라이브러리에 없는 게임이 포함되어 있습니다. 선택 목록을 확인해 주세요."
             );
         }
 
