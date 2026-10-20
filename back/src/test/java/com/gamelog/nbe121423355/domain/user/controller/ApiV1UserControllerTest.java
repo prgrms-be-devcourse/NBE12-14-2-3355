@@ -213,6 +213,54 @@ class ApiV1UserControllerTest {
     }
 
     @Test
+    @DisplayName("회원탈퇴 성공 - refreshToken 쿠키가 즉시 만료되고, 이후 그 쿠키로 재발급하면 401")
+    void withdraw_success_clearsCookie() throws Exception {
+        User user = saveUser("test@test.com", "nickname", "password123");
+        Cookie refreshTokenCookie = loginAndGetRefreshTokenCookie();
+
+        MvcResult result = mockMvc.perform(delete("/api/v1/users/me")
+                        .header("Authorization", "Bearer " + accessTokenFor(user))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"password": "password123"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resultCode").value("200-19"))
+                .andReturn();
+
+        Cookie clearedCookie = result.getResponse().getCookie("refreshToken");
+        assertThat(clearedCookie).isNotNull();
+        assertThat(clearedCookie.getMaxAge()).isZero();
+        mockMvc.perform(post("/api/v1/users/refresh").cookie(refreshTokenCookie))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("회원탈퇴 실패 - 비밀번호를 입력하지 않으면 400")
+    void withdraw_fail_blankPassword() throws Exception {
+        User user = saveUser("test@test.com", "nickname", "password123");
+
+        mockMvc.perform(delete("/api/v1/users/me")
+                        .header("Authorization", "Bearer " + accessTokenFor(user))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"password": ""}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("회원탈퇴 실패 - 로그인하지 않으면 401")
+    void withdraw_fail_unauthenticated() throws Exception {
+        mockMvc.perform(delete("/api/v1/users/me")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"password": "password123"}
+                                """))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     @DisplayName("비밀번호 변경 성공 - 현재 기기용 새 refreshToken 쿠키가 내려오고, 그 쿠키로 재발급 가능")
     void changePassword_success_setsNewRefreshTokenCookie() throws Exception {
         User user = saveUser("test@test.com", "nickname", "password123");

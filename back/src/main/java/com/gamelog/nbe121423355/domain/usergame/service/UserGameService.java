@@ -98,7 +98,7 @@ public class UserGameService {
                 request.getSize()
         );
 
-        if (!userRepository.existsById(userId)) {
+        if (!userRepository.existsByIdAndDeletedAtIsNull(userId)) {
             throw new ServiceException("404-1", "존재하지 않는 유저입니다.");
         }
         return getUserGameList(userId, request);
@@ -509,7 +509,7 @@ public class UserGameService {
                 currentUserId
         );
 
-        if (!userRepository.existsById(targetUserId)) {
+        if (!userRepository.existsByIdAndDeletedAtIsNull(targetUserId)) {
             throw new ServiceException("404-1", "존재하지 않는 유저입니다.");
         }
         List<UserGame> playedGames =

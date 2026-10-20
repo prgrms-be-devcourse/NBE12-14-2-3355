@@ -16,8 +16,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -125,6 +127,12 @@ public class ReviewService {
         review.deleteByUser();
         reviewRepository.flush();
         return review.getUserGame().getId();
+    }
+
+    // 회원탈퇴 트랜잭션 안에서만 호출 (라이브러리 통계 유지를 위해 라이브러리 상태는 재계산하지 않음)
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void hideAllByWithdrawnUser(Long userId) {
+        reviewRepository.hideAllByUserId(userId, LocalDateTime.now());
     }
 
     private UserGame getUserGame(Long userGameId) {
