@@ -497,7 +497,24 @@ export default function MyGameLog({
               <small id="play-time-description">현재까지 플레이한 총 시간을 입력해 주세요.</small>
             </label>
 
-            <label className={styles.dateToggle}><input type="checkbox" checked={showDates} onChange={(event) => setShowDates(event.target.checked)} />플레이 날짜 기록하기</label>
+            <div className={styles.dateHeader}>
+              <label className={styles.dateToggle}><input type="checkbox" checked={showDates} onChange={(event) => setShowDates(event.target.checked)} />플레이 날짜 기록하기</label>
+              {showDates && Boolean(form.startedAt || form.completedAt || form.lastPlayedAt) && (
+                <button
+                  type="button"
+                  className={styles.clearDates}
+                  disabled={saving || deleting}
+                  onClick={() => setForm((current) => ({
+                    ...current,
+                    startedAt: "",
+                    completedAt: "",
+                    lastPlayedAt: "",
+                  }))}
+                >
+                  날짜 모두 지우기
+                </button>
+              )}
+            </div>
             {showDates && <div className={styles.dateGrid}>
               <label>시작일<input type="date" max={form.completedAt && form.completedAt < TODAY ? form.completedAt : TODAY} value={form.startedAt} onChange={(event) => update("startedAt", event.target.value)} /></label>
               <label>완료일<input type="date" min={form.startedAt || undefined} max={TODAY} value={form.completedAt} onChange={(event) => update("completedAt", event.target.value)} /></label>
