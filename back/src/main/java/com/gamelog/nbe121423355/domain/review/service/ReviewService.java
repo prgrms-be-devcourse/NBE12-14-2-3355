@@ -61,19 +61,19 @@ public class ReviewService {
             DetailedReviewSaveRequest request
     ) {
         // 게임 기록은 항상 저장하고, 리뷰 요청이 있으면 같은 기록에 리뷰를 저장한다.
-        UserGameSaveResult userGameResult = userGameService.addOrUpdateGameToLibrary(
+        UserGameSaveResult userGameResult = userGameService.prepareGameRecordForReview(
                 userId,
                 gameId,
                 request.userGame()
         );
 
-        ReviewResponse review = request.review() == null || !request.review().hasReviewContent()
-                ? findReviewResponse(userGameResult.userGame().getId())
-                : saveReview(
-                        userId,
-                        userGameResult.userGame().getId(),
-                        request.review()
-                );
+        ReviewResponse review;
+        if (request.review() == null || !request.review().hasReviewContent()) {
+            userGameService.synchronizeLibraryState(userGameResult.userGame());
+            review = findReviewResponse(userGameResult.userGame().getId());
+        } else {
+            review = saveReview(userId, userGameResult.userGame().getId(), request.review());
+        }
 
         return new DetailedReviewResponse(
                 new UserGameDto(userGameResult.userGame()),
@@ -100,6 +100,7 @@ public class ReviewService {
                 review.edit(request.rating(), request.content(), request.spoiler());
             }
             reviewRepository.flush();
+            userGameService.synchronizeLibraryState(userGame);
             return toReviewResponse(review);
         }
 
@@ -110,7 +111,9 @@ public class ReviewService {
                 request.spoiler()
         );
 
-        return toReviewResponse(reviewRepository.save(newReview));
+        Review savedReview = reviewRepository.save(newReview);
+        userGameService.synchronizeLibraryState(userGame);
+        return toReviewResponse(savedReview);
     }
 
     public ReviewResponse getReview(Long reviewId) {
@@ -143,6 +146,7 @@ public class ReviewService {
         // 변경된 리뷰를 자동으로 반영.
         review.edit(request.rating(), request.content(), request.spoiler());
         reviewRepository.flush();
+        userGameService.synchronizeLibraryState(review.getUserGame());
 
         return toReviewResponse(review);
     }
@@ -154,6 +158,7 @@ public class ReviewService {
 
         review.deleteByUser();
         reviewRepository.flush();
+        userGameService.synchronizeLibraryState(review.getUserGame());
     }
 
     private UserGame getUserGame(Long userGameId) {

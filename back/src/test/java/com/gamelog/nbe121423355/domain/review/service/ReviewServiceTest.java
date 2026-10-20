@@ -543,7 +543,7 @@ class ReviewServiceTest {
         when(game.getId()).thenReturn(GAME_ID);
         when(userGame.isBacklog()).thenReturn(true);
         when(userGame.isInLibrary()).thenReturn(true);
-        when(userGameService.addOrUpdateGameToLibrary(
+        when(userGameService.prepareGameRecordForReview(
                 USER_ID,
                 GAME_ID,
                 userGameRequest

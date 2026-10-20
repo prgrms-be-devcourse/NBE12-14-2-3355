@@ -79,6 +79,10 @@ public class Review extends BaseEntity {
         return status == null || status == ReviewStatus.ACTIVE;
     }
 
+    public boolean hasVisibleContent() {
+        return isActive() && (rating != null || (content != null && !content.isBlank()));
+    }
+
     public boolean isDeletedByUser() {
         return status == ReviewStatus.DELETED_BY_USER;
     }

@@ -39,6 +39,9 @@ class ReviewReportServiceTest {
     @Mock ReviewReportRepository reviewReportRepository;
     @Mock ReviewRepository reviewRepository;
     @Mock UserRepository userRepository;
+    @Mock
+    private com.gamelog.nbe121423355.domain.usergame.service.UserGameService userGameService;
+
     @InjectMocks ReviewReportService reviewReportService;
 
     private User writer;
