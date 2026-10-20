@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.Optional;
-import java.util.UUID;
 
 @Component
 public class JwtProvider {
@@ -20,6 +19,8 @@ public class JwtProvider {
     private static final String TOKEN_TYPE = "token_type";
     private static final String ACCESS = "Access";
     private static final String REFRESH = "Refresh";
+    // refreshToken의 로그인 세션(family) 식별 클레임
+    private static final String FAMILY_ID = "fid";
 
     private final JwtProperties jwtProperties;
     private final SecretKey secretKey;
@@ -48,18 +49,27 @@ public class JwtProvider {
 
 
     // refreshtoken 생성 메소드
-    public String generateRefreshToken(Long userId){
-        Date now = new Date();
-        Date expiration = new Date(now.getTime() + jwtProperties.refreshTokenValidity());
-
+    // jti/만료시각을 밖에서 받는 이유: 유예 시간 내 재요청 시 같은 jti·같은 만료시각으로 다시 서명해야 함
+    public String generateRefreshToken(Long userId, String familyId, String jti, Date expiration){
         return Jwts.builder()
                 .subject(String.valueOf(userId))
-                .id(UUID.randomUUID().toString())
+                .id(jti)
                 .claim(TOKEN_TYPE, REFRESH)
-                .issuedAt(now)
+                .claim(FAMILY_ID, familyId)
+                .issuedAt(new Date())
                 .expiration(expiration)
                 .signWith(secretKey)
                 .compact();
+    }
+
+    // 새 로그인 세션의 만료 시각 (지금 + refreshToken 유효기간)
+    public Date newRefreshTokenExpiration() {
+        return new Date(System.currentTimeMillis() + jwtProperties.refreshTokenValidity());
+    }
+
+    // refreshToken의 세션 식별자 (fid가 없는 기존 토큰은 null)
+    public String getFamilyId(Claims claims) {
+        return claims.get(FAMILY_ID, String.class);
     }
 
     // 클레임에서 userId 추출

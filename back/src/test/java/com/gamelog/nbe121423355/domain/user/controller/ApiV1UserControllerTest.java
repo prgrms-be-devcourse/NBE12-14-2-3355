@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -196,18 +197,53 @@ class ApiV1UserControllerTest {
         saveUser("test@test.com", "nickname", "password123");
         Cookie refreshTokenCookie = loginAndGetRefreshTokenCookie();
 
-        mockMvc.perform(post("/api/v1/users/refresh")
+        MvcResult result = mockMvc.perform(post("/api/v1/users/refresh")
                         .cookie(refreshTokenCookie))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.resultCode").value("200-2"))
-                .andExpect(jsonPath("$.data.accessToken").isNotEmpty());
+                .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
+                .andReturn();
+
+        // Rotation: 교체된 refreshToken이 HttpOnly 쿠키로 다시 내려옴
+        Cookie rotatedCookie = result.getResponse().getCookie("refreshToken");
+        assertThat(rotatedCookie).isNotNull();
+        assertThat(rotatedCookie.isHttpOnly()).isTrue();
+        assertThat(rotatedCookie.getMaxAge()).isPositive();
+        assertThat(rotatedCookie.getValue()).isNotEqualTo(refreshTokenCookie.getValue());
+    }
+
+    @Test
+    @DisplayName("비밀번호 변경 성공 - 현재 기기용 새 refreshToken 쿠키가 내려오고, 그 쿠키로 재발급 가능")
+    void changePassword_success_setsNewRefreshTokenCookie() throws Exception {
+        User user = saveUser("test@test.com", "nickname", "password123");
+        Cookie oldCookie = loginAndGetRefreshTokenCookie();
+
+        MvcResult result = mockMvc.perform(patch("/api/v1/users/me/password")
+                        .header("Authorization", "Bearer " + accessTokenFor(user))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"currentPassword": "password123", "newPassword": "newPassword123"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resultCode").value("200-14"))
+                .andReturn();
+
+        Cookie newCookie = result.getResponse().getCookie("refreshToken");
+        assertThat(newCookie).isNotNull();
+        assertThat(newCookie.getMaxAge()).isPositive();
+
+        mockMvc.perform(post("/api/v1/users/refresh").cookie(newCookie))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/users/refresh").cookie(oldCookie))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
     @DisplayName("토큰 재발급 실패 - RefreshToken DB에 없는 토큰(로그인을 거치지 않고 직접 생성한 토큰)")
     void refresh_fail_tokenNotInDb() throws Exception {
         User user = saveUser("test@test.com", "nickname", "password123");
-        String refreshToken = jwtProvider.generateRefreshToken(user.getId());
+        String refreshToken = jwtProvider.generateRefreshToken(user.getId(), UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(), jwtProvider.newRefreshTokenExpiration());
 
         mockMvc.perform(post("/api/v1/users/refresh")
                         .cookie(new Cookie("refreshToken", refreshToken)))

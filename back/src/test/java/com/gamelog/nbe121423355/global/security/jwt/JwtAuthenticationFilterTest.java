@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -110,11 +111,17 @@ class JwtAuthenticationFilterTest {
         User user = saveUser("autorefresh-test@test.com", "nickname", "password123");
         Cookie refreshTokenCookie = loginAndGetRefreshTokenCookie();
 
-        mockMvc.perform(get("/api/v1/users/me")
+        MvcResult result = mockMvc.perform(get("/api/v1/users/me")
                         .header("Authorization", "Bearer " + expiredAccessToken(user.getId(), user.getRole()))
                         .cookie(refreshTokenCookie))
                 .andExpect(status().isOk())
-                .andExpect(header().exists("New-Access-Token"));
+                .andExpect(header().exists("New-Access-Token"))
+                .andReturn();
+
+        // Rotation: 자동 재발급 시에도 교체된 refreshToken이 Set-Cookie로 내려옴
+        Cookie rotatedCookie = result.getResponse().getCookie("refreshToken");
+        assertThat(rotatedCookie).isNotNull();
+        assertThat(rotatedCookie.getValue()).isNotEqualTo(refreshTokenCookie.getValue());
     }
 
     @Test
@@ -132,7 +139,8 @@ class JwtAuthenticationFilterTest {
     @DisplayName("accessToken 만료 + refreshToken이 DB에 없음(로그인 거치지 않고 직접 생성한 토큰) → 재발급 안 되고 401")
     void autoReissue_fail_refreshTokenNotInDb() throws Exception {
         User user = saveUser("autorefresh-test@test.com", "nickname", "password123");
-        String refreshToken = jwtProvider.generateRefreshToken(user.getId());
+        String refreshToken = jwtProvider.generateRefreshToken(user.getId(), UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(), jwtProvider.newRefreshTokenExpiration());
 
         mockMvc.perform(get("/api/v1/users/me")
                         .header("Authorization", "Bearer " + expiredAccessToken(user.getId(), user.getRole()))

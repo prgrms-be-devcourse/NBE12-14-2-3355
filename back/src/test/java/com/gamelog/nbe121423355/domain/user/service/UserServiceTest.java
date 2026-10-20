@@ -3,7 +3,6 @@ package com.gamelog.nbe121423355.domain.user.service;
 import com.gamelog.nbe121423355.domain.user.dto.ChangePasswordRequestDto;
 import com.gamelog.nbe121423355.domain.user.dto.LoginRequestDto;
 import com.gamelog.nbe121423355.domain.user.dto.SignupRequestDto;
-import com.gamelog.nbe121423355.domain.user.dto.TokenResponseDto;
 import com.gamelog.nbe121423355.domain.user.dto.UpdateProfileRequestDto;
 import com.gamelog.nbe121423355.domain.user.dto.UserDto;
 import com.gamelog.nbe121423355.domain.user.entity.User;
@@ -21,6 +20,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -56,6 +57,11 @@ class UserServiceTest {
         return userRepository.save(
                 new User(nickname, email, passwordEncoder.encode(rawPassword))
         );
+    }
+
+    // refreshToken의 로그인 세션(family) ID
+    private String familyIdOf(String refreshToken) {
+        return jwtProvider.getFamilyId(jwtProvider.parseClaims(refreshToken));
     }
 
     @Test
@@ -150,10 +156,10 @@ class UserServiceTest {
         LoginRequestDto loginRequestDto = new LoginRequestDto("test@test.com", "password123");
         UserService.LoginResult loginResult = userService.login(loginRequestDto);
 
-        TokenResponseDto tokenResponseDto = userService.refresh(loginResult.refreshToken());
+        TokenReissueService.ReissueResult result = userService.refresh(loginResult.refreshToken());
 
-        assertThat(tokenResponseDto.accessToken()).isNotBlank();
-        assertThat(jwtProvider.getUserId(tokenResponseDto.accessToken())).isEqualTo(loginResult.user().id());
+        assertThat(result.accessToken()).isNotBlank();
+        assertThat(jwtProvider.getUserId(result.accessToken())).isEqualTo(loginResult.user().id());
     }
 
     @Test
@@ -175,7 +181,8 @@ class UserServiceTest {
     @Test
     @DisplayName("토큰 재발급 실패 - RefreshToken DB에 없는 토큰(로그아웃되었거나 직접 생성된 토큰)")
     void refresh_fail_userNotFound() {
-        String refreshToken = jwtProvider.generateRefreshToken(999_999L);
+        String refreshToken = jwtProvider.generateRefreshToken(999_999L, UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(), jwtProvider.newRefreshTokenExpiration());
 
         assertThatThrownBy(() -> userService.refresh(refreshToken))
                 .isInstanceOf(ServiceException.class)
@@ -188,12 +195,12 @@ class UserServiceTest {
         saveUser("test@test.com", "nickname", "password123");
         LoginRequestDto loginRequestDto = new LoginRequestDto("test@test.com", "password123");
         UserService.LoginResult loginResult = userService.login(loginRequestDto);
-        String jti = jwtProvider.parseClaims(loginResult.refreshToken()).getId();
-        assertThat(refreshTokenRepository.findByTokenId(jti)).isPresent();
+        String familyId = familyIdOf(loginResult.refreshToken());
+        assertThat(refreshTokenRepository.findByFamilyId(familyId)).isPresent();
 
         userService.logout(loginResult.refreshToken());
 
-        assertThat(refreshTokenRepository.findByTokenId(jti)).isEmpty();
+        assertThat(refreshTokenRepository.findByFamilyId(familyId)).isEmpty();
         assertThatThrownBy(() -> userService.refresh(loginResult.refreshToken()))
                 .isInstanceOf(ServiceException.class)
                 .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("401-2"));
@@ -211,22 +218,36 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("비밀번호 변경 성공 - 모든 기기의 RefreshToken이 삭제되고, 기존 토큰으로 재발급 시도하면 실패함")
+    @DisplayName("비밀번호 변경 성공 - 기존 모든 기기의 세션이 삭제되고, 기존 토큰으로 재발급 시도하면 실패함")
     void changePassword_success_revokesAllRefreshTokens() {
         User user = saveUser("test@test.com", "nickname", "password123");
         LoginRequestDto loginRequestDto = new LoginRequestDto("test@test.com", "password123");
         UserService.LoginResult device1 = userService.login(loginRequestDto);
         UserService.LoginResult device2 = userService.login(loginRequestDto);
-        String jti1 = jwtProvider.parseClaims(device1.refreshToken()).getId();
-        String jti2 = jwtProvider.parseClaims(device2.refreshToken()).getId();
+        String familyId1 = familyIdOf(device1.refreshToken());
+        String familyId2 = familyIdOf(device2.refreshToken());
 
         userService.changePassword(user.getId(), new ChangePasswordRequestDto("password123", "newPassword123"));
 
-        assertThat(refreshTokenRepository.findByTokenId(jti1)).isEmpty();
-        assertThat(refreshTokenRepository.findByTokenId(jti2)).isEmpty();
+        assertThat(refreshTokenRepository.findByFamilyId(familyId1)).isEmpty();
+        assertThat(refreshTokenRepository.findByFamilyId(familyId2)).isEmpty();
         assertThatThrownBy(() -> userService.refresh(device1.refreshToken()))
                 .isInstanceOf(ServiceException.class)
                 .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("401-2"));
+    }
+
+    @Test
+    @DisplayName("비밀번호 변경 성공 - 현재 기기용 새 세션이 발급되어 그 refreshToken으로 재발급 가능")
+    void changePassword_success_issuesNewSessionForCurrentDevice() {
+        User user = saveUser("test@test.com", "nickname", "password123");
+        UserService.LoginResult current = userService.login(new LoginRequestDto("test@test.com", "password123"));
+
+        UserService.IssuedSession session = userService.changePassword(user.getId(), new ChangePasswordRequestDto("password123", "newPassword123"));
+
+        String newFamilyId = familyIdOf(session.refreshToken());
+        assertThat(newFamilyId).isNotEqualTo(familyIdOf(current.refreshToken()));
+        assertThat(refreshTokenRepository.findByFamilyId(newFamilyId)).isPresent();
+        assertThat(userService.refresh(session.refreshToken()).userId()).isEqualTo(user.getId());
     }
 
     @Test
@@ -249,11 +270,11 @@ class UserServiceTest {
         User user = saveUser("test@test.com", "nickname", "password123");
         saveUser("other@test.com", "other", "password123");
         UserService.LoginResult other = userService.login(new LoginRequestDto("other@test.com", "password123"));
-        String otherJti = jwtProvider.parseClaims(other.refreshToken()).getId();
+        String otherFamilyId = familyIdOf(other.refreshToken());
 
         userService.changePassword(user.getId(), new ChangePasswordRequestDto("password123", "newPassword123"));
 
-        assertThat(refreshTokenRepository.findByTokenId(otherJti)).isPresent();
+        assertThat(refreshTokenRepository.findByFamilyId(otherFamilyId)).isPresent();
     }
 
     @Test
@@ -275,8 +296,7 @@ class UserServiceTest {
         assertThatThrownBy(() -> userService.refresh(device1.refreshToken()))
                 .isInstanceOf(ServiceException.class)
                 .satisfies(e -> assertThat(((ServiceException) e).getResultCode()).isEqualTo("401-2"));
-        TokenResponseDto tokenResponseDto = userService.refresh(device2.refreshToken());
-        assertThat(tokenResponseDto.accessToken()).isNotBlank();
+        assertThat(userService.refresh(device2.refreshToken()).accessToken()).isNotBlank();
     }
 
     @Test
