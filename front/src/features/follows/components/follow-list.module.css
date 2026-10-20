@@ -1,5 +1,6 @@
 /* 팔로잉·팔로워 목록과 액션 버튼 */
 .panel{padding:28px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.panel.embedded{padding:0;background:transparent;border:0;border-radius:0}
 .heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .heading h2{font-size:22px;margin:0}
 .heading>span,.count{font-size:12px;color:var(--muted)}

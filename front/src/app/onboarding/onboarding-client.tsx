@@ -252,7 +252,7 @@ export default function OnboardingClient() {
               })}
             </div>
             <div className={styles.actions}>
-              <button type="button" className={styles.skip} onClick={skip} disabled={saving}>나중에 하기</button>
+              <button type="button" className={styles.skip} onClick={skip} disabled={saving}>건너뛰기</button>
               <button type="button" className={styles.complete} onClick={() => setStep(2)} disabled={saving}>다음</button>
             </div>
           </section>
@@ -339,7 +339,7 @@ export default function OnboardingClient() {
             <div className={styles.actions}>
               <button type="button" className={styles.back} onClick={() => setStep(1)} disabled={saving}>이전</button>
               <div className={styles.actionsRight}>
-                <button type="button" className={styles.skip} onClick={skip} disabled={saving}>나중에 하기</button>
+                <button type="button" className={styles.skip} onClick={skip} disabled={saving}>건너뛰기</button>
                 <button type="button" className={styles.complete} onClick={complete} disabled={saving}>{saving ? "저장 중…" : "완료"}</button>
               </div>
             </div>

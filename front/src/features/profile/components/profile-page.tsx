@@ -494,12 +494,19 @@ function FavoriteGames({
     useState<FavoriteGame[]>(favorites);
 
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const saveErrorDialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
-    setDraftFavorites(favorites);
-  }, [favorites]);
+    const dialog = saveErrorDialogRef.current;
+    if (saveError && dialog && !dialog.open) {
+      dialog.showModal();
+    }
+  }, [saveError]);
 
   async function handleSave() {
+    if (saving) return;
+    setSaveError("");
     try {
       setSaving(true);
 
@@ -508,6 +515,8 @@ function FavoriteGames({
       );
 
       setEditing(false);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "인생게임을 저장하지 못했습니다. 다시 시도해 주세요.");
     } finally {
       setSaving(false);
     }
@@ -645,6 +654,7 @@ function FavoriteGames({
                     styles.favoriteEditButton
                   }
                   onClick={() => {
+                    setSaveError("");
                     setDraftFavorites(favorites);
                     setEditing(true);
                   }}
@@ -660,6 +670,7 @@ function FavoriteGames({
                   <button
                     type="button"
                     onClick={() => {
+                      setSaveError("");
                       setDraftFavorites(favorites);
                       setEditing(false);
                     }}
@@ -761,6 +772,21 @@ function FavoriteGames({
           </div>
         )}
       </section>
+
+      <dialog
+        ref={saveErrorDialogRef}
+        className={styles.favoriteSaveErrorDialog}
+        role="alertdialog"
+        aria-labelledby="favorite-save-error-title"
+        aria-describedby="favorite-save-error-message"
+        onClose={() => setSaveError("")}
+      >
+        <h3 id="favorite-save-error-title">인생게임을 저장하지 못했어요</h3>
+        <p id="favorite-save-error-message">{saveError}</p>
+        <form method="dialog">
+          <button type="submit">확인</button>
+        </form>
+      </dialog>
 
       {editable && showAddModal && (
         <FavoriteGameSearchModal
@@ -1186,21 +1212,19 @@ function GenreDistribution({
     0,
   );
 
-  let accumulated = 0;
+  const gradient = total > 0
+    ? chartData
+        .map((genre, index) => {
+          const previousTotal = chartData
+            .slice(0, index)
+            .reduce((sum, item) => sum + item.ratio, 0);
+          const start = (previousTotal / total) * 100;
+          const end = ((previousTotal + genre.ratio) / total) * 100;
 
-  const gradient = chartData
-    .map((genre, index) => {
-      const start =
-        (accumulated / total) * 100;
-
-      accumulated += genre.ratio;
-
-      const end =
-        (accumulated / total) * 100;
-
-      return `${GENRE_COLORS[index % GENRE_COLORS.length]} ${start}% ${end}%`;
-    })
-    .join(", ");
+          return `${GENRE_COLORS[index % GENRE_COLORS.length]} ${start}% ${end}%`;
+        })
+        .join(", ")
+    : "";
 
   return (
     <section className={styles.genreSection}>
@@ -1208,7 +1232,7 @@ function GenreDistribution({
         <h3>장르 분포</h3>
       </div>
 
-      {!data.length ? (
+      {total <= 0 ? (
         <div className={styles.emptyBox}>
           아직 장르 데이터가 없습니다.
         </div>
@@ -1543,7 +1567,7 @@ export default function ProfilePage({ section = "profile", page = 0, userId }: {
                   accessToken={auth.accessToken ?? undefined}
                 />
               )}
-              {isFriends && targetUserId !== undefined && <FollowList userId={targetUserId} kind={section} page={page} basePath={userId ? `/profile/${userId}` : "/profile"} />}
+              {isFriends && targetUserId !== undefined && <FollowList embedded userId={targetUserId} kind={section} page={page} basePath={userId ? `/profile/${userId}` : "/profile"} />}
               {activeTab === "likes" && targetUserId !== undefined && <ProfileLikes key={targetUserId} userId={isMe ? undefined : userId} accessToken={auth.accessToken ?? undefined} />}
               <div hidden={activeTab !== "profile"}>
               <h2 className={styles.contentTitle}>게임 기록</h2>

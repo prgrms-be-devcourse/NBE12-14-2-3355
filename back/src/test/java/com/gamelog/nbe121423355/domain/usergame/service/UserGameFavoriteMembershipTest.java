@@ -14,6 +14,7 @@ import com.gamelog.nbe121423355.domain.usergame.repository.UserGameRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import com.gamelog.nbe121423355.global.exception.ServiceException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -124,7 +125,10 @@ class UserGameFavoriteMembershipTest {
         records.saveAndFlush(eligible);
         service.updateFavoriteGames(user.getId(), List.of(other.getId()));
         assertThatThrownBy(() -> service.updateFavoriteGames(user.getId(), List.of(game.getId())))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOfSatisfying(ServiceException.class, error -> {
+                    assertThat(error.getResultCode()).isEqualTo("400-11");
+                    assertThat(error.getMsg()).isEqualTo("라이브러리에 없는 게임이 포함되어 있습니다. 선택 목록을 확인해 주세요.");
+                });
         assertThat(favorites.findAllByUserIdOrderByDisplayOrderAsc(user.getId()))
                 .extracting(f -> f.getGame().getId()).containsExactly(other.getId());
     }
