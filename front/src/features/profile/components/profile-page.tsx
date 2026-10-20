@@ -504,10 +504,6 @@ function FavoriteGames({
     }
   }, [saveError]);
 
-  useEffect(() => {
-    setDraftFavorites(favorites);
-  }, [favorites]);
-
   async function handleSave() {
     if (saving) return;
     setSaveError("");
@@ -1216,21 +1212,19 @@ function GenreDistribution({
     0,
   );
 
-  let accumulated = 0;
+  const gradient = total > 0
+    ? chartData
+        .map((genre, index) => {
+          const previousTotal = chartData
+            .slice(0, index)
+            .reduce((sum, item) => sum + item.ratio, 0);
+          const start = (previousTotal / total) * 100;
+          const end = ((previousTotal + genre.ratio) / total) * 100;
 
-  const gradient = chartData
-    .map((genre, index) => {
-      const start =
-        (accumulated / total) * 100;
-
-      accumulated += genre.ratio;
-
-      const end =
-        (accumulated / total) * 100;
-
-      return `${GENRE_COLORS[index % GENRE_COLORS.length]} ${start}% ${end}%`;
-    })
-    .join(", ");
+          return `${GENRE_COLORS[index % GENRE_COLORS.length]} ${start}% ${end}%`;
+        })
+        .join(", ")
+    : "";
 
   return (
     <section className={styles.genreSection}>
@@ -1238,7 +1232,7 @@ function GenreDistribution({
         <h3>장르 분포</h3>
       </div>
 
-      {!data.length ? (
+      {total <= 0 ? (
         <div className={styles.emptyBox}>
           아직 장르 데이터가 없습니다.
         </div>
