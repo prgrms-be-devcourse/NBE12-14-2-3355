@@ -5,6 +5,7 @@ import com.gamelog.nbe121423355.domain.review.dto.request.ReviewSaveRequest;
 import com.gamelog.nbe121423355.domain.review.dto.response.DetailedReviewResponse;
 import com.gamelog.nbe121423355.domain.review.dto.response.ReviewPageResponse;
 import com.gamelog.nbe121423355.domain.review.dto.response.ReviewResponse;
+import com.gamelog.nbe121423355.domain.review.service.GameRecordReviewService;
 import com.gamelog.nbe121423355.domain.review.service.ReviewService;
 import com.gamelog.nbe121423355.global.dto.RsData;
 import com.gamelog.nbe121423355.global.security.SecurityUser;
@@ -34,15 +35,20 @@ import static org.springframework.data.domain.Sort.Direction.DESC;
 public class ReviewController {
 
     private final ReviewService reviewService;
+    private final GameRecordReviewService gameRecordReviewService;
 
     @PutMapping("/games/{gameId}/reviews")
-    @Operation(summary = "게임 기록 및 리뷰 저장", description = "내 게임 기록과 리뷰를 한 번에 생성하거나 수정합니다.", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "게임 기록 및 리뷰 통합 저장",
+            description = "편집 화면에서 게임 기록과 리뷰를 함께 저장합니다. 상태 또는 리뷰만 변경할 때는 각각의 전용 API를 사용합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     public RsData<DetailedReviewResponse> saveDetailedReview(
             @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser securityUser,
             @PathVariable Long gameId,
             @Valid @RequestBody DetailedReviewSaveRequest request
     ) {
-        DetailedReviewResponse response = reviewService.saveDetailedReview(
+        DetailedReviewResponse response = gameRecordReviewService.saveDetailedReview(
                 securityUser.getId(),
                 gameId,
                 request
@@ -70,7 +76,7 @@ public class ReviewController {
             @PathVariable Long userGameId,
             @Valid @RequestBody ReviewSaveRequest request
     ) {
-        ReviewResponse response = reviewService.saveReview(securityUser.getId(), userGameId, request);
+        ReviewResponse response = gameRecordReviewService.saveReview(securityUser.getId(), userGameId, request);
         return new RsData<>("200-6", "리뷰가 저장되었습니다.", response);
     }
 
@@ -108,7 +114,7 @@ public class ReviewController {
             @PathVariable Long reviewId,
             @Valid @RequestBody ReviewSaveRequest request
     ) {
-        ReviewResponse response = reviewService.updateReview(securityUser.getId(), reviewId, request);
+        ReviewResponse response = gameRecordReviewService.updateReview(securityUser.getId(), reviewId, request);
         return new RsData<>("200-4", "리뷰가 수정되었습니다.", response);
     }
 
@@ -118,7 +124,7 @@ public class ReviewController {
             @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser securityUser,
             @PathVariable Long reviewId
     ) {
-        reviewService.deleteReview(securityUser.getId(), reviewId);
+        gameRecordReviewService.deleteReview(securityUser.getId(), reviewId);
         return new RsData<>("200-5", "리뷰가 삭제되었습니다.");
     }
 }

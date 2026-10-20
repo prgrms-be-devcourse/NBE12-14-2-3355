@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 @Transactional
 class ReviewLibraryLifecycleTest {
-    @Autowired ReviewService reviewService;
+    @Autowired GameRecordReviewService gameRecordReviewService;
     @Autowired ReviewReportService reports;
     @Autowired UserGameService library;
     @Autowired UserRepository users;
@@ -70,7 +70,7 @@ class ReviewLibraryLifecycleTest {
     @DisplayName("별점만 또는 본문만 작성해도 라이브러리에 포함되고 응답에도 반영된다")
     void reviewOnlyIsIncluded(boolean ratingOnly) {
         var request = ratingOnly ? rating() : new ReviewSaveRequest(null, "본문만 작성", false);
-        var response = reviewService.saveDetailedReview(userId, gameId, new DetailedReviewSaveRequest(record(false), request));
+        var response = gameRecordReviewService.saveDetailedReview(userId, gameId, new DetailedReviewSaveRequest(record(false), request));
         assertThat(response.userGame().inLibrary()).isTrue();
         assertThat(reload().isInLibrary()).isTrue();
         assertThat(library.getUserGameList(userId, new UserGameSearchRequest()).getTotalElements()).isEqualTo(1);
@@ -79,16 +79,16 @@ class ReviewLibraryLifecycleTest {
     @Test
     @DisplayName("리뷰만 있는 게임의 리뷰를 삭제하면 라이브러리와 인생게임에서 제외되고 재작성 시 복원된다")
     void deleteAndRestoreReviewOnly() {
-        var response = reviewService.saveDetailedReview(userId, gameId, new DetailedReviewSaveRequest(record(false), rating()));
+        var response = gameRecordReviewService.saveDetailedReview(userId, gameId, new DetailedReviewSaveRequest(record(false), rating()));
         Long recordId = response.userGame().id(), reviewId = response.review().reviewId();
         library.updateFavoriteGames(userId, List.of(gameId));
-        reviewService.deleteReview(userId, reviewId);
+        gameRecordReviewService.deleteReview(userId, reviewId);
         UserGame saved = reload();
         assertThat(saved.isInLibrary()).isFalse();
         assertThat(saved.isLiked()).isTrue();
         assertThat(favorites.findAllByUserIdOrderByDisplayOrderAsc(userId)).isEmpty();
         assertThat(reviews.findById(reviewId).orElseThrow().getRating()).isEqualByComparingTo("4.0");
-        var restored = reviewService.saveReview(userId, recordId, rating());
+        var restored = gameRecordReviewService.saveReview(userId, recordId, rating());
         assertThat(restored.reviewId()).isEqualTo(reviewId);
         assertThat(reload().isInLibrary()).isTrue();
         assertThat(favorites.findAllByUserIdOrderByDisplayOrderAsc(userId)).isEmpty();
@@ -98,7 +98,7 @@ class ReviewLibraryLifecycleTest {
     @ValueSource(booleans = {true, false})
     @DisplayName("신고 승인으로 리뷰가 숨겨지면 다른 플레이 기록의 유무에 따라 라이브러리와 인생게임을 갱신한다")
     void hidingReviewRecalculatesMembership(boolean playing) {
-        var response = reviewService.saveDetailedReview(userId, gameId, new DetailedReviewSaveRequest(record(playing), rating()));
+        var response = gameRecordReviewService.saveDetailedReview(userId, gameId, new DetailedReviewSaveRequest(record(playing), rating()));
         library.updateFavoriteGames(userId, List.of(gameId));
         Long reporterId = users.save(new User("reporter", "reporter@example.com", "password")).getId();
         var report = reports.createReport(reporterId, response.review().reviewId(), new ReviewReportCreateRequest("신고 테스트"));
@@ -112,7 +112,7 @@ class ReviewLibraryLifecycleTest {
     @ValueSource(strings = {"played", "playing", "wishlist", "backlog", "liked", "record"})
     @DisplayName("게임 상태나 기록을 지워도 활성 리뷰가 남으면 라이브러리와 인생게임이 유지된다")
     void activeReviewSurvivesGameRecordChanges(String route) {
-        reviewService.saveDetailedReview(userId, gameId, new DetailedReviewSaveRequest(record(true), rating()));
+        gameRecordReviewService.saveDetailedReview(userId, gameId, new DetailedReviewSaveRequest(record(true), rating()));
         library.updateFavoriteGames(userId, List.of(gameId));
         library.changePlaying(userId, gameId, false);
         switch (route) {
@@ -132,7 +132,7 @@ class ReviewLibraryLifecycleTest {
     void replacingRecordsWithNewReviewKeepsFavorite() {
         library.addOrUpdateGameToLibrary(userId, gameId, record(true));
         library.updateFavoriteGames(userId, List.of(gameId));
-        var response = reviewService.saveDetailedReview(userId, gameId, new DetailedReviewSaveRequest(record(false), rating()));
+        var response = gameRecordReviewService.saveDetailedReview(userId, gameId, new DetailedReviewSaveRequest(record(false), rating()));
         assertThat(response.userGame().inLibrary()).isTrue();
         assertThat(reload().isInLibrary()).isTrue();
         assertThat(favorites.findAllByUserIdOrderByDisplayOrderAsc(userId)).hasSize(1);
@@ -141,9 +141,9 @@ class ReviewLibraryLifecycleTest {
     @Test
     @DisplayName("빈 리뷰 요청은 기존 활성 리뷰를 유지하고 게임 기록을 비워도 인생게임을 유지한다")
     void emptyReviewRequestPreservesReviewAndFavorite() {
-        reviewService.saveDetailedReview(userId, gameId, new DetailedReviewSaveRequest(record(true), rating()));
+        gameRecordReviewService.saveDetailedReview(userId, gameId, new DetailedReviewSaveRequest(record(true), rating()));
         library.updateFavoriteGames(userId, List.of(gameId));
-        var response = reviewService.saveDetailedReview(userId, gameId,
+        var response = gameRecordReviewService.saveDetailedReview(userId, gameId,
                 new DetailedReviewSaveRequest(record(false), new ReviewSaveRequest(null, " ", false)));
         assertThat(response.review().rating()).isEqualByComparingTo("4.0");
         assertThat(reload().isInLibrary()).isTrue();
@@ -153,8 +153,8 @@ class ReviewLibraryLifecycleTest {
     @Test
     @DisplayName("별점을 지우고 본문만 남겨도 라이브러리에는 유지된다")
     void editingRatingToContentOnlyKeepsLibrary() {
-        var response = reviewService.saveDetailedReview(userId, gameId, new DetailedReviewSaveRequest(record(false), rating()));
-        reviewService.updateReview(userId, response.review().reviewId(), new ReviewSaveRequest(null, "본문 유지", false));
+        var response = gameRecordReviewService.saveDetailedReview(userId, gameId, new DetailedReviewSaveRequest(record(false), rating()));
+        gameRecordReviewService.updateReview(userId, response.review().reviewId(), new ReviewSaveRequest(null, "본문 유지", false));
         assertThat(reload().isInLibrary()).isTrue();
         assertThat(reviews.findById(response.review().reviewId()).orElseThrow().getRating()).isNull();
     }
