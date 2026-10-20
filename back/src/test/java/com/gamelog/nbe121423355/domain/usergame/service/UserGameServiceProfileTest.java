@@ -57,7 +57,7 @@ public class UserGameServiceProfileTest {
     @DisplayName("비로그인 사용자는 공개 프로필을 조회하고 팔로우 상태는 조회하지 않는다")
     void anonymousProfile() {
         // given: 조회 대상 사용자가 존재
-        when(userRepository.existsById(2L)).thenReturn(true);
+        when(userRepository.existsByIdAndDeletedAtIsNull(2L)).thenReturn(true);
         // when: 비로그인 상태로 조회
         UserProfileResponse result = userGameService.profileTab(2L, null);
         // then: 대상 사용자와 공개 조회 상태를 반환
@@ -71,7 +71,7 @@ public class UserGameServiceProfileTest {
     @DisplayName("다른 사용자 프로필에서 현재 사용자의 팔로우 여부를 반환한다")
     void otherUserProfile() {
         // given: 현재 사용자가 조회 대상을 팔로우
-        when(userRepository.existsById(2L)).thenReturn(true);
+        when(userRepository.existsByIdAndDeletedAtIsNull(2L)).thenReturn(true);
         when(userFollowRepository.existsByFollowerIdAndFolloweeId(1L, 2L)).thenReturn(true);
         // when: 다른 사용자의 프로필을 조회
         UserProfileResponse result = userGameService.profileTab(2L, 1L);
@@ -116,7 +116,7 @@ public class UserGameServiceProfileTest {
     void t21() {
         // given: 프로필 통계 데이터를 준비
         Long userId = 1L;
-        when(userRepository.existsById(userId)).thenReturn(true);
+        when(userRepository.existsByIdAndDeletedAtIsNull(userId)).thenReturn(true);
 
         UserGame game1 = mock(UserGame.class);
         UserGame game2 = mock(UserGame.class);
@@ -214,7 +214,7 @@ public class UserGameServiceProfileTest {
     void t22() {
         // given: 프로필 통계 데이터를 준비
         Long userId = 1L;
-        when(userRepository.existsById(userId)).thenReturn(true);
+        when(userRepository.existsByIdAndDeletedAtIsNull(userId)).thenReturn(true);
 
         UserGame game1 = mock(UserGame.class);
         UserGame game2 = mock(UserGame.class);
@@ -262,7 +262,7 @@ public class UserGameServiceProfileTest {
     void t23() {
         // given: 프로필 통계 데이터를 준비
         Long userId = 1L;
-        when(userRepository.existsById(userId)).thenReturn(true);
+        when(userRepository.existsByIdAndDeletedAtIsNull(userId)).thenReturn(true);
 
         UserGame game1 = mock(UserGame.class);
         UserGame game2 = mock(UserGame.class);
@@ -300,7 +300,7 @@ public class UserGameServiceProfileTest {
     void t24() {
         // given: 프로필 통계 데이터를 준비
         Long userId = 1L;
-        when(userRepository.existsById(userId)).thenReturn(true);
+        when(userRepository.existsByIdAndDeletedAtIsNull(userId)).thenReturn(true);
 
         UserGame game1 = mock(UserGame.class);
         UserGame game2 = mock(UserGame.class);
@@ -335,7 +335,7 @@ public class UserGameServiceProfileTest {
     void t26() {
         // given: 프로필 통계 데이터를 준비
         Long userId = 1L;
-        when(userRepository.existsById(userId)).thenReturn(true);
+        when(userRepository.existsByIdAndDeletedAtIsNull(userId)).thenReturn(true);
 
         List<BigDecimal> ratings = List.of(
                 BigDecimal.valueOf(3.0),
@@ -372,7 +372,7 @@ public class UserGameServiceProfileTest {
     void t27() {
         // given: 프로필 통계 데이터를 준비
         Long userId = 1L;
-        when(userRepository.existsById(userId)).thenReturn(true);
+        when(userRepository.existsByIdAndDeletedAtIsNull(userId)).thenReturn(true);
 
         List<BigDecimal> ratings = List.of(
                 BigDecimal.valueOf(4.0),
@@ -403,7 +403,7 @@ public class UserGameServiceProfileTest {
     void t28() {
         // given: 프로필 통계 데이터를 준비
         Long userId = 1L;
-        when(userRepository.existsById(userId)).thenReturn(true);
+        when(userRepository.existsByIdAndDeletedAtIsNull(userId)).thenReturn(true);
 
         UserGame game1 = mock(UserGame.class);
         UserGame game2 = mock(UserGame.class);
@@ -443,7 +443,7 @@ public class UserGameServiceProfileTest {
     void t29() {
         // given: 프로필 통계 데이터를 준비
         Long userId = 1L;
-        when(userRepository.existsById(userId)).thenReturn(true);
+        when(userRepository.existsByIdAndDeletedAtIsNull(userId)).thenReturn(true);
 
         mockProfileRepositories(
                 userId,
@@ -484,7 +484,7 @@ public class UserGameServiceProfileTest {
     void t30() {
         // given: 프로필 통계 데이터를 준비
         Long userId = 1L;
-        when(userRepository.existsById(userId)).thenReturn(true);
+        when(userRepository.existsByIdAndDeletedAtIsNull(userId)).thenReturn(true);
 
         mockProfileRepositories(
                 userId,

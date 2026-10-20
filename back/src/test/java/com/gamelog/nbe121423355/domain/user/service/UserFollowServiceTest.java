@@ -57,8 +57,8 @@ class UserFollowServiceTest {
         User follower = mockUser(LOGIN_USER_ID, "로그인 사용자", null);
         User followee = mockUser(TARGET_USER_ID, "팔로우 대상", "profile.png");
         UserFollowId followId = new UserFollowId(LOGIN_USER_ID, TARGET_USER_ID);
-        when(userRepository.findById(LOGIN_USER_ID)).thenReturn(Optional.of(follower));
-        when(userRepository.findById(TARGET_USER_ID)).thenReturn(Optional.of(followee));
+        when(userRepository.findByIdAndDeletedAtIsNull(LOGIN_USER_ID)).thenReturn(Optional.of(follower));
+        when(userRepository.findByIdAndDeletedAtIsNull(TARGET_USER_ID)).thenReturn(Optional.of(followee));
         when(userFollowRepository.existsById(followId)).thenReturn(false);
 
         // when: 대상 사용자를 팔로우
@@ -81,8 +81,8 @@ class UserFollowServiceTest {
         User follower = mockUser(LOGIN_USER_ID, "로그인 사용자", null);
         User followee = mockUser(TARGET_USER_ID, "팔로우 대상", null);
         UserFollowId followId = new UserFollowId(LOGIN_USER_ID, TARGET_USER_ID);
-        when(userRepository.findById(LOGIN_USER_ID)).thenReturn(Optional.of(follower));
-        when(userRepository.findById(TARGET_USER_ID)).thenReturn(Optional.of(followee));
+        when(userRepository.findByIdAndDeletedAtIsNull(LOGIN_USER_ID)).thenReturn(Optional.of(follower));
+        when(userRepository.findByIdAndDeletedAtIsNull(TARGET_USER_ID)).thenReturn(Optional.of(followee));
         when(userFollowRepository.existsById(followId)).thenReturn(true);
 
         // when: 동일한 사용자를 다시 팔로우
@@ -100,7 +100,7 @@ class UserFollowServiceTest {
         // given: 팔로우 중인 사용자 관계를 준비
         User targetUser = mockUser(TARGET_USER_ID, "팔로우 대상", null);
         UserFollowId followId = new UserFollowId(LOGIN_USER_ID, TARGET_USER_ID);
-        when(userRepository.findById(TARGET_USER_ID)).thenReturn(Optional.of(targetUser));
+        when(userRepository.findByIdAndDeletedAtIsNull(TARGET_USER_ID)).thenReturn(Optional.of(targetUser));
         when(userFollowRepository.existsById(followId)).thenReturn(true);
 
         // when: 대상 사용자를 언팔로우
@@ -119,7 +119,7 @@ class UserFollowServiceTest {
         // given: 존재하지만 팔로우하지 않은 사용자를 준비
         User targetUser = mockUser(TARGET_USER_ID, "팔로우 대상", null);
         UserFollowId followId = new UserFollowId(LOGIN_USER_ID, TARGET_USER_ID);
-        when(userRepository.findById(TARGET_USER_ID)).thenReturn(Optional.of(targetUser));
+        when(userRepository.findByIdAndDeletedAtIsNull(TARGET_USER_ID)).thenReturn(Optional.of(targetUser));
         when(userFollowRepository.existsById(followId)).thenReturn(false);
 
         // when: 대상 사용자를 언팔로우
@@ -152,8 +152,8 @@ class UserFollowServiceTest {
     void followRejectsMissingTargetUser() {
         // given: 로그인 사용자만 존재하도록 준비
         User follower = mockUser(LOGIN_USER_ID, "로그인 사용자", null);
-        when(userRepository.findById(LOGIN_USER_ID)).thenReturn(Optional.of(follower));
-        when(userRepository.findById(TARGET_USER_ID)).thenReturn(Optional.empty());
+        when(userRepository.findByIdAndDeletedAtIsNull(LOGIN_USER_ID)).thenReturn(Optional.of(follower));
+        when(userRepository.findByIdAndDeletedAtIsNull(TARGET_USER_ID)).thenReturn(Optional.empty());
 
         // when: 존재하지 않는 사용자를 팔로우하는 기능을 실행
         // then: 사용자 조회 예외가 발생하고 팔로우 관계를 저장하지 않는지 확인
@@ -176,7 +176,7 @@ class UserFollowServiceTest {
         UserFollow userFollow = org.mockito.Mockito.mock(UserFollow.class);
         LocalDateTime followedAt = LocalDateTime.of(2026, 9, 22, 10, 30);
         PageRequest requestedPage = PageRequest.of(0, 10);
-        when(userRepository.findById(TARGET_USER_ID)).thenReturn(Optional.of(targetUser));
+        when(userRepository.findByIdAndDeletedAtIsNull(TARGET_USER_ID)).thenReturn(Optional.of(targetUser));
         when(userFollow.getFollowee()).thenReturn(displayedUser);
         when(userFollow.getCreatedDate()).thenReturn(followedAt);
         when(userFollowRepository.findAllByFollower_Id(
@@ -221,7 +221,7 @@ class UserFollowServiceTest {
         User displayedUser = mockUser(LIST_USER_ID, "목록 사용자", null);
         UserFollow userFollow = org.mockito.Mockito.mock(UserFollow.class);
         PageRequest requestedPage = PageRequest.of(0, 10);
-        when(userRepository.findById(TARGET_USER_ID)).thenReturn(Optional.of(targetUser));
+        when(userRepository.findByIdAndDeletedAtIsNull(TARGET_USER_ID)).thenReturn(Optional.of(targetUser));
         when(userFollow.getFollower()).thenReturn(displayedUser);
         when(userFollowRepository.findAllByFollowee_Id(
                 org.mockito.ArgumentMatchers.eq(TARGET_USER_ID),
@@ -255,7 +255,7 @@ class UserFollowServiceTest {
         User loginUser = mockUser(LOGIN_USER_ID, "로그인 사용자", null);
         UserFollow userFollow = org.mockito.Mockito.mock(UserFollow.class);
         PageRequest requestedPage = PageRequest.of(0, 10);
-        when(userRepository.findById(TARGET_USER_ID)).thenReturn(Optional.of(targetUser));
+        when(userRepository.findByIdAndDeletedAtIsNull(TARGET_USER_ID)).thenReturn(Optional.of(targetUser));
         when(userFollow.getFollowee()).thenReturn(loginUser);
         when(userFollowRepository.findAllByFollower_Id(
                 org.mockito.ArgumentMatchers.eq(TARGET_USER_ID),
@@ -288,7 +288,7 @@ class UserFollowServiceTest {
         User displayedUser = mockUser(LIST_USER_ID, "목록 사용자", null);
         UserFollow userFollow = org.mockito.Mockito.mock(UserFollow.class);
         PageRequest requestedPage = PageRequest.of(0, 10);
-        when(userRepository.findById(TARGET_USER_ID)).thenReturn(Optional.of(targetUser));
+        when(userRepository.findByIdAndDeletedAtIsNull(TARGET_USER_ID)).thenReturn(Optional.of(targetUser));
         when(userFollow.getFollowee()).thenReturn(displayedUser);
         when(userFollowRepository.findAllByFollower_Id(
                 org.mockito.ArgumentMatchers.eq(TARGET_USER_ID),
@@ -318,7 +318,7 @@ class UserFollowServiceTest {
         User other = mockUser(LIST_USER_ID, "user1", null);
         User followed = mockUser(TARGET_USER_ID, "user2", "profile.png");
         Pageable pageable = PageRequest.of(1, 2, Sort.by("nickname", "id"));
-        when(userRepository.findByNicknameContainingIgnoreCaseAndIdNot("user", LOGIN_USER_ID, pageable))
+        when(userRepository.findByNicknameContainingIgnoreCaseAndIdNotAndDeletedAtIsNull("user", LOGIN_USER_ID, pageable))
                 .thenReturn(new PageImpl<>(List.of(other, followed), pageable, 7));
         when(userFollowRepository.findFolloweeIdsByFollowerIdAndFolloweeIds(
                 LOGIN_USER_ID, List.of(LIST_USER_ID, TARGET_USER_ID)))

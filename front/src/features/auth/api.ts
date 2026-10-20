@@ -98,6 +98,10 @@ export function changePassword(body: ChangePasswordRequestBody, accessToken: str
   return request<null>("me/password", { method: "PATCH", body: JSON.stringify(body), accessToken });
 }
 
+export function withdraw(body: { password: string }, accessToken: string) {
+  return request<null>("me", { method: "DELETE", body: JSON.stringify(body), accessToken });
+}
+
 export async function uploadProfileImage(file: File, accessToken: string): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
