@@ -11,7 +11,7 @@ import UserSearch from "./user-search";
 import ImageWithFallback from "@/components/ui/image-with-fallback";
 import styles from "./follow-list.module.css";
 
-type Props = { userId: number; kind: FollowKind; page: number; basePath: string };
+type Props = { userId: number; kind: FollowKind; page: number; basePath: string; embedded?: boolean };
 
 function Avatar({ user }: { user: FollowUserResponseDto }) {
   return <ImageWithFallback
@@ -32,7 +32,7 @@ function FriendsContent(props: Props) {
   return <FollowListContent key={`${props.userId}/${props.kind}/${props.page}/${auth.user?.id ?? "guest"}/${keyword}`} {...props} keyword={keyword} />;
 }
 
-function FollowListContent({ userId, kind, page, basePath, keyword }: Props & { keyword: string }) {
+function FollowListContent({ userId, kind, page, basePath, keyword, embedded = false }: Props & { keyword: string }) {
   const auth = useAuth();
   const router = useRouter();
   const [data, setData] = useState<FollowPageResponseDto | null>(null);
@@ -105,7 +105,7 @@ function FollowListContent({ userId, kind, page, basePath, keyword }: Props & { 
   const firstVisiblePage = Math.max(0, Math.min(page - 2, (data?.totalPages ?? 1) - 5));
   const pages = Array.from({ length: Math.min(5, data?.totalPages ?? 0) }, (_, index) => firstVisiblePage + index);
 
-  return <section className={styles.panel} aria-label="Friends">
+  return <section className={`${styles.panel}${embedded ? ` ${styles.embedded}` : ""}`} aria-label="Friends">
     <div className={styles.heading}><h2>{keyword ? "유저 검색 결과" : "Friends"}</h2><span>{keyword ? "닉네임 순" : "최신 팔로우 순"}</span></div>
     {auth.status === "authenticated" && auth.accessToken && <UserSearch
       value={draft} accessToken={auth.accessToken} onChange={setDraft}

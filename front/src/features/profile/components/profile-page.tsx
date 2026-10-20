@@ -1543,7 +1543,7 @@ export default function ProfilePage({ section = "profile", page = 0, userId }: {
                   accessToken={auth.accessToken ?? undefined}
                 />
               )}
-              {isFriends && targetUserId !== undefined && <FollowList userId={targetUserId} kind={section} page={page} basePath={userId ? `/profile/${userId}` : "/profile"} />}
+              {isFriends && targetUserId !== undefined && <FollowList embedded userId={targetUserId} kind={section} page={page} basePath={userId ? `/profile/${userId}` : "/profile"} />}
               {activeTab === "likes" && targetUserId !== undefined && <ProfileLikes key={targetUserId} userId={isMe ? undefined : userId} accessToken={auth.accessToken ?? undefined} />}
               <div hidden={activeTab !== "profile"}>
               <h2 className={styles.contentTitle}>게임 기록</h2>
