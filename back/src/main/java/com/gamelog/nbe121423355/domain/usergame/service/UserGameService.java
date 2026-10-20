@@ -243,6 +243,13 @@ public class UserGameService {
         }
     }
 
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void synchronizeLibraryState(Long userGameId) {
+        UserGame userGame = userGameRepository.findById(userGameId)
+                .orElseThrow(() -> new ServiceException("404-2", "게임 기록을 찾을 수 없습니다."));
+        synchronizeLibraryState(userGame);
+    }
+
     private void validatePlayDates(UserGameReqBody reqBody) {
         LocalDate today = LocalDate.now();
 
