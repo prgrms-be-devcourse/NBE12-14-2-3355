@@ -75,7 +75,8 @@ class UserGameReviewStatisticsTest {
         review(hidden).hideByAdmin();
         library.synchronizeLibraryState(hidden);
         UserGame deleted = save(null, "30.0", "5.0", null);
-        gameRecordReviewService.deleteReview(userId, review(deleted).getId());
+        Review deletedReview = review(deleted);
+        gameRecordReviewService.deleteReview(userId, deletedReview.getId(), deletedReview.getVersion());
         UserGame completed = save(PlayStatus.COMPLETED, null, null, null);
         UserGame wish = save(null, null, null, null);
         library.changeWishlist(userId, wish.getGame().getId(), true);
@@ -102,7 +103,8 @@ class UserGameReviewStatisticsTest {
     void ratingSortKeepsGamesWithInvisibleOrMissingReviews() {
         UserGame active = save(null, null, "2.0", null);
         UserGame deleted = save(null, "10", "5.0", null);
-        gameRecordReviewService.deleteReview(userId, review(deleted).getId());
+        Review deletedReview = review(deleted);
+        gameRecordReviewService.deleteReview(userId, deletedReview.getId(), deletedReview.getVersion());
         UserGame hidden = save(null, "5", "4.0", null);
         review(hidden).hideByAdmin();
         library.synchronizeLibraryState(hidden);
@@ -147,7 +149,12 @@ class UserGameReviewStatisticsTest {
     @DisplayName("활성 별점을 본문만 있는 리뷰로 바꾸면 라이브러리는 유지하고 플레이 통계에서는 제외한다")
     void contentOnlyAfterEditIsNotPlayed() {
         UserGame rated = save(null, null, "4.0", null);
-        gameRecordReviewService.updateReview(userId, review(rated).getId(), new ReviewSaveRequest(null, "본문만 남김", false));
+        Review ratedReview = review(rated);
+        gameRecordReviewService.updateReview(
+                userId,
+                ratedReview.getId(),
+                new ReviewSaveRequest(ratedReview.getVersion(), null, "본문만 남김", false)
+        );
         em.flush();
         em.clear();
         var profile = library.profileTab(userId, userId);

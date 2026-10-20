@@ -4,6 +4,7 @@ import com.gamelog.nbe121423355.global.dto.RsData;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.ErrorResponse;
@@ -101,6 +102,16 @@ public class GlobalExceptionHandler {
         return new RsData<>(
                 e.getResultCode(),
                 e.getMsg()
+        );
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    @ResponseBody
+    public RsData<Void> handleException(ObjectOptimisticLockingFailureException e) {
+        log.warn("동시에 변경된 데이터로 인한 낙관적 락 충돌", e);
+        return new RsData<>(
+                "409-6",
+                "다른 곳에서 리뷰가 변경되었습니다. 최신 내용을 다시 불러온 후 시도해 주세요."
         );
     }
 

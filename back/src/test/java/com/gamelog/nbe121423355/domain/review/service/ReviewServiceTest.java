@@ -106,6 +106,7 @@ class ReviewServiceTest {
         prepareOwnedUserGame();
         Review existingReview = prepareReview();
         when(existingReview.isActive()).thenReturn(true);
+        when(existingReview.getVersion()).thenReturn(2L);
         when(userGameRepository.findById(USER_GAME_ID)).thenReturn(Optional.of(userGame));
         when(reviewRepository.findIncludingDeletedByUserGameId(USER_GAME_ID))
                 .thenReturn(Optional.of(existingReview));
@@ -113,7 +114,7 @@ class ReviewServiceTest {
         reviewService.saveReview(
                 USER_ID,
                 USER_GAME_ID,
-                new ReviewSaveRequest(new BigDecimal("3.5"), "수정된 리뷰", true)
+                new ReviewSaveRequest(2L, new BigDecimal("3.5"), "수정된 리뷰", true)
         );
 
         verify(existingReview).edit(new BigDecimal("3.5"), "수정된 리뷰", true);
@@ -210,12 +211,13 @@ class ReviewServiceTest {
     void updateOwnReview() {
         prepareOwnedUserGame();
         Review review = prepareReview();
+        when(review.getVersion()).thenReturn(4L);
         when(reviewRepository.findActiveById(10L)).thenReturn(Optional.of(review));
 
         reviewService.updateReview(
                 USER_ID,
                 10L,
-                new ReviewSaveRequest(null, "글만 남긴 리뷰", true)
+                new ReviewSaveRequest(4L, null, "글만 남긴 리뷰", true)
         );
 
         verify(review).edit(null, "글만 남긴 리뷰", true);
@@ -250,9 +252,10 @@ class ReviewServiceTest {
         when(userGame.getUser()).thenReturn(user);
         when(user.getId()).thenReturn(USER_ID);
         Review review = prepareReview();
+        when(review.getVersion()).thenReturn(1L);
         when(reviewRepository.findActiveById(10L)).thenReturn(Optional.of(review));
 
-        reviewService.deleteReview(USER_ID, 10L);
+        reviewService.deleteReview(USER_ID, 10L, 1L);
 
         verify(review).deleteByUser();
         verify(reviewRepository).flush();
@@ -300,7 +303,7 @@ class ReviewServiceTest {
         Review review = prepareReview();
         when(reviewRepository.findActiveById(10L)).thenReturn(Optional.of(review));
 
-        assertThatThrownBy(() -> reviewService.deleteReview(USER_ID, 10L))
+        assertThatThrownBy(() -> reviewService.deleteReview(USER_ID, 10L, 0L))
                 .isInstanceOf(ServiceException.class)
                 .satisfies(exception -> assertThat(
                         ((ServiceException) exception).getResultCode()
@@ -308,6 +311,69 @@ class ReviewServiceTest {
 
         verify(review, never()).deleteByUser();
         verify(reviewRepository, never()).delete(any(Review.class));
+    }
+
+    @DisplayName("오래된 버전으로 리뷰를 수정하면 충돌 오류가 발생한다")
+    @Test
+    void rejectStaleReviewUpdate() {
+        prepareOwnedUserGame();
+        Review review = prepareReview();
+        when(review.getVersion()).thenReturn(5L);
+        when(reviewRepository.findActiveById(10L)).thenReturn(Optional.of(review));
+
+        assertThatThrownBy(() -> reviewService.updateReview(
+                USER_ID,
+                10L,
+                new ReviewSaveRequest(4L, new BigDecimal("3.0"), "오래된 내용", false)
+        ))
+                .isInstanceOf(ServiceException.class)
+                .satisfies(exception -> assertThat(
+                        ((ServiceException) exception).getResultCode()
+                ).isEqualTo("409-6"));
+
+        verify(review, never()).edit(any(), any(), anyBoolean());
+        verify(reviewRepository, never()).flush();
+    }
+
+    @DisplayName("버전 없이 기존 리뷰를 저장하면 충돌 오류가 발생한다")
+    @Test
+    void rejectExistingReviewSaveWithoutVersion() {
+        prepareOwnedUserGame();
+        Review review = org.mockito.Mockito.mock(Review.class);
+        when(review.isActive()).thenReturn(true);
+        when(reviewRepository.findIncludingDeletedByUserGameId(USER_GAME_ID))
+                .thenReturn(Optional.of(review));
+        when(userGameRepository.findById(USER_GAME_ID)).thenReturn(Optional.of(userGame));
+
+        assertThatThrownBy(() -> reviewService.saveReview(
+                USER_ID,
+                USER_GAME_ID,
+                new ReviewSaveRequest(new BigDecimal("4.0"), "버전 없는 수정", false)
+        ))
+                .isInstanceOf(ServiceException.class)
+                .satisfies(exception -> assertThat(
+                        ((ServiceException) exception).getResultCode()
+                ).isEqualTo("409-6"));
+
+        verify(review, never()).edit(any(), any(), anyBoolean());
+    }
+
+    @DisplayName("오래된 버전으로 리뷰를 삭제하면 충돌 오류가 발생한다")
+    @Test
+    void rejectStaleReviewDelete() {
+        prepareOwnedUserGame();
+        Review review = prepareReview();
+        when(review.getVersion()).thenReturn(3L);
+        when(reviewRepository.findActiveById(10L)).thenReturn(Optional.of(review));
+
+        assertThatThrownBy(() -> reviewService.deleteReview(USER_ID, 10L, 2L))
+                .isInstanceOf(ServiceException.class)
+                .satisfies(exception -> assertThat(
+                        ((ServiceException) exception).getResultCode()
+                ).isEqualTo("409-6"));
+
+        verify(review, never()).deleteByUser();
+        verify(reviewRepository, never()).flush();
     }
 
     @DisplayName("게임별 리뷰 목록을 페이지 정보와 함께 조회한다")

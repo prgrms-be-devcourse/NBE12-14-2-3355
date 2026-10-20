@@ -82,7 +82,7 @@ class ReviewLibraryLifecycleTest {
         var response = gameRecordReviewService.saveDetailedReview(userId, gameId, new DetailedReviewSaveRequest(record(false), rating()));
         Long recordId = response.userGame().id(), reviewId = response.review().reviewId();
         library.updateFavoriteGames(userId, List.of(gameId));
-        gameRecordReviewService.deleteReview(userId, reviewId);
+        gameRecordReviewService.deleteReview(userId, reviewId, response.review().version());
         UserGame saved = reload();
         assertThat(saved.isInLibrary()).isFalse();
         assertThat(saved.isLiked()).isTrue();
@@ -154,7 +154,11 @@ class ReviewLibraryLifecycleTest {
     @DisplayName("별점을 지우고 본문만 남겨도 라이브러리에는 유지된다")
     void editingRatingToContentOnlyKeepsLibrary() {
         var response = gameRecordReviewService.saveDetailedReview(userId, gameId, new DetailedReviewSaveRequest(record(false), rating()));
-        gameRecordReviewService.updateReview(userId, response.review().reviewId(), new ReviewSaveRequest(null, "본문 유지", false));
+        gameRecordReviewService.updateReview(
+                userId,
+                response.review().reviewId(),
+                new ReviewSaveRequest(response.review().version(), null, "본문 유지", false)
+        );
         assertThat(reload().isInLibrary()).isTrue();
         assertThat(reviews.findById(response.review().reviewId()).orElseThrow().getRating()).isNull();
     }

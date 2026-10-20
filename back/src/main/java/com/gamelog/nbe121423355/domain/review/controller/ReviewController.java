@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import static org.springframework.data.domain.Sort.Direction.DESC;
@@ -122,9 +123,11 @@ public class ReviewController {
     @Operation(summary = "리뷰 삭제", description = "본인이 작성한 리뷰를 소프트 삭제합니다.", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<Void> deleteReview(
             @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser securityUser,
-            @PathVariable Long reviewId
+            @PathVariable Long reviewId,
+            @Parameter(description = "조회 시 받은 리뷰 버전", example = "0")
+            @RequestParam(required = false) Long version
     ) {
-        gameRecordReviewService.deleteReview(securityUser.getId(), reviewId);
+        gameRecordReviewService.deleteReview(securityUser.getId(), reviewId, version);
         return new RsData<>("200-5", "리뷰가 삭제되었습니다.");
     }
 }

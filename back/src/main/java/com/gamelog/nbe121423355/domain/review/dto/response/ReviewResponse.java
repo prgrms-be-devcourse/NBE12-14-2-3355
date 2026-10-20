@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 
 public record ReviewResponse(
         Long reviewId,
+        Long version,
         Long userGameId,
         Long gameId,
         String gameTitle,
@@ -37,6 +38,7 @@ public record ReviewResponse(
     public static ReviewResponse from(Review review, long likeCount) {
         return new ReviewResponse(
                 review.getId(),
+                review.getVersion(),
                 review.getUserGame().getId(),
                 review.getUserGame().getGame().getId(),
                 review.getUserGame().getGame().getTitle(),

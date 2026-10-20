@@ -6,6 +6,7 @@ export type ApiResponse<T> = {
 
 export type Review = {
   reviewId: number;
+  version: number;
   userGameId: number;
   gameId: number;
   gameTitle: string;
@@ -138,5 +139,5 @@ export type DetailedReviewSaveBody = {
     completedAt: string | null;
     lastPlayedAt: string | null;
   };
-  review: ReviewDraft | null;
+  review: (ReviewDraft & { version: number | null }) | null;
 };

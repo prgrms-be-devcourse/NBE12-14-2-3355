@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent, type MouseEvent as ReactMouseEvent } from "react";
 import { deleteReview, getMyDetailedReview, ReviewApiError, saveDetailedReview } from "@/features/reviews/api";
+import { changeBooleanStatus, changePlayStatus, LibraryApiError } from "@/features/library/api";
 import type {
   DetailedReview,
   DetailedReviewSaveBody,
@@ -36,6 +37,15 @@ type FormState = {
   rating: string;
   content: string;
   spoiler: boolean;
+};
+
+type QuickStatusKey = "playStatus" | "isPlaying" | "isBacklog" | "isWishlist" | "isLiked";
+
+const booleanStatusEndpoint: Record<Exclude<QuickStatusKey, "playStatus">, "playing" | "backlog" | "wishlist" | "liked"> = {
+  isPlaying: "playing",
+  isBacklog: "backlog",
+  isWishlist: "wishlist",
+  isLiked: "liked",
 };
 
 const playStatusOptions: Array<{ value: PlayStatus; label: string; description: string }> = [
@@ -113,7 +123,7 @@ function validateDates(form: FormState) {
   return null;
 }
 
-function toRequest(form: FormState): DetailedReviewSaveBody {
+function toRequest(form: FormState, reviewVersion: number | null): DetailedReviewSaveBody {
   const hasReview = form.rating !== "" || form.content.trim() !== "";
   return {
     userGame: {
@@ -131,6 +141,7 @@ function toRequest(form: FormState): DetailedReviewSaveBody {
       lastPlayedAt: form.lastPlayedAt ? `${form.lastPlayedAt}T00:00:00` : null,
     },
     review: hasReview ? {
+      version: reviewVersion,
       rating: optionalNumber(form.rating),
       content: form.content.trim(),
       spoiler: form.spoiler,
@@ -214,7 +225,23 @@ export default function MyGameLog({
     return event.clientX - bounds.left < bounds.width / 2 ? score - 0.5 : score;
   }
 
-  async function saveQuickChange(nextForm: FormState, successMessage: string) {
+  async function reloadLatestAfterConflict(reason: unknown) {
+    if (!(reason instanceof ReviewApiError) || reason.resultCode !== "409-6" || !accessToken) {
+      return false;
+    }
+
+    try {
+      const latest = await getMyDetailedReview(gameId, accessToken);
+      setDetail(latest);
+      setForm(initialForm(latest));
+      setEditing(false);
+    } catch {
+      // 원래 충돌 메시지를 유지하고 다음 화면 진입 시 다시 조회합니다.
+    }
+    return true;
+  }
+
+  async function saveQuickReviewChange(nextForm: FormState, successMessage: string) {
     if (!accessToken || !tokenVerified) {
       setMessage("게임 기록을 작성하려면 로그인이 필요합니다.");
       onLoginRequired?.();
@@ -225,7 +252,11 @@ export default function MyGameLog({
     setQuickSaving(true);
     setMessage("");
     try {
-      const saved = await saveDetailedReview(gameId, toRequest(nextForm), accessToken);
+      const saved = await saveDetailedReview(
+        gameId,
+        toRequest(nextForm, detail?.review?.version ?? null),
+        accessToken,
+      );
       setDetail(saved);
       setForm(initialForm(saved));
       setMessage(successMessage);
@@ -234,16 +265,55 @@ export default function MyGameLog({
       if (reason instanceof ReviewApiError && reason.status === 401) {
         setTokenVerified(false);
       }
-      setForm(initialForm(detail));
+      const refreshed = await reloadLatestAfterConflict(reason);
+      if (!refreshed) setForm(initialForm(detail));
       setMessage(reason instanceof Error ? reason.message : "게임 기록을 저장하지 못했습니다.");
     } finally {
       setQuickSaving(false);
     }
   }
 
-  function quickUpdate<K extends keyof FormState>(key: K, value: FormState[K], successMessage: string) {
+  function quickReviewUpdate<K extends "rating">(key: K, value: FormState[K], successMessage: string) {
     const nextForm = { ...form, [key]: value };
-    void saveQuickChange(nextForm, successMessage);
+    void saveQuickReviewChange(nextForm, successMessage);
+  }
+
+  async function quickStatusUpdate<K extends QuickStatusKey>(
+    key: K,
+    value: FormState[K],
+    successMessage: string,
+  ) {
+    if (!accessToken || !tokenVerified || quickSaving) return;
+
+    const nextForm = { ...form, [key]: value };
+    setForm(nextForm);
+    setQuickSaving(true);
+    setMessage("");
+    try {
+      if (key === "playStatus") {
+        await changePlayStatus(gameId, value ? (value as PlayStatus) : null, accessToken);
+      } else {
+        await changeBooleanStatus(
+          gameId,
+          booleanStatusEndpoint[key as Exclude<QuickStatusKey, "playStatus">],
+          Boolean(value),
+          accessToken,
+        );
+      }
+      const latest = await getMyDetailedReview(gameId, accessToken);
+      setDetail(latest);
+      setForm(initialForm(latest));
+      setMessage(successMessage);
+      onSaved?.();
+    } catch (reason) {
+      if ((reason instanceof ReviewApiError || reason instanceof LibraryApiError) && reason.status === 401) {
+        setTokenVerified(false);
+      }
+      setForm(initialForm(detail));
+      setMessage(reason instanceof Error ? reason.message : "게임 상태를 저장하지 못했습니다.");
+    } finally {
+      setQuickSaving(false);
+    }
   }
 
   function openQuickPlayStatusMenu() {
@@ -269,7 +339,7 @@ export default function MyGameLog({
     const successMessage = playStatus
       ? `${playStatusLabels[playStatus]} 상태로 저장했습니다.`
       : "플레이 상태를 해제했습니다.";
-    quickUpdate("playStatus", playStatus, successMessage);
+    void quickStatusUpdate("playStatus", playStatus, successMessage);
   }
 
   async function submit(event: FormEvent) {
@@ -284,7 +354,11 @@ export default function MyGameLog({
     setSaving(true);
     setMessage("");
     try {
-      const saved = await saveDetailedReview(gameId, toRequest(form), accessToken);
+      const saved = await saveDetailedReview(
+        gameId,
+        toRequest(form, detail?.review?.version ?? null),
+        accessToken,
+      );
       setDetail(saved);
       setForm(initialForm(saved));
       setEditing(false);
@@ -294,6 +368,7 @@ export default function MyGameLog({
       if (reason instanceof ReviewApiError && reason.status === 401) {
         setTokenVerified(false);
       }
+      await reloadLatestAfterConflict(reason);
       setMessage(reason instanceof Error ? reason.message : "게임 기록을 저장하지 못했습니다.");
     } finally {
       setSaving(false);
@@ -301,14 +376,15 @@ export default function MyGameLog({
   }
 
   async function removeExistingReview() {
-    const reviewId = detail?.review?.reviewId;
-    if (!reviewId || !accessToken || !tokenVerified || deleting) return;
+    const review = detail?.review;
+    if (!review || !accessToken || !tokenVerified || deleting) return;
+    const { reviewId, version } = review;
     if (!window.confirm("작성한 리뷰를 삭제할까요? 게임 기록은 그대로 유지됩니다.")) return;
 
     setDeleting(true);
     setMessage("");
     try {
-      await deleteReview(reviewId, accessToken);
+      await deleteReview(reviewId, version, accessToken);
       const nextDetail = detail ? { ...detail, review: null } : null;
       setDetail(nextDetail);
       setForm(initialForm(nextDetail));
@@ -319,6 +395,7 @@ export default function MyGameLog({
       if (reason instanceof ReviewApiError && reason.status === 401) {
         setTokenVerified(false);
       }
+      await reloadLatestAfterConflict(reason);
       setMessage(reason instanceof Error ? reason.message : "리뷰를 삭제하지 못했습니다.");
     } finally {
       setDeleting(false);
@@ -350,7 +427,7 @@ export default function MyGameLog({
           onMouseMove={(event) => setQuickRatingHover(ratingFromPointer(event, score))}
           onClick={(event) => {
             const nextRating = ratingFromPointer(event, score);
-            quickUpdate("rating", String(nextRating), `별점 ${nextRating.toFixed(1)}점을 저장했습니다.`);
+            quickReviewUpdate("rating", String(nextRating), `별점 ${nextRating.toFixed(1)}점을 저장했습니다.`);
           }}
           disabled={loading || quickSaving}
           aria-label={`${score - 0.5}점 또는 ${score}점 바로 저장`}
@@ -359,16 +436,16 @@ export default function MyGameLog({
       {isAuthenticated && form.rating && <button
         type="button"
         className={styles.quickRatingClear}
-        onClick={() => quickUpdate("rating", "", "별점을 삭제했습니다.")}
+        onClick={() => quickReviewUpdate("rating", "", "별점을 삭제했습니다.")}
         disabled={loading || quickSaving}
         aria-label="별점 삭제"
       >↺</button>}
     </div>
     <div className={styles.quickStatuses} aria-label="게임 상태 빠른 설정">
       <button type="button" className={quickPlayStatus ? styles.quickSelected : undefined} data-play-status={quickPlayStatus || undefined} disabled={loading || quickSaving} onClick={openQuickPlayStatusMenu}><span aria-hidden="true">🎮</span>{quickPlayStatus ? playStatusLabels[quickPlayStatus] : "플레이함"}</button>
-      <button type="button" className={quickIsPlaying ? styles.quickSelected : undefined} disabled={loading || quickSaving} onClick={() => quickUpdate("isPlaying", !quickIsPlaying, quickIsPlaying ? "플레이 중 상태를 해제했습니다." : "플레이 중으로 저장했습니다.")}><span aria-hidden="true">▶</span>플레이 중</button>
-      <button type="button" className={quickIsBacklog ? styles.quickSelected : undefined} disabled={loading || quickSaving} onClick={() => quickUpdate("isBacklog", !quickIsBacklog, quickIsBacklog ? "플레이 예정에서 해제했습니다." : "플레이 예정으로 저장했습니다.")}><span aria-hidden="true">▦</span>플레이 예정</button>
-      <button type="button" className={quickIsWishlist ? styles.quickSelected : undefined} disabled={loading || quickSaving} onClick={() => quickUpdate("isWishlist", !quickIsWishlist, quickIsWishlist ? "위시리스트에서 해제했습니다." : "위시리스트에 저장했습니다.")}><span aria-hidden="true">★</span>위시리스트</button>
+      <button type="button" className={quickIsPlaying ? styles.quickSelected : undefined} disabled={loading || quickSaving} onClick={() => void quickStatusUpdate("isPlaying", !quickIsPlaying, quickIsPlaying ? "플레이 중 상태를 해제했습니다." : "플레이 중으로 저장했습니다.")}><span aria-hidden="true">▶</span>플레이 중</button>
+      <button type="button" className={quickIsBacklog ? styles.quickSelected : undefined} disabled={loading || quickSaving} onClick={() => void quickStatusUpdate("isBacklog", !quickIsBacklog, quickIsBacklog ? "플레이 예정에서 해제했습니다." : "플레이 예정으로 저장했습니다.")}><span aria-hidden="true">▦</span>플레이 예정</button>
+      <button type="button" className={quickIsWishlist ? styles.quickSelected : undefined} disabled={loading || quickSaving} onClick={() => void quickStatusUpdate("isWishlist", !quickIsWishlist, quickIsWishlist ? "위시리스트에서 해제했습니다." : "위시리스트에 저장했습니다.")}><span aria-hidden="true">★</span>위시리스트</button>
     </div>
     <div className={styles.quickLikeRow}>
       <span>좋아하는 게임</span>
@@ -378,7 +455,7 @@ export default function MyGameLog({
         disabled={loading || quickSaving}
         aria-label={quickIsLiked ? "좋아하는 게임에서 해제" : "좋아하는 게임으로 표시"}
         aria-pressed={quickIsLiked}
-        onClick={() => quickUpdate(
+        onClick={() => void quickStatusUpdate(
           "isLiked",
           !quickIsLiked,
           quickIsLiked ? "좋아하는 게임에서 해제했습니다." : "좋아하는 게임으로 저장했습니다.",

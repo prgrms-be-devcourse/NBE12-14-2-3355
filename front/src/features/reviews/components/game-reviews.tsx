@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { createReviewReport, deleteReview, getLikeStatus, getMyDetailedReview, setReviewLike } from "@/features/reviews/api";
+import { createReviewReport, deleteReview, getLikeStatus, getMyDetailedReview, ReviewApiError, setReviewLike } from "@/features/reviews/api";
 import type { DetailedReview } from "@/features/reviews/types";
 import type { Review, ReviewPage } from "@/features/reviews/list-types";
 import styles from "./game-reviews.module.css";
@@ -232,15 +232,16 @@ export default function GameReviews({
   }, [accessToken, gameId, page, refreshKey, sort, retry]);
 
   async function removeMyReview() {
-    const reviewId = myDetail?.review?.reviewId;
-    if (!accessToken || !reviewId || deletingReviewId != null) return;
+    const review = myDetail?.review;
+    if (!accessToken || !review || deletingReviewId != null) return;
+    const { reviewId, version } = review;
     if (!window.confirm("작성한 리뷰를 삭제할까요? 게임 기록은 그대로 유지됩니다.")) return;
 
     setDeletingReviewId(reviewId);
     setActionError("");
     setActionNotice("");
     try {
-      await deleteReview(reviewId, accessToken);
+      await deleteReview(reviewId, version, accessToken);
       setMyDetail((current) => current ? { ...current, review: null } : null);
       setResult((current) => current ? {
         ...current,
@@ -251,6 +252,9 @@ export default function GameReviews({
       setActionNotice("리뷰를 삭제했습니다. 게임 기록은 그대로 유지됩니다.");
       onDeleted?.();
     } catch (reason) {
+      if (reason instanceof ReviewApiError && reason.resultCode === "409-6") {
+        setRetry((value) => value + 1);
+      }
       setActionError(reason instanceof Error ? reason.message : "리뷰를 삭제하지 못했습니다.");
     } finally {
       setDeletingReviewId(null);
