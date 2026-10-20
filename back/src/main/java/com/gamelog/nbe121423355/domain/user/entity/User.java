@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
@@ -32,6 +33,9 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private boolean onboardingCompleted=false;
     private String role;
+
+    // 회원탈퇴 시각 (null이면 활성 회원)
+    private LocalDateTime deletedAt;
 
     public void completeOnboarding() {
         this.onboardingCompleted = true;
@@ -60,5 +64,18 @@ public class User extends BaseEntity {
 
     public void promoteToAdmin() {
         this.role = "ADMIN";
+    }
+
+    public void withdraw(String encodedRandomPassword) {
+        this.email = "deleted_" + id + "@deleted.local";
+        this.nickname = "탈퇴한사용자_" + id;
+        this.password = Objects.requireNonNull(encodedRandomPassword, "password");
+        this.profileImageUrl = null;
+        this.bio = null;
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
     }
 }

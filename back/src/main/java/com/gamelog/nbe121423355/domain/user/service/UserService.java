@@ -108,9 +108,9 @@ public class UserService {
         return new UserDto(user);
     }
 
-    //유저 정보 가져오기
+    //유저 정보 가져오기 (탈퇴한 유저는 존재하지 않는 유저로 취급)
     public PublicUserDto getUser(Long userId) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ServiceException(
                         "404-1",
                         "존재하지 않는 유저입니다."
@@ -182,7 +182,8 @@ public class UserService {
 
     @Transactional
     public UserDto promoteToAdmin(Long userId) {
-        User user = userRepository.findById(userId)
+        // 탈퇴한 유저는 권한 변경 대상에서 제외
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ServiceException("404-1", "존재하지 않는 유저 입니다."));
         user.promoteToAdmin();
         return new UserDto(user);

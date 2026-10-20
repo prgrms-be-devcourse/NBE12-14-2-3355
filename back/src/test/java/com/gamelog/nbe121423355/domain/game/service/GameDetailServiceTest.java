@@ -385,16 +385,7 @@ class GameDetailServiceTest {
             boolean backlog,
             boolean wishlist
     ) {
-        User user = new User(
-                null,
-                email,
-                "password",
-                nickname,
-                null,
-                null,
-                false,
-                "USER"
-        );
+        User user = new User(nickname, email, "password");
 
         entityManager.persist(user);
 
