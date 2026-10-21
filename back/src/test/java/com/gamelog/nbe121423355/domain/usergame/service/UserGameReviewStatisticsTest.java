@@ -1,5 +1,7 @@
 package com.gamelog.nbe121423355.domain.usergame.service;
 
+import com.gamelog.nbe121423355.support.MySqlIntegrationTest;
+
 import com.gamelog.nbe121423355.domain.game.dto.IgdbGameResponse;
 import com.gamelog.nbe121423355.domain.game.entity.*;
 import com.gamelog.nbe121423355.domain.game.repository.GameRepository;
@@ -20,14 +22,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-@ActiveProfiles("test")
+@MySqlIntegrationTest
 @Transactional
 class UserGameReviewStatisticsTest {
     @Autowired UserGameService library;

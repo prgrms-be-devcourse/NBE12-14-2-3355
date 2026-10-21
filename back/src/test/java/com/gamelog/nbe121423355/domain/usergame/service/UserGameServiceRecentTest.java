@@ -38,7 +38,7 @@ class UserGameServiceRecentTest {
     private ReviewRepository reviewRepository;
 
     @Test
-    @DisplayName("최근 플레이한 게임을 조회한다")
+    @DisplayName("최근 플레이한 게임을 최대 5개 요청하고 조회 결과를 반환한다")
     void getRecentPlayedGames() {
         Long userId = 1L;
 
@@ -72,29 +72,12 @@ class UserGameServiceRecentTest {
         assertThat(result.get(0).gameId()).isEqualTo(1L);
         assertThat(result.get(1).gameId()).isEqualTo(2L);
 
-        verify(userGameRepository)
-                .findRecentPlayedGames(
-                        eq(userId),
-                        any(Pageable.class)
-                );
-    }
-
-    @Test
-    @DisplayName("최근 플레이 게임은 최대 5개를 요청한다")
-    void getRecentPlayedGamesLimit() {
-        given(userGameRepository.findRecentPlayedGames(
-                eq(1L),
-                any(Pageable.class)
-        )).willReturn(List.of());
-
-        userGameService.getRecentPlayedGames(1L);
-
         ArgumentCaptor<Pageable> captor =
                 ArgumentCaptor.forClass(Pageable.class);
 
         verify(userGameRepository)
                 .findRecentPlayedGames(
-                        eq(1L),
+                        eq(userId),
                         captor.capture()
                 );
 
@@ -105,7 +88,7 @@ class UserGameServiceRecentTest {
     }
 
     @Test
-    @DisplayName("최근 작성한 리뷰를 조회한다")
+    @DisplayName("최근 작성한 리뷰를 최대 3개 요청하고 조회 결과를 반환한다")
     void getRecentReviews() {
         Long userId = 1L;
 
@@ -149,24 +132,13 @@ class UserGameServiceRecentTest {
         assertThat(result.get(0).gameId()).isEqualTo(10L);
         assertThat(result.get(1).reviewId()).isEqualTo(2L);
         assertThat(result.get(1).gameId()).isEqualTo(20L);
-    }
-
-    @Test
-    @DisplayName("최근 리뷰는 최대 3개를 요청한다")
-    void getRecentReviewsLimit() {
-        given(reviewRepository.findRecentReviews(
-                eq(1L),
-                any(Pageable.class)
-        )).willReturn(List.of());
-
-        userGameService.getRecentReviews(1L);
 
         ArgumentCaptor<Pageable> captor =
                 ArgumentCaptor.forClass(Pageable.class);
 
         verify(reviewRepository)
                 .findRecentReviews(
-                        eq(1L),
+                        eq(userId),
                         captor.capture()
                 );
 
