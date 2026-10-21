@@ -30,7 +30,7 @@ export default async function ProfileSectionPage({ params, searchParams }: {
       />
     );
   }
-  if (segments.length === 1 && (first === "following" || first === "followers" || first === "games" || first === "reviews" || first === "likes")) {
+  if (segments.length === 1 && (first === "following" || first === "followers" || first === "games" || first === "reviews" || first === "likes" || first === "settings")) {
     return <ProfilePage section={first as ProfileSection} page={page} />;
   }
   if (

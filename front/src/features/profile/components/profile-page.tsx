@@ -8,6 +8,7 @@ import LibraryGames from "./library-games";
 import ProfileReviews from "./profile-reviews";
 import ProfileLikes from "./profile-likes";
 import ProfileTabs, { type ProfileSection } from "./profile-tabs";
+import AccountSettings from "./account-settings";
 import ProfileHeader from "./profile-header";
 import ProfileLayout from "./profile-layout";
 import FollowList from "@/features/follows/components/follow-list";
@@ -1555,7 +1556,7 @@ export default function ProfilePage({ section = "profile", page = 0, userId }: {
         {canViewProfile ? (
           <>
             {headerUser && ( <ProfileHeader key={headerUser.id} user={headerUser} accessToken={auth.accessToken ?? undefined} editable={isMe} onSaved={isMe? auth.setUser: undefined} />)}
-            <ProfileTabs section={section} userId = {userId}/>
+            <ProfileTabs section={section} userId = {userId} showSettings={isMe}/>
             <div className={styles.content}>
               {activeTab !== "profile" && profileError && <p role="alert" className={styles.errorBox}>{profileError}</p>}
               <div hidden={activeTab !== "games"}>{activeTab === "games" && <LibraryGames key={targetUserId} userId={isMe ? undefined : userId} accessToken={auth.accessToken ?? undefined} />}</div>
@@ -1569,6 +1570,7 @@ export default function ProfilePage({ section = "profile", page = 0, userId }: {
               )}
               {isFriends && targetUserId !== undefined && <FollowList embedded userId={targetUserId} kind={section} page={page} basePath={userId ? `/profile/${userId}` : "/profile"} />}
               {activeTab === "likes" && targetUserId !== undefined && <ProfileLikes key={targetUserId} userId={isMe ? undefined : userId} accessToken={auth.accessToken ?? undefined} />}
+              {activeTab === "settings" && isMe && auth.user && <AccountSettings user={auth.user} accessToken={auth.accessToken ?? ""} />}
               <div hidden={activeTab !== "profile"}>
               <h2 className={styles.contentTitle}>게임 기록</h2>
 
