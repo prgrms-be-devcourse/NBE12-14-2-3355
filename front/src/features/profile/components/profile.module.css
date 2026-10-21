@@ -1757,3 +1757,7 @@
       display: none;
     }
   }
+.settingsRow{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0;border-bottom:1px solid var(--line)}
+.settingsLabel{margin:0;font-size:14px;font-weight:600;color:var(--text)}
+.settingsValue{margin:4px 0 0;font-size:13px;color:var(--muted)}
+.settingsHint{margin:4px 0 0;font-size:12px;color:var(--muted)}
