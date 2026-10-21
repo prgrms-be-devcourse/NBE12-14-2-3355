@@ -7,6 +7,10 @@ spring:
     multipart:
       max-file-size: 5MB
       max-request-size: 5MB
+recommendation:
+  related:
+    precomputed-enabled: ${RECOMMENDATION_RELATED_PRECOMPUTED_ENABLED:false}
+
 # ===== jwt 토큰 =====
 jwt:
   secret: 2yFvv+amd1bJKWDQ/picSaxbhQ+VKrMIjFqIqbBqib8=

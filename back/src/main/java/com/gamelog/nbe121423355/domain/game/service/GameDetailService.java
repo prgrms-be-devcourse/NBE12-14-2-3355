@@ -9,6 +9,8 @@ import com.gamelog.nbe121423355.domain.game.repository.projection.GameRatingStat
 import com.gamelog.nbe121423355.domain.game.repository.projection.GameStatusStatisticsProjection;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,11 @@ public class GameDetailService {
     private final GameSeriesGameRepository gameSeriesGameRepository;
     private final GameStatisticsRepository gameStatisticsRepository;
     private final RelatedGameQueryRepository relatedGameQueryRepository;
+    private final RelatedGameCandidateRepository relatedGameCandidateRepository;
+    private final RelatedGameCalculationRepository relatedGameCalculationRepository;
+
+    @Value("${recommendation.related.precomputed-enabled:false}")
+    private boolean relatedPrecomputedEnabled;
 
     // 게임 기본 정보와 연결 정보, 상태·평점·리뷰·좋아요 통계를 조회해 상세 응답으로 반환
     public GameDetailResponse getGameDetail(Long gameId) {
@@ -120,7 +127,11 @@ public class GameDetailService {
             );
         }
 
-        List<RelatedGameResponse> games = relatedGameQueryRepository.findRelatedGames(gameId);
+        // 최초 계산 완료 여부로 판단하므로 재갱신 실패·진행 중에도 이전 정상 결과를 사용한다.
+        List<RelatedGameResponse> games = relatedPrecomputedEnabled
+                && relatedGameCalculationRepository.existsByGameIdAndLastSuccessAtIsNotNull(gameId)
+                ? relatedGameCandidateRepository.findStoredRelatedGames(gameId, PageRequest.of(0, 5))
+                : relatedGameQueryRepository.findRelatedGames(gameId);
         if (games.isEmpty()) {
             return games;
         }
