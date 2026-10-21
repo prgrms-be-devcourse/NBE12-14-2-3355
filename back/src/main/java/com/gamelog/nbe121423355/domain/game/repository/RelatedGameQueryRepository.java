@@ -1,9 +1,11 @@
 package com.gamelog.nbe121423355.domain.game.repository;
 
 import com.gamelog.nbe121423355.domain.game.dto.RelatedGameResponse;
+import com.gamelog.nbe121423355.domain.game.repository.projection.RelatedGameCandidateProjection;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -13,6 +15,15 @@ import java.util.List;
 public class RelatedGameQueryRepository {
 
     private final EntityManager entityManager;
+
+    private static final String READY_CANDIDATE_CONDITION = """
+                  AND EXISTS (
+                      SELECT 1
+                      FROM related_game_calculations calculation
+                      WHERE calculation.game_id = g.id
+                        AND calculation.last_success_at IS NOT NULL
+                  )
+            """;
 
     // 연관 추천 게임 5개를 선별하고 계산하기 위한 CTE 기반 Native SQL 구문
     // TODO: 평점 데이터가 충분해지면 최소 평점 개수(5)와 평균 평점 기준(3.5)을 재조정
@@ -32,6 +43,7 @@ public class RelatedGameQueryRepository {
                 JOIN base_genres bg ON bg.genre_id = gg.genre_id
                 WHERE gg.game_id <> :gameId
                   AND g.igdb_rating >= 70.0
+            %s
                 GROUP BY gg.game_id
             ),
             rating_stats AS (
@@ -108,15 +120,12 @@ public class RelatedGameQueryRepository {
             JOIN games g ON g.id = c.game_id
             LEFT JOIN interaction_scores i ON i.game_id = c.game_id
             ORDER BY recommendation_score DESC, g.id ASC
-            LIMIT 5
+            LIMIT :limit
             """;
 
     // 기준 게임과 연관된 추천 후보 게임 목록을 Native SQL로 조회하여 DTO로 반환
     public List<RelatedGameResponse> findRelatedGames(Long gameId) {
-        List<?> rows = entityManager
-                .createNativeQuery(RELATED_GAMES_SQL)
-                .setParameter("gameId", gameId)
-                .getResultList();
+        List<?> rows = findRows(gameId, 5, false);
 
         return rows.stream()
                 .map(row -> {
@@ -132,6 +141,34 @@ public class RelatedGameQueryRepository {
                     );
                 })
                 .toList();
+    }
+
+    // 최초 전체 계산은 모든 게임을, 일반 갱신은 준비 완료된 게임만 후보로 사용한다.
+    @Transactional(readOnly = true)
+    public List<RelatedGameCandidateProjection> findCandidatesForPrecompute(
+            Long gameId, int limit, boolean readyCandidatesOnly
+    ) {
+        if (limit < 1) {
+            throw new IllegalArgumentException("후보 조회 개수는 1 이상이어야 합니다.");
+        }
+        return findRows(gameId, limit, readyCandidatesOnly).stream()
+                .map(row -> {
+                    Object[] columns = (Object[]) row;
+                    return new RelatedGameCandidateProjection(
+                            ((Number) columns[0]).longValue(),
+                            toBigDecimal(columns[4])
+                    );
+                })
+                .toList();
+    }
+
+    private List<?> findRows(Long gameId, int limit, boolean readyCandidatesOnly) {
+        // SQL에 삽입되는 조건은 고정된 내부 문자열이며 요청 값을 조합하지 않는다.
+        String sql = RELATED_GAMES_SQL.formatted(readyCandidatesOnly ? READY_CANDIDATE_CONDITION : "");
+        return entityManager.createNativeQuery(sql)
+                .setParameter("gameId", gameId)
+                .setParameter("limit", limit)
+                .getResultList();
     }
 
     // SQL 조회 결과의 수치 데이터 객체를 안전하게 BigDecimal 타입으로 변환
