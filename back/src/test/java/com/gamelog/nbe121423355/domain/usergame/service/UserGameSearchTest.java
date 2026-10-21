@@ -1,5 +1,7 @@
 package com.gamelog.nbe121423355.domain.usergame.service;
 
+import com.gamelog.nbe121423355.support.MySqlIntegrationTest;
+
 import com.gamelog.nbe121423355.domain.game.dto.IgdbGameResponse;
 import com.gamelog.nbe121423355.domain.game.entity.*;
 import com.gamelog.nbe121423355.domain.review.entity.Review;
@@ -19,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.data.domain.Page;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("test")
+@MySqlIntegrationTest
 @Transactional
 class UserGameSearchTest {
     @Autowired
