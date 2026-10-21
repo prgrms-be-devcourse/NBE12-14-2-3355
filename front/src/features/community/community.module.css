@@ -13,25 +13,42 @@
 .page button:disabled { opacity: .5; cursor: wait; }
 .page button:focus-visible, .page a:focus-visible { outline: 2px solid #bef264; outline-offset: 4px; }
 .sectionHeading > button { flex-shrink: 0; }
-.card { border: 1px solid #30343e; border-radius: 16px; padding: 24px; background: #191c24; margin-bottom: 16px; }
-.cardHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.cardHeader time { color: #969caa; font-size: 12px; flex-shrink: 0; }
-.author { display: flex; align-items: center; gap: 10px; min-width: 0; text-decoration: none; color: #f3f4f6; }
-.author strong { overflow-wrap: anywhere; }
-.avatar { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: #303843; flex-shrink: 0; }
+.card { border: 1px solid var(--line); border-radius: 9px; padding: 24px 26px; background: var(--panel); margin-bottom: 16px; }
+.cardHeader { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 20px; }
+.cardHeader time { color: #95a092; font-size: 12px; flex-shrink: 0; }
+.identity { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.reviewerDetails { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.reviewerName { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
+.author { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; color: var(--text); font-size: 16px; font-weight: 700; }
+.author:hover { color: var(--lime); }
+.avatar { width: 48px; height: 48px; border: 1px solid #5d724d; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: linear-gradient(145deg, #405338, #202a22); color: var(--lime); font-size: 18px; font-weight: 800; flex-shrink: 0; text-decoration: none; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
-.game { display: flex; align-items: center; gap: 14px; margin: 20px 0; padding: 12px; border-radius: 10px; background: #222630; color: #f3f4f6; text-decoration: none; }
-.game strong { overflow-wrap: anywhere; }
+.game { display: flex; align-items: center; gap: 14px; margin: 20px 0; color: var(--text); text-decoration: none; }
+.game strong { min-width: 0; overflow-wrap: anywhere; font-size: 14px; }
+.game:hover strong, .game:hover .arrow { color: var(--lime); }
 .cover { width: 44px; height: 60px; flex-shrink: 0; overflow: hidden; border-radius: 5px; }
 .cover img { width: 100%; height: 100%; object-fit: cover; }
 .coverFallback { display: grid; place-items: center; width: 100%; height: 100%; background: #303c2b; color: #bef264; font-size: 12px; font-weight: 700; }
-.rating { display: block; color: #bef264; font-size: 13px; margin-top: 6px; }
-.arrow { margin-left: auto; color: #969caa; }
-.body p { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.8; color: #d4d7df; }
-.spoiler { text-align: center; padding: 20px; background: #222630; border-radius: 8px; color: #a6abba; }
-.actions { border-top: 1px solid #30343e; padding: 16px 0 0; margin: 20px 0 0; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.actions button[aria-pressed=true] { color: #bef264; border-color: #71894a; }
-.actions a { color: #a6abba; text-decoration: none; font-size: 12px; }
+.rating { display: flex; align-items: baseline; gap: 5px; color: var(--lime); }
+.rating > span, .rating strong { font-size: 20px; }
+.rating small { color: var(--muted); font-size: 12px; }
+.noRating { color: var(--muted); font-size: 13px; }
+.reviewerMeta { display: flex; flex-wrap: wrap; align-items: center; gap: 11px; }
+.playState { display: inline-flex; align-items: center; gap: 6px; color: #c2cec0; font-size: 12px; }
+.playState i { width: 7px; height: 7px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 8px #b8ed6b66; }
+.arrow { margin-left: auto; color: var(--muted); }
+.body { min-height: 80px; }
+.body p { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; line-height: 1.75; color: #d5dbd2; }
+.body button { margin-top: 8px; padding: 5px 0; border: 0; border-radius: 0; background: transparent; color: var(--muted); font-size: 12px; }
+.body button:hover { color: var(--lime); }
+.spoiler { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; min-height: 80px; padding: 12px; text-align: center; color: var(--text); font-size: 14px; }
+.spoiler button { padding: 9px 12px; border: 1px solid #60764d; border-radius: 4px; background: #293a25; color: var(--lime); font-size: 12px; }
+.spoiler button:hover { background: #344b2b; }
+.actions { margin-top: 14px; display: flex; align-items: center; justify-content: flex-start; gap: 12px; }
+.comments > div { border-top: 0; }
+.actions button { display: inline-flex; align-items: center; gap: 7px; padding: 6px 0; border: 0; border-radius: 0; background: transparent; color: var(--muted); font-size: 13px; }
+.actions button > span { color: var(--lime); font-size: 19px; line-height: 1; }
+.actions button:hover:not(:disabled), .actions button[aria-pressed=true] { color: var(--lime); }
 .state { text-align: center; padding: 40px 16px; color: #a6abba; }
 .state h3 { color: #e5e7eb; font-size: 18px; }
 .state a { display: inline-block; margin-top: 12px; color: #bef264; }
@@ -40,7 +57,14 @@
 @media (max-width: 600px) {
   .page { padding: 28px 16px 60px; }
   .heading h1 { font-size: 28px; }
-  .card { padding: 16px; }
-  .cardHeader { align-items: flex-start; }
   .sectionHeading { align-items: flex-start; }
+}
+@media (max-width: 760px) {
+  .card { padding: 19px; }
+  .cardHeader { align-items: flex-start; flex-wrap: wrap; }
+  .avatar { width: 42px; height: 42px; font-size: 16px; }
+  .reviewerName { font-size: 12px; }
+  .author { max-width: 100%; font-size: 15px; }
+  .body p { font-size: 14px; }
+  .spoiler { flex-direction: column; gap: 8px; }
 }

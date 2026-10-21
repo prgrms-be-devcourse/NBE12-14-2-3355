@@ -38,7 +38,7 @@ export default function SiteHeader() {
           전체 게임
         </Link>
         <Link className={pathname === "/community" ? "nav-active" : undefined} href="/community" aria-current={pathname === "/community" ? "page" : undefined}>
-          커뮤니티
+          피드
         </Link>
       </nav>
       <GameSearch value={search} demo={false} onChange={setSearch} onSearch={searchGames} onSelect={openGame} />

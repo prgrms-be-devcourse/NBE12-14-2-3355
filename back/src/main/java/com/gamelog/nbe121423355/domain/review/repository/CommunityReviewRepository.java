@@ -15,7 +15,7 @@ public interface CommunityReviewRepository extends Repository<Review, Long> {
             SELECT r.id AS reviewId, u.id AS userId, u.nickname AS nickname,
                    u.profileImageUrl AS profileImageUrl, g.id AS gameId,
                    g.title AS gameTitle, g.coverImageUrl AS gameCoverImageUrl,
-                   r.rating AS rating, r.content AS content, r.spoiler AS spoiler,
+                   ug.playStatus AS playStatus, ug.playing AS playing, ug.backlog AS backlog, ug.wishlist AS wishlist, r.rating AS rating, r.content AS content, r.spoiler AS spoiler,
                    r.createdDate AS createdDate, COUNT(l.user.id) AS likeCount,
                    CASE WHEN SUM(CASE WHEN l.user.id = :viewerId THEN 1 ELSE 0 END) > 0
                         THEN true ELSE false END AS liked
@@ -27,7 +27,7 @@ public interface CommunityReviewRepository extends Repository<Review, Long> {
             """;
     String GROUP = """
             GROUP BY r.id, u.id, u.nickname, u.profileImageUrl, g.id, g.title,
-                     g.coverImageUrl, r.rating, r.content, r.spoiler, r.createdDate
+                     g.coverImageUrl, ug.playStatus, ug.playing, ug.backlog, ug.wishlist, r.rating, r.content, r.spoiler, r.createdDate
             """;
 
     @Query(SELECT + """

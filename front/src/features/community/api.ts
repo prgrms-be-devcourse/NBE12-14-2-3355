@@ -1,7 +1,13 @@
 import type { PopularReview } from "@/features/home/api";
 import { ReviewApiError } from "@/features/reviews/api";
 
-export type CommunityReview = PopularReview & { liked: boolean };
+export type CommunityReview = PopularReview & {
+  liked: boolean;
+  playStatus: string | null;
+  playing: boolean;
+  backlog: boolean;
+  wishlist: boolean;
+};
 export type Feed = { reviews: CommunityReview[]; hasNext: boolean; hasFollowing: boolean };
 export type FeedTab = "following" | "popular";
 
