@@ -1,3 +1,4 @@
+import { acceptRefreshedToken } from "@/features/auth/api";
 import type {
   ApiResponse,
   DetailedReview,
@@ -34,6 +35,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     headers,
     cache: "no-store",
   });
+  acceptRefreshedToken(response);
   const payload = (await response.json()) as ApiResponse<T>;
 
   if (!response.ok) {
