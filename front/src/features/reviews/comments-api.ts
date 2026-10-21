@@ -1,3 +1,4 @@
+import { acceptRefreshedToken } from "@/features/auth/api";
 import { ReviewApiError } from "./api";
 
 export type Comment = {
@@ -13,6 +14,7 @@ export async function commentRequest<T>(reviewId: number, suffix = "", token?: s
     headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(body ? { "Content-Type": "application/json" } : {}) },
     body: body ? JSON.stringify(body) : undefined,
   });
+  acceptRefreshedToken(response);
   const result = await response.json();
   if (!response.ok) throw new ReviewApiError(result.msg || "댓글 요청에 실패했습니다.", response.status);
   return result.data;
