@@ -1,0 +1,18 @@
+.shell { min-height: 100vh; }
+.header { border-bottom: 1px solid var(--line); background: #111414ed; position: sticky; top: 0; z-index: 10; backdrop-filter: blur(16px); }
+.inner { width: min(1120px, calc(100% - 36px)); margin: 0 auto; display: flex; align-items: center; gap: 36px; height: 82px; }
+.brand { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 800; color: var(--text); white-space: nowrap; }
+.brand span { padding: 4px 7px; border: 1px solid var(--line); border-radius: 5px; color: var(--muted); font-size: 11px; font-weight: 500; }
+.nav { display: flex; align-items: center; align-self: stretch; gap: 28px; white-space: nowrap; }
+.nav a { height: 100%; display: flex; align-items: center; position: relative; color: var(--muted); font-size: 13px; font-weight: 600; }
+.nav a:hover, .nav a[aria-current="page"] { color: var(--text); }
+.nav a[aria-current="page"]::after { content: ""; height: 3px; background: var(--lime); position: absolute; bottom: 0; left: 0; right: 0; }
+.logout { margin-left: auto; border: 1px solid var(--line); border-radius: 7px; padding: 9px 13px; color: var(--muted); font-size: 12px; cursor: pointer; white-space: nowrap; }
+.logout:hover { color: var(--text); border-color: var(--muted); }
+.logout:disabled { opacity: .5; cursor: wait; }
+.inner a:focus-visible, .logout:focus-visible { outline: 2px solid var(--lime); outline-offset: 4px; }
+@media (max-width: 700px) {
+  .inner { width: calc(100% - 22px); flex-wrap: wrap; gap: 16px; height: auto; padding: 18px 0 0; }
+  .nav { order: 3; width: 100%; height: 48px; }
+  .nav a { justify-content: center; }
+}

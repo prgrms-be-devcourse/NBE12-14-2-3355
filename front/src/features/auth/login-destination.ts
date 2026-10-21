@@ -27,13 +27,13 @@ export function reviewReturnPath(value: string | null): string | null {
 }
 
 export function loginDestination(user: UserDto, next: string | null, afterSubmit = true): string {
+  if (user.role === "ADMIN") return "/admin/reports";
   const community = reviewReturnPath(next);
   if (community) {
-    return user.role !== "ADMIN" && needsOnboarding(user)
+    return needsOnboarding(user)
       ? `/onboarding?next=${encodeURIComponent(community)}`
       : community;
   }
-  if (user.role === "ADMIN") return "/admin/reports";
   if (afterSubmit && needsOnboarding(user)) return "/onboarding";
   return safeReturnPath(next);
 }
