@@ -12,19 +12,20 @@ import com.gamelog.nbe121423355.domain.game.service.model.RelatedGamePrecomputeS
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import com.gamelog.nbe121423355.support.MySqlTestConfiguration;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +52,9 @@ class RelatedGamePrecomputeServiceTest {
 
     @Autowired
     private RelatedGamePrecomputeService service;
+
+    @Autowired
+    private RelatedGamePrecomputeStore store;
 
     @MockitoSpyBean
     private RelatedGameQueryRepository queryRepository;
@@ -211,9 +215,28 @@ class RelatedGamePrecomputeServiceTest {
                 new RelatedGameCandidateProjection(Long.MAX_VALUE, new BigDecimal("98"))
         )).when(queryRepository).findCandidatesForPrecompute(fixture.sourceId(), 20, true);
 
-        // 기존 목록 삭제와 첫 후보 삽입 후 실제 MySQL 외래키 오류를 발생시킨다.
+        // 기존 목록 삭제 후 한 INSERT 안의 유효·무효 후보로 실제 MySQL 외래키 오류를 발생시킨다.
         assertThatThrownBy(() -> service.precompute(fixture.sourceId(), RelatedGamePrecomputeMode.REFRESH))
-                .isInstanceOf(PersistenceException.class);
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasRootCauseInstanceOf(SQLIntegrityConstraintViolationException.class);
+
+        assertPreviousResultAndFailedState(fixture);
+    }
+
+    @Test
+    void stateFailureAfterJdbcInsertRollsBackNewCandidatesAndRestoresOldList() {
+        Fixture fixture = createFixture(2, 2);
+        seedPreviousResult(fixture);
+        inTransaction(() -> {
+            calculationRepository.findById(fixture.sourceId()).orElseThrow()
+                    .fail(PREVIOUS_SUCCESS.plusDays(1), "이전 계산 실패");
+            return null;
+        });
+
+        // JDBC INSERT 이후 성공 상태 변경이 거부되어도 후보 교체 전체가 롤백되어야 한다.
+        assertThatThrownBy(() -> store.replace(fixture.sourceId(), List.of(
+                new RelatedGameCandidateProjection(fixture.candidateIds().get(1), new BigDecimal("99.125"))
+        ), LocalDateTime.now())).isInstanceOf(IllegalStateException.class);
 
         assertPreviousResultAndFailedState(fixture);
     }

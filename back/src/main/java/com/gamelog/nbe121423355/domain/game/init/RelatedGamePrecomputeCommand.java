@@ -3,6 +3,7 @@ package com.gamelog.nbe121423355.domain.game.init;
 import com.gamelog.nbe121423355.domain.game.repository.GameRepository;
 import com.gamelog.nbe121423355.domain.game.repository.RelatedGameQueryRepository;
 import com.gamelog.nbe121423355.domain.game.repository.RelatedGamePrecomputeSnapshotRepository;
+import com.gamelog.nbe121423355.domain.game.repository.RelatedGameCandidateBatchRepository;
 import com.gamelog.nbe121423355.domain.game.service.*;
 import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.boot.WebApplicationType;
@@ -58,7 +59,8 @@ public final class RelatedGamePrecomputeCommand {
     @EnableJpaAuditing
     @Import({RelatedGamePrecomputeBatchService.class, RelatedGamePrecomputeLock.class,
             RelatedGamePrecomputeService.class, RelatedGamePrecomputeStore.class,
-            RelatedGameQueryRepository.class, RelatedGamePrecomputeSnapshotRepository.class})
+            RelatedGameQueryRepository.class, RelatedGamePrecomputeSnapshotRepository.class,
+            RelatedGameCandidateBatchRepository.class})
     public static class CommandConfiguration {
     }
 }

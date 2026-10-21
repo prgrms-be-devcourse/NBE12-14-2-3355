@@ -2,10 +2,10 @@ package com.gamelog.nbe121423355.domain.game.service;
 
 import com.gamelog.nbe121423355.domain.game.entity.Game;
 import com.gamelog.nbe121423355.domain.game.entity.RelatedGameCalculation;
-import com.gamelog.nbe121423355.domain.game.entity.RelatedGameCandidate;
 import com.gamelog.nbe121423355.domain.game.repository.GameRepository;
 import com.gamelog.nbe121423355.domain.game.repository.RelatedGameCalculationRepository;
 import com.gamelog.nbe121423355.domain.game.repository.RelatedGameCandidateRepository;
+import com.gamelog.nbe121423355.domain.game.repository.RelatedGameCandidateBatchRepository;
 import com.gamelog.nbe121423355.domain.game.repository.projection.RelatedGameCandidateProjection;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import jakarta.persistence.EntityManager;
@@ -26,12 +26,15 @@ public class RelatedGamePrecomputeStore {
     private final GameRepository gameRepository;
     private final RelatedGameCalculationRepository calculationRepository;
     private final RelatedGameCandidateRepository candidateRepository;
+    private final RelatedGameCandidateBatchRepository candidateBatchRepository;
 
     public void start(Long gameId, LocalDateTime attemptedAt) {
-        Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new ServiceException("404-1", "존재하지 않는 게임입니다."));
+        if (!gameRepository.existsById(gameId)) {
+            throw new ServiceException("404-1", "존재하지 않는 게임입니다.");
+        }
         RelatedGameCalculation calculation = calculationRepository.findById(gameId)
-                .orElseGet(() -> calculationRepository.save(new RelatedGameCalculation(game)));
+                .orElseGet(() -> calculationRepository.save(new RelatedGameCalculation(
+                        entityManager.getReference(Game.class, gameId))));
         calculation.start(attemptedAt);
     }
 
@@ -42,18 +45,9 @@ public class RelatedGamePrecomputeStore {
 
         // 이 메서드는 별도 영속성 컨텍스트에서 실행하므로 이전 후보 엔티티를 로딩하지 않는다.
         candidateRepository.deleteAllBySourceGameId(gameId);
-        Game source = entityManager.getReference(Game.class, gameId);
-        for (int index = 0; index < candidates.size(); index++) {
-            RelatedGameCandidateProjection candidate = candidates.get(index);
-            entityManager.persist(new RelatedGameCandidate(
-                    source,
-                    entityManager.getReference(Game.class, candidate.gameId()),
-                    candidate.relatedScore(),
-                    index + 1
-            ));
-        }
+        candidateBatchRepository.insertAll(gameId, candidates);
         calculation.succeed(completedAt);
-        // 후보 제약 위반도 성공 상태와 함께 롤백되도록 트랜잭션 안에서 확인한다.
+        // JDBC 저장과 JPA 성공 상태 변경이 같은 연결·트랜잭션에서 반영된다.
         entityManager.flush();
     }
 
