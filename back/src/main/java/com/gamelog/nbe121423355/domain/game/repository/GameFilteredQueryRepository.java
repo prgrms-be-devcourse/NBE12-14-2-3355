@@ -3,6 +3,7 @@ package com.gamelog.nbe121423355.domain.game.repository;
 import com.gamelog.nbe121423355.domain.game.dto.GameSort;
 import com.gamelog.nbe121423355.domain.game.entity.Game;
 import jakarta.persistence.EntityManager;
+import com.gamelog.nbe121423355.domain.game.service.GamePublicationPolicy;
 import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,6 +21,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class GameFilteredQueryRepository {
     private final EntityManager entityManager;
+    private final GamePublicationPolicy publicationPolicy;
 
     @SuppressWarnings("unchecked")
     public Page<Game> findPage(String keyword, List<Long> genreIds, List<Long> platformIds,
@@ -30,6 +32,10 @@ public class GameFilteredQueryRepository {
         StringBuilder where = new StringBuilder("""
                 WHERE g.release_date >= :minDate AND g.release_date < :maxDate
                 """);
+        if (publicationPolicy.isReadyOnly()) {
+            where.append(" AND EXISTS (SELECT 1 FROM related_game_calculations calculation "
+                    + "WHERE calculation.game_id = g.id AND calculation.last_success_at IS NOT NULL)");
+        }
         if (keyword != null) {
             where.append(" AND LOWER(g.title) LIKE LOWER(:keyword) ESCAPE '!'\n");
             parameters.put("keyword", keyword);

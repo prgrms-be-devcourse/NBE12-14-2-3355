@@ -2,6 +2,7 @@ package com.gamelog.nbe121423355.domain.game.repository;
 
 import com.gamelog.nbe121423355.domain.game.repository.projection.PersonalizedRelatedGameProjection;
 import jakarta.persistence.EntityManager;
+import com.gamelog.nbe121423355.domain.game.service.GamePublicationPolicy;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.query.NativeQuery;
 import org.springframework.stereotype.Repository;
@@ -14,6 +15,7 @@ import java.util.List;
 public class PersonalizedRelatedGameQueryRepository {
 
     private final EntityManager entityManager;
+    private final GamePublicationPolicy publicationPolicy;
 
     // 사용자별 제외를 먼저 적용하고 저장 순위 순서로 1~5위를 다시 매긴다.
     private static final String STORED_RELATED_GAMES_SQL = """
@@ -28,6 +30,9 @@ public class PersonalizedRelatedGameQueryRepository {
                 JOIN games g ON g.id = c.candidate_game_id
                 WHERE c.source_game_id IN (:sourceGameIds)
                   AND calculation.last_success_at IS NOT NULL
+                  AND (:readyOnly = false OR EXISTS (
+                      SELECT 1 FROM related_game_calculations ready
+                      WHERE ready.game_id = g.id AND ready.last_success_at IS NOT NULL))
                   AND c.candidate_game_id NOT IN (:excludedGameIds)
             )
             SELECT source_game_id, game_id, title, cover_image_url,
@@ -58,6 +63,9 @@ public class PersonalizedRelatedGameQueryRepository {
                 WHERE gg.game_id <> sg.source_game_id
                   AND gg.game_id NOT IN (:excludedGameIds)
                   AND g.igdb_rating >= 70.0
+                  AND (:readyOnly = false OR EXISTS (
+                      SELECT 1 FROM related_game_calculations ready
+                      WHERE ready.game_id = g.id AND ready.last_success_at IS NOT NULL))
                 GROUP BY sg.source_game_id, gg.game_id
             ),
             candidate_game_ids AS (
@@ -193,6 +201,7 @@ public class PersonalizedRelatedGameQueryRepository {
                 .createNativeQuery(sql)
                 .unwrap(NativeQuery.class)
                 .setParameterList("sourceGameIds", sourceGameIds)
+                .setParameter("readyOnly", publicationPolicy.isReadyOnly())
                 // 빈 IN 목록을 피하기 위한 존재하지 않는 게임 ID
                 .setParameterList(
                         "excludedGameIds",

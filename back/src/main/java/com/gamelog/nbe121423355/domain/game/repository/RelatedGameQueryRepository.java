@@ -3,6 +3,7 @@ package com.gamelog.nbe121423355.domain.game.repository;
 import com.gamelog.nbe121423355.domain.game.dto.RelatedGameResponse;
 import com.gamelog.nbe121423355.domain.game.repository.projection.RelatedGameCandidateProjection;
 import jakarta.persistence.EntityManager;
+import com.gamelog.nbe121423355.domain.game.service.GamePublicationPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,7 @@ import java.util.List;
 public class RelatedGameQueryRepository {
 
     private final EntityManager entityManager;
+    private final GamePublicationPolicy publicationPolicy;
 
     private static final String READY_CANDIDATE_CONDITION = """
                   AND EXISTS (
@@ -125,7 +127,7 @@ public class RelatedGameQueryRepository {
 
     // 기준 게임과 연관된 추천 후보 게임 목록을 Native SQL로 조회하여 DTO로 반환
     public List<RelatedGameResponse> findRelatedGames(Long gameId) {
-        List<?> rows = findRows(gameId, 5, false);
+        List<?> rows = findRows(gameId, 5, publicationPolicy.isReadyOnly());
 
         return rows.stream()
                 .map(row -> {

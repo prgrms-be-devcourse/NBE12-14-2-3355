@@ -60,7 +60,8 @@ public final class RelatedGamePrecomputeCommand {
     @Import({RelatedGamePrecomputeBatchService.class, RelatedGamePrecomputeLock.class,
             RelatedGamePrecomputeService.class, RelatedGamePrecomputeStore.class,
             RelatedGameQueryRepository.class, RelatedGamePrecomputeSnapshotRepository.class,
-            RelatedGameCandidateBatchRepository.class})
+            RelatedGameCandidateBatchRepository.class,
+            GamePublicationPolicy.class})
     public static class CommandConfiguration {
     }
 }

@@ -26,6 +26,7 @@ import java.util.stream.IntStream;
 public class GameDetailService {
 
     private final GameRepository gameRepository;
+    private final GamePublicationPolicy publicationPolicy;
     private final GameGenreRepository gameGenreRepository;
     private final GamePlatformRepository gamePlatformRepository;
     private final GameSeriesGameRepository gameSeriesGameRepository;
@@ -39,6 +40,7 @@ public class GameDetailService {
 
     // 게임 기본 정보와 연결 정보, 상태·평점·리뷰·좋아요 통계를 조회해 상세 응답으로 반환
     public GameDetailResponse getGameDetail(Long gameId) {
+        requirePublished(gameId);
         // GameLog DB ID로 게임 기본 정보 조회
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() ->
@@ -120,6 +122,7 @@ public class GameDetailService {
 
     // 기준 게임의 존재 여부를 확인한 뒤 연관 추천 게임 상위 5개를 반환
     public List<RelatedGameResponse> getRelatedGames(Long gameId) {
+        requirePublished(gameId);
         if (!gameRepository.existsById(gameId)) {
             throw new ServiceException(
                     "404-1",
@@ -154,6 +157,13 @@ public class GameDetailService {
                         item.recommendationScore(), genresByGameId.getOrDefault(item.id(), List.of())
                 ))
                 .toList();
+    }
+
+    private void requirePublished(Long gameId) {
+        if (publicationPolicy.isReadyOnly()
+                && !relatedGameCalculationRepository.existsByGameIdAndLastSuccessAtIsNotNull(gameId)) {
+            throw new ServiceException("404-1", "존재하지 않는 게임입니다.");
+        }
     }
 
     // 평균 평점, 평가 수, 내용이 있는 리뷰 수와 모든 0.5점 단위의 평점 분포를 구성

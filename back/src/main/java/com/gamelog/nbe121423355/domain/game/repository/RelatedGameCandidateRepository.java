@@ -21,6 +21,9 @@ public interface RelatedGameCandidateRepository extends JpaRepository<RelatedGam
             FROM RelatedGameCandidate candidate
             JOIN candidate.candidateGame game
             WHERE candidate.id.sourceGameId = :sourceGameId
+            AND (:#{@gamePublicationPolicy.readyOnly} = false OR EXISTS (
+                SELECT 1 FROM RelatedGameCalculation calculation
+                WHERE calculation.gameId = game.id AND calculation.lastSuccessAt IS NOT NULL))
             ORDER BY candidate.relatedRank
             """)
     List<RelatedGameResponse> findStoredRelatedGames(@Param("sourceGameId") Long sourceGameId,

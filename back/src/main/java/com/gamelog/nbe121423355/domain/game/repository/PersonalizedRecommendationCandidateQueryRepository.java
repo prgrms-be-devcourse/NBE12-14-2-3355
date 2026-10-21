@@ -3,6 +3,7 @@ package com.gamelog.nbe121423355.domain.game.repository;
 import com.gamelog.nbe121423355.domain.game.repository.projection.PersonalizedRecommendationCandidateProjection;
 import com.gamelog.nbe121423355.domain.review.entity.ReviewStatus;
 import jakarta.persistence.EntityManager;
+import com.gamelog.nbe121423355.domain.game.service.GamePublicationPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -14,6 +15,7 @@ import java.util.List;
 public class PersonalizedRecommendationCandidateQueryRepository {
 
     private final EntityManager entityManager;
+    private final GamePublicationPolicy publicationPolicy;
 
     // 후보 게임의 기본 정보와 전체 장르, 활성 리뷰의 평균 평점을 일괄 조회
     private static final String CANDIDATES_BY_GAME_IDS_JPQL = """
@@ -34,6 +36,9 @@ public class PersonalizedRecommendationCandidateQueryRepository {
               ON review.userGame.game = game
              AND (review.status IS NULL OR review.status = :activeReviewStatus)
             WHERE game.id IN :gameIds
+            AND (:readyOnly = false OR EXISTS (
+                SELECT 1 FROM RelatedGameCalculation calculation
+                WHERE calculation.gameId = game.id AND calculation.lastSuccessAt IS NOT NULL))
             GROUP BY
                 game.id,
                 game.title,
@@ -57,6 +62,9 @@ public class PersonalizedRecommendationCandidateQueryRepository {
             WHERE gameGenre.genre.id IN :preferredGenreIds
               AND game.id NOT IN :excludedGameIds
               AND game.igdbRating >= 70.0
+              AND (:readyOnly = false OR EXISTS (
+                SELECT 1 FROM RelatedGameCalculation calculation
+                WHERE calculation.gameId = game.id AND calculation.lastSuccessAt IS NOT NULL))
             GROUP BY
                 game.id,
                 game.igdbRating,
@@ -89,6 +97,7 @@ public class PersonalizedRecommendationCandidateQueryRepository {
                 )
                 .setParameter("gameIds", gameIds)
                 .setParameter("activeReviewStatus", ReviewStatus.ACTIVE)
+                .setParameter("readyOnly", publicationPolicy.isReadyOnly())
                 .getResultList();
     }
 
@@ -110,6 +119,7 @@ public class PersonalizedRecommendationCandidateQueryRepository {
                         excludedGameIds.isEmpty() ? List.of(-1L) : excludedGameIds
                 )
                 .setParameter("activeReviewStatus", ReviewStatus.ACTIVE)
+                .setParameter("readyOnly", publicationPolicy.isReadyOnly())
                 .setMaxResults(5)
                 .getResultList();
     }

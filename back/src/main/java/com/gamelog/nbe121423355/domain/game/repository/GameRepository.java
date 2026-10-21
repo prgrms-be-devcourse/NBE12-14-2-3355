@@ -35,6 +35,9 @@ public interface GameRepository extends JpaRepository<Game,Long> {
                    END AS match_rank
             FROM games
             WHERE LOWER(title) LIKE LOWER(:containsPattern) ESCAPE '!'
+              AND (:#{@gamePublicationPolicy.readyOnly} = false OR EXISTS (
+                  SELECT 1 FROM related_game_calculations calculation
+                  WHERE calculation.game_id = games.id AND calculation.last_success_at IS NOT NULL))
               AND release_date >= :minReleaseDate
               AND release_date < :maxReleaseDateExclusive
             ORDER BY match_rank, sort_title, id
@@ -60,6 +63,9 @@ public interface GameRepository extends JpaRepository<Game,Long> {
                         SELECT id, igdb_rating
                         FROM games
                         WHERE release_date >= :minReleaseDate
+                          AND (:#{@gamePublicationPolicy.readyOnly} = false OR EXISTS (
+                              SELECT 1 FROM related_game_calculations calculation
+                              WHERE calculation.game_id = games.id AND calculation.last_success_at IS NOT NULL))
                           AND release_date < :maxReleaseDateExclusive
                           AND (:keyword IS NULL OR LOWER(title) LIKE LOWER(:keyword) ESCAPE '!')
                         ORDER BY COALESCE(igdb_rating, -1.0) DESC, id ASC
@@ -82,6 +88,9 @@ public interface GameRepository extends JpaRepository<Game,Long> {
                     SELECT COUNT(*)
                     FROM games
                     WHERE release_date >= :minReleaseDate
+                      AND (:#{@gamePublicationPolicy.readyOnly} = false OR EXISTS (
+                          SELECT 1 FROM related_game_calculations calculation
+                          WHERE calculation.game_id = games.id AND calculation.last_success_at IS NOT NULL))
                       AND release_date < :maxReleaseDateExclusive
                       AND (:keyword IS NULL OR LOWER(title) LIKE LOWER(:keyword) ESCAPE '!')
                     """,
