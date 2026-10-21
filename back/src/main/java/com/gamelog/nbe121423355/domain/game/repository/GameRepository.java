@@ -8,8 +8,21 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.time.LocalDate;
 import java.util.Optional;
+import org.springframework.data.domain.Pageable;
 
 public interface GameRepository extends JpaRepository<Game,Long> {
+
+    @Query("SELECT COALESCE(MAX(game.id), 0) FROM Game game")
+    long findMaxGameIdForPrecompute();
+
+    @Query("""
+            SELECT game.id FROM Game game
+            WHERE game.id > :afterId AND game.id <= :upperId
+            ORDER BY game.id
+            """)
+    List<Long> findGameIdsForPrecompute(@Param("afterId") long afterId,
+                                      @Param("upperId") long upperId, Pageable pageable);
+
     // 제목 인덱스에서 후보를 먼저 제한하여 큰 본문 컬럼은 최종 6행만 읽습니다.
     @Query(value = """
         SELECT g.*

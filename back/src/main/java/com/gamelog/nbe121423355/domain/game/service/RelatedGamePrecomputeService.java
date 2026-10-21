@@ -23,7 +23,7 @@ public class RelatedGamePrecomputeService {
     private final RelatedGameQueryRepository queryRepository;
     private final RelatedGamePrecomputeStore store;
 
-    // 전체 실행과 프로세스 간 중복 실행 제어는 다음 단계의 실행부에서 담당한다.
+    // 외부 실행은 단일 실행 잠금을 담당하는 배치 서비스를 통해 호출한다.
     public int precompute(Long gameId, RelatedGamePrecomputeMode mode) {
         Objects.requireNonNull(gameId, "gameId");
         Objects.requireNonNull(mode, "mode");

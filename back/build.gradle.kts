@@ -51,3 +51,14 @@ dependencies {
 tasks.withType<Test> {
     useJUnitPlatform()
 }
+
+tasks.register<JavaExec>("recommendationPrecompute") {
+    group = "application"
+    description = "로컬 연관 추천을 전체 또는 지정 게임 ID로 사전 계산합니다."
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("com.gamelog.nbe121423355.domain.game.init.RelatedGamePrecomputeCommand")
+    systemProperty("spring.devtools.restart.enabled", "false")
+    javaLauncher.set(javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    })
+}
