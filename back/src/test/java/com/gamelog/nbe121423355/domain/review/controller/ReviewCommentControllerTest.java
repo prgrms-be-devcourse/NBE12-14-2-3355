@@ -124,7 +124,7 @@ class ReviewCommentControllerTest {
         var root = service.create(review.getId(), author.getId(), body("원댓글", null));
         var reply = service.create(review.getId(), reader.getId(), body("답글", root.id()));
         service.like(review.getId(), reply.id(), author.getId(), true);
-        reviewService.deleteReview(author.getId(), review.getId());
+        reviewService.deleteReview(author.getId(), review.getId(), review.getVersion());
         assertThat(comments.count()).isZero();
         assertThat(likes.count()).isZero();
         review.restore(BigDecimal.ONE, "다시 작성", false);

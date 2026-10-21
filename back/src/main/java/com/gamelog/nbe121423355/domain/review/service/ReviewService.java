@@ -33,6 +33,7 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final ReviewLikeRepository reviewLikeRepository;
     private final UserGameRepository userGameRepository;
+    private final ReviewCommentService reviewCommentService;
 
     public DetailedReviewResponse getMyDetailedReview(Long userId, Long gameId) {
         UserGame userGame = userGameRepository.findByUser_IdAndGame_Id(userId, gameId)
@@ -64,10 +65,12 @@ public class ReviewService {
 
         if (review != null) {
             if (review.isDeletedByUser()) {
+                validateVersionWhenProvided(review, request.version());
                 review.restore(request.rating(), request.content(), request.spoiler());
             } else if (!review.isActive()) {
                 throw new ServiceException("409-5", "관리자에 의해 숨김 처리된 리뷰는 다시 작성할 수 없습니다.");
             } else {
+                validateVersion(review, request.version());
                 review.edit(request.rating(), request.content(), request.spoiler());
             }
             reviewRepository.flush();
@@ -111,6 +114,7 @@ public class ReviewService {
 
         Review review = getReviewEntity(reviewId);
         validateOwner(userId, review.getUserGame());
+        validateVersion(review, request.version());
 
         // 변경된 리뷰를 자동으로 반영.
         review.edit(request.rating(), request.content(), request.spoiler());
@@ -120,12 +124,19 @@ public class ReviewService {
     }
 
     @Transactional
-    public Long deleteReview(Long userId, Long reviewId) {
-        Review review = getReviewEntity(reviewId);
-        validateOwner(userId, review.getUserGame());
+    public Long deleteReview(Long userId, Long reviewId, Long version) {
+        Review review = reviewRepository.findActiveForUpdate(reviewId)
+                .orElseThrow(() ->
+                        new ServiceException("404-3", "리뷰를 찾을 수 없습니다.")
+                );
 
+        validateOwner(userId, review.getUserGame());
+        validateVersion(review, version);
+
+        reviewCommentService.purge(reviewId);
         review.deleteByUser();
         reviewRepository.flush();
+
         return review.getUserGame().getId();
     }
 
@@ -182,5 +193,24 @@ public class ReviewService {
         if (!Objects.equals(userGame.getUser().getId(), userId)) {
             throw new ServiceException("403-1", "본인의 리뷰만 작성하거나 변경할 수 있습니다.");
         }
+    }
+
+    private void validateVersion(Review review, Long requestedVersion) {
+        if (requestedVersion == null || !Objects.equals(review.getVersion(), requestedVersion)) {
+            throw staleReviewException();
+        }
+    }
+
+    private void validateVersionWhenProvided(Review review, Long requestedVersion) {
+        if (requestedVersion != null && !Objects.equals(review.getVersion(), requestedVersion)) {
+            throw staleReviewException();
+        }
+    }
+
+    private ServiceException staleReviewException() {
+        return new ServiceException(
+                "409-6",
+                "다른 곳에서 리뷰가 변경되었습니다. 최신 내용을 다시 불러온 후 시도해 주세요."
+        );
     }
 }
