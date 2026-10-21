@@ -122,6 +122,6 @@ app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS}
   cookie:
-    same-site: None
+    same-site: Lax
     secure: true
 
