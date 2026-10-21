@@ -10,6 +10,8 @@ spring:
 recommendation:
   related:
     precomputed-enabled: ${RECOMMENDATION_RELATED_PRECOMPUTED_ENABLED:false}
+  personalized:
+    precomputed-enabled: ${RECOMMENDATION_PERSONALIZED_PRECOMPUTED_ENABLED:false}
 
 # ===== jwt 토큰 =====
 jwt:
