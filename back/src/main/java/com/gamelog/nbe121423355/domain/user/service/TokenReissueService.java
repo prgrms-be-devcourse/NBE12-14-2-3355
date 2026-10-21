@@ -79,6 +79,10 @@ public class TokenReissueService {
         RefreshToken session = refreshTokenRepository.findByFamilyIdWithUser(familyId)
                 .orElseThrow(() -> new ServiceException("401-2", "로그아웃된 토큰입니다."));
         User user = session.getUser();
+        // 탈퇴 시 세션은 전부 삭제되지만 방어적으로 한 번 더 확인
+        if (user.isDeleted()) {
+            throw new ServiceException("401-2", "로그인 정보가 없습니다.");
+        }
 
         if (!rotated && !isWithinGracePeriod(session, jti, now)) {
             // 이미 교체된 refreshToken이 유예 시간 이후에 다시 사용됨 → 탈취 가능성, 세션 폐기

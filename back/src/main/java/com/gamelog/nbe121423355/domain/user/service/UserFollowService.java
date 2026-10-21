@@ -40,8 +40,8 @@ public class UserFollowService {
         }
         Pageable pageable = PageRequest.of(page, size, Sort.by("nickname", "id"));
         Page<User> result = loginUserId == null
-                ? userRepository.findByNicknameContainingIgnoreCase(term, pageable)
-                : userRepository.findByNicknameContainingIgnoreCaseAndIdNot(term, loginUserId, pageable);
+                ? userRepository.findByNicknameContainingIgnoreCaseAndDeletedAtIsNull(term, pageable)
+                : userRepository.findByNicknameContainingIgnoreCaseAndIdNotAndDeletedAtIsNull(term, loginUserId, pageable);
         Set<Long> followedIds = findFollowedUserIds(loginUserId,
                 result.getContent().stream().map(User::getId).toList());
         List<FollowUserResponseDto> users = result.getContent().stream()
@@ -227,8 +227,9 @@ public class UserFollowService {
         }
     }
 
+    // 탈퇴한 유저는 존재하지 않는 사용자로 취급 (팔로우하기, 팔로잉/팔로워 목록 모두 여기를 거침)
     private User getUser(Long userId) {
-        return userRepository.findById(userId)
+        return userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ServiceException(
                         "404-1",
                         "존재하지 않는 사용자입니다."

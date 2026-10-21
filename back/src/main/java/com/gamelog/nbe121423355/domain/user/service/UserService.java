@@ -1,9 +1,14 @@
 package com.gamelog.nbe121423355.domain.user.service;
 
+import com.gamelog.nbe121423355.domain.review.service.ReviewService;
 import com.gamelog.nbe121423355.domain.user.dto.*;
 import com.gamelog.nbe121423355.domain.user.entity.RefreshToken;
 import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.domain.user.repository.RefreshTokenRepository;
+import com.gamelog.nbe121423355.domain.user.repository.UserFavoriteGameRepository;
+import com.gamelog.nbe121423355.domain.user.repository.UserFollowRepository;
+import com.gamelog.nbe121423355.domain.user.repository.UserPreferenceGameRepository;
+import com.gamelog.nbe121423355.domain.user.repository.UserPreferenceGenreRepository;
 import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import com.gamelog.nbe121423355.global.security.jwt.JwtProvider;
@@ -12,6 +17,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -28,6 +35,11 @@ public class UserService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final ImageUploadService imageUploadService;
     private final TokenReissueService tokenReissueService;
+    private final ReviewService reviewService;
+    private final UserFollowRepository userFollowRepository;
+    private final UserPreferenceGenreRepository userPreferenceGenreRepository;
+    private final UserPreferenceGameRepository userPreferenceGameRepository;
+    private final UserFavoriteGameRepository userFavoriteGameRepository;
 
     // 로그인 결과를 Controller에 전달하기 위한 내부 운반용 record
     // refreshTokenExpiryDate: 쿠키 maxAge 계산용 (세션의 절대 만료 시각)
@@ -108,9 +120,9 @@ public class UserService {
         return new UserDto(user);
     }
 
-    //유저 정보 가져오기
+    //유저 정보 가져오기 (탈퇴한 유저는 존재하지 않는 유저로 취급)
     public PublicUserDto getUser(Long userId) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ServiceException(
                         "404-1",
                         "존재하지 않는 유저입니다."
@@ -182,9 +194,44 @@ public class UserService {
 
     @Transactional
     public UserDto promoteToAdmin(Long userId) {
-        User user = userRepository.findById(userId)
+        // 탈퇴한 유저는 권한 변경 대상에서 제외
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ServiceException("404-1", "존재하지 않는 유저 입니다."));
         user.promoteToAdmin();
         return new UserDto(user);
+    }
+
+    // 회원탈퇴 (soft delete + 즉시 익명화)
+    @Transactional
+    public void withdraw(Long userId, WithdrawRequestDto requestDto) {
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new ServiceException("404-1", "존재하지 않는 유저 입니다."));
+        if ("ADMIN".equals(user.getRole())) {
+            throw new ServiceException("403-2", "관리자 계정은 탈퇴할 수 없습니다.");
+        }
+        if (!passwordEncoder.matches(requestDto.password(), user.getPassword())) {
+            throw new ServiceException("400-13", "비밀번호가 일치하지 않습니다.");
+        }
+        String oldProfileImageUrl = user.getProfileImageUrl();
+
+        // 익명화를 먼저: 마지막 refreshToken 삭제의 clearAutomatically 이후에는 user 변경이 반영되지 않음
+        user.withdraw(passwordEncoder.encode(UUID.randomUUID().toString()));
+
+        reviewService.hideAllByWithdrawnUser(userId);
+        userFollowRepository.deleteAllByUserId(userId);
+        userPreferenceGenreRepository.deleteByUser_Id(userId);
+        userPreferenceGameRepository.deleteByUser_Id(userId);
+        userFavoriteGameRepository.deleteAllByUserId(userId);
+        refreshTokenRepository.deleteAllByUserId(userId);
+
+        // 롤백되면 이미지만 지워지는 일이 없도록 커밋 후 삭제
+        if (oldProfileImageUrl != null) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    imageUploadService.deleteImage(oldProfileImageUrl);
+                }
+            });
+        }
     }
 }

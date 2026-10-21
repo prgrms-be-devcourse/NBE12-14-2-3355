@@ -247,6 +247,24 @@ public class ApiV1UserController {
         );
     }
 
+    @DeleteMapping("/me")
+    @Operation(summary = "회원탈퇴", description = "비밀번호를 확인한 뒤 계정을 익명화하고 모든 기기에서 로그아웃합니다. 관리자 계정은 탈퇴할 수 없습니다.", security = @SecurityRequirement(name = "bearerAuth"))
+    public RsData<Void> withdraw(
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser securityUser,
+            @Valid @RequestBody WithdrawRequestDto withdrawRequestDto,
+            @Parameter(hidden = true) HttpServletResponse httpServletResponse
+    ) {
+        userService.withdraw(securityUser.getId(), withdrawRequestDto);
+
+        ResponseCookie responseCookie = refreshTokenCookieFactory.delete();
+        httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
+
+        return new RsData<>(
+                "200-19",
+                "회원탈퇴 성공"
+        );
+    }
+
     @GetMapping("/check-email")
     @Operation(summary = "이메일 중복 확인", description = "true이면 이미 사용 중인 이메일입니다.")
     public RsData<Boolean> checkEmailDuplicate(
