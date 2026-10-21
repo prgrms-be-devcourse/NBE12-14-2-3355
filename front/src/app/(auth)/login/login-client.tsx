@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/features/auth/auth-context";
 import { AuthApiError } from "@/features/auth/api";
-import { needsOnboarding } from "@/features/auth/onboarding-status";
+import { loginDestination } from "@/features/auth/login-destination";
 import { clearLoginNotice, peekLoginNotice } from "@/features/auth/login-notice";
 import styles from "./login-client.module.css";
 
@@ -21,12 +21,13 @@ export default function LoginClient() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const loginStarted = useRef(false);
 
   useEffect(() => {
-    if (auth.status === "authenticated") {
-      router.replace(auth.user?.role === "ADMIN" ? "/admin/reports" : next || "/");
+    if (auth.status === "authenticated" && auth.user && !loginStarted.current) {
+      router.replace(loginDestination(auth.user, next, false));
     }
-  }, [auth.status, auth.user, next, router]);
+  }, [auth.status, auth.user, next, router, submitting]);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -34,13 +35,13 @@ export default function LoginClient() {
     if (!email.trim()) { setError("이메일을 입력해 주세요."); return; }
     if (!password) { setError("비밀번호를 입력해 주세요."); return; }
     setSubmitting(true);
+    loginStarted.current = true;
     try {
       const user = await auth.login({ email, password });
       clearLoginNotice();
-      router.replace(
-        user.role === "ADMIN" ? "/admin/reports" : needsOnboarding(user) ? "/onboarding" : next || "/"
-      );
+      router.replace(loginDestination(user, next));
     } catch (reason) {
+      loginStarted.current = false;
       setError(reason instanceof AuthApiError && reason.status === 401
         ? "이메일 또는 비밀번호가 올바르지 않습니다."
         : reason instanceof Error ? reason.message : "로그인에 실패했습니다.");

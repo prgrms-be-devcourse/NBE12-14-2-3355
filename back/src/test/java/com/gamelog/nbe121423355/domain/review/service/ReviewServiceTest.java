@@ -53,6 +53,9 @@ class ReviewServiceTest {
     private ReviewLikeRepository reviewLikeRepository;
 
     @Mock
+    private ReviewCommentService reviewCommentService;
+
+    @Mock
     private UserGameRepository userGameRepository;
 
     @Mock
@@ -371,7 +374,7 @@ class ReviewServiceTest {
         when(userGame.getUser()).thenReturn(user);
         when(user.getId()).thenReturn(USER_ID);
         Review review = prepareReview();
-        when(reviewRepository.findActiveById(10L)).thenReturn(Optional.of(review));
+        when(reviewRepository.findActiveForUpdate(10L)).thenReturn(Optional.of(review));
 
         reviewService.deleteReview(USER_ID, 10L);
 
@@ -419,7 +422,7 @@ class ReviewServiceTest {
         when(userGame.getUser()).thenReturn(user);
         when(user.getId()).thenReturn(2L);
         Review review = prepareReview();
-        when(reviewRepository.findActiveById(10L)).thenReturn(Optional.of(review));
+        when(reviewRepository.findActiveForUpdate(10L)).thenReturn(Optional.of(review));
 
         assertThatThrownBy(() -> reviewService.deleteReview(USER_ID, 10L))
                 .isInstanceOf(ServiceException.class)

@@ -57,6 +57,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/games/*/reviews/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/games/recommendations/personalized").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reviews/popular").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/reviews/*/comments", "/api/v1/reviews/*/comments/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reviews/*/likes/count").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/*/reviews").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/games", "/api/v1/games/**").permitAll()

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { reviewReturnPath } from "@/features/auth/login-destination";
 import Link from "next/link";
 import { useAuth } from "@/features/auth/auth-context";
 import { completeOnboarding, setPreferredGames, setPreferredGenres, skipOnboarding } from "@/features/auth/api";
@@ -14,6 +15,8 @@ const MAX_GAMES = 3;
 
 export default function OnboardingClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = reviewReturnPath(searchParams.get("next")) ?? "/";
   const auth = useAuth();
   const [step, setStep] = useState<1 | 2>(1);
   const [genreOptions, setGenreOptions] = useState<Option[]>([]);
@@ -41,12 +44,12 @@ export default function OnboardingClient() {
   }, [auth.user]);
 
   useEffect(() => {
-    if (auth.status === "unauthenticated") router.replace("/login?next=/onboarding");
-  }, [auth.status, router]);
+    if (auth.status === "unauthenticated") router.replace(`/login?next=${encodeURIComponent(returnTo === "/" ? "/onboarding" : returnTo)}`);
+  }, [auth.status, router, returnTo]);
 
   useEffect(() => {
-    if (auth.user && isOnboarded(auth.user)) router.replace("/");
-  }, [auth.user, router]);
+    if (auth.user && isOnboarded(auth.user)) router.replace(returnTo);
+  }, [auth.user, router, returnTo]);
 
   // 버튼 없이 다른 페이지로 이동해 온보딩을 이탈하는 경우, 건너뛰기로 암묵 처리
   // (완료/건너뛰기를 이미 눌렀다면 resolvedRef가 true라 여기서 다시 호출하지 않음)
@@ -184,7 +187,7 @@ export default function OnboardingClient() {
       const updated = await completeOnboarding(auth.accessToken);
       resolvedRef.current = true;
       auth.setUser(updated);
-      router.replace("/");
+      router.replace(returnTo);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "온보딩 저장에 실패했습니다.");
     } finally {
@@ -200,7 +203,7 @@ export default function OnboardingClient() {
       const updated = await skipOnboarding(auth.accessToken);
       resolvedRef.current = true;
       auth.setUser(updated);
-      router.replace("/");
+      router.replace(returnTo);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "건너뛰기에 실패했습니다.");
     } finally {

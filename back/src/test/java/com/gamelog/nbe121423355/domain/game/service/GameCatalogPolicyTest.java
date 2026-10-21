@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
@@ -39,15 +40,19 @@ class GameCatalogPolicyTest extends GameQueryTestSupport {
     }
 
     @Test
-    @DisplayName("모든 정렬에서 출시 연도가 1970년부터 올해인 게임만 페이징하고 집계한다")
-    void filtersReleaseYearBoundariesForEverySort() {
-        int year = LocalDate.now().getYear();
+    @DisplayName("모든 정렬과 자동완성은 1970년 1월 1일부터 오늘까지 출시된 게임만 반환한다")
+    void filtersReleaseDateBoundariesForEverySortAndSuggestions() {
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
         save(9201L, "Boundary Old", LocalDate.of(1969, 12, 31), "100");
         save(9202L, "Boundary Unknown", null, "100");
-        save(9203L, "Boundary Future", LocalDate.of(year + 1, 1, 1), "100");
+        save(9203L, "Boundary Future", today.plusDays(1), "100");
         save(9204L, "Boundary Earliest", LocalDate.of(1970, 1, 1), "80");
-        save(9205L, "Boundary Current", LocalDate.of(year, 12, 31), "90");
+        save(9205L, "Boundary Current", today, "90");
         entityManager.flush();
+
+        assertThat(gameService.getSuggestions("Boundary"))
+                .extracting(GameListResponse::title)
+                .containsExactlyInAnyOrder("Boundary Earliest", "Boundary Current");
 
         Stream.concat(Stream.<GameSort>of((GameSort) null), Arrays.stream(GameSort.values())).forEach(sort -> {
             var first = gameService.getGamesPage(new GameSearchRequest(0, 1, sort, "Boundary", null, null));
@@ -55,6 +60,9 @@ class GameCatalogPolicyTest extends GameQueryTestSupport {
             assertThat(first.getTotalElements()).isEqualTo(2);
             assertThat(first.getTotalPages()).isEqualTo(2);
             assertThat(second.getTotalElements()).isEqualTo(2);
+            var beyond = gameService.getGamesPage(new GameSearchRequest(2, 1, sort, "Boundary", null, null));
+            assertThat(beyond.getContent()).isEmpty();
+            assertThat(beyond.getTotalElements()).isEqualTo(2);
             assertThat(Stream.concat(first.getContent().stream(), second.getContent().stream())
                     .map(GameListResponse::title).toList())
                     .containsExactlyInAnyOrder("Boundary Earliest", "Boundary Current");

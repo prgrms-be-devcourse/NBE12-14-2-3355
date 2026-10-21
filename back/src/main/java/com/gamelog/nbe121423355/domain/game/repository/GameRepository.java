@@ -22,6 +22,8 @@ public interface GameRepository extends JpaRepository<Game,Long> {
                    END AS match_rank
             FROM games
             WHERE LOWER(title) LIKE LOWER(:containsPattern) ESCAPE '!'
+              AND release_date >= :minReleaseDate
+              AND release_date < :maxReleaseDateExclusive
             ORDER BY match_rank, sort_title, id
             LIMIT 6
         ) AS matched
@@ -31,7 +33,9 @@ public interface GameRepository extends JpaRepository<Game,Long> {
     List<Game> findSuggestions(
             @Param("keyword") String keyword,
             @Param("prefixPattern") String prefixPattern,
-            @Param("containsPattern") String containsPattern);
+            @Param("containsPattern") String containsPattern,
+            @Param("minReleaseDate") LocalDate minReleaseDate,
+            @Param("maxReleaseDateExclusive") LocalDate maxReleaseDateExclusive);
 
     Optional<Game> findByIgdbId(Long igdbId);
 

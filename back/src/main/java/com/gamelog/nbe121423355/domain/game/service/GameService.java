@@ -14,10 +14,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.time.LocalDate;
+import java.time.ZoneId;
 
 @Service
 @RequiredArgsConstructor
 public class GameService {
+    private static final LocalDate MIN_RELEASE_DATE = LocalDate.of(1970, 1, 1);
+    private static final ZoneId CATALOG_ZONE = ZoneId.of("Asia/Seoul");
     private final GameRepository gameRepository;
     private final GameFilteredQueryRepository gameFilteredQueryRepository;
 
@@ -48,8 +51,8 @@ public class GameService {
             var pageable = keywordPattern == null
                     ? request.toPageable()
                     : PageRequest.of(request.page(), request.size());
-            var minDate = LocalDate.of(1970, 1, 1);
-            var maxDate = LocalDate.now().withDayOfYear(1).plusYears(1);
+            var minDate = MIN_RELEASE_DATE;
+            var maxDate = LocalDate.now(CATALOG_ZONE).plusDays(1);
             var content = gameRepository.findDefaultSearchContent(
                     keywordPattern, minDate, maxDate, pageable.getPageSize(), pageable.getOffset());
             // 마지막 부분 페이지는 크기로 총 개수를 알 수 있습니다.
@@ -64,8 +67,8 @@ public class GameService {
                         genreIds,
                         platformIds,
                         request.sort(),
-                        LocalDate.of(1970, 1, 1),
-                        LocalDate.now().withDayOfYear(1).plusYears(1),
+                        MIN_RELEASE_DATE,
+                        LocalDate.now(CATALOG_ZONE).plusDays(1),
                         request.toPageable()
                 )
                 .map(GameListResponse::new);
@@ -76,7 +79,8 @@ public class GameService {
         if (keyword == null || keyword.isBlank()) return List.of();
         String normalized = keyword.strip();
         String escaped = escapeLike(normalized);
-        return gameRepository.findSuggestions(normalized, escaped + "%", "%" + escaped + "%")
+        return gameRepository.findSuggestions(normalized, escaped + "%", "%" + escaped + "%",
+                        MIN_RELEASE_DATE, LocalDate.now(CATALOG_ZONE).plusDays(1))
                 .stream().map(GameListResponse::new).toList();
     }
 

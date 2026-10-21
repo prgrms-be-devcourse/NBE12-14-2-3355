@@ -17,7 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class GameSuggestionTest extends GameQueryTestSupport {
     @Test
-    void suggestionsKeepIdTieBreakAndIncludeUnknownReleaseDates() {
+    void suggestionsKeepIdTieBreakAndExcludeUnknownReleaseDates() {
         saveGame(9400L, "Needle", List.of(), List.of());
         saveGame(9401L, "Needle", List.of(), List.of());
         entityManager.persist(Game.createFromIgdb(new IgdbGameResponse(
@@ -28,9 +28,8 @@ class GameSuggestionTest extends GameQueryTestSupport {
         entityManager.clear();
         var result = gameService.getSuggestions("needle");
         assertThat(result).extracting(GameListResponse::title)
-                .containsExactly("Needle", "Needle", "Needle Unknown", "A Needle");
+                .containsExactly("Needle", "Needle", "A Needle");
         assertThat(result.get(0).id()).isLessThan(result.get(1).id());
-        assertThat(result.get(2).releaseDate()).isNull();
     }
 
 

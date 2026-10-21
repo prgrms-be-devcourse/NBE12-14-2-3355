@@ -6,6 +6,8 @@ import { createReviewReport, deleteReview, getLikeStatus, getMyDetailedReview, s
 import type { DetailedReview } from "@/features/reviews/types";
 import type { Review, ReviewPage } from "@/features/reviews/list-types";
 import styles from "./game-reviews.module.css";
+import ReviewComments from "./review-comments";
+import CommentReturn from "./comment-return";
 
 type ReviewSort = "newest" | "rating";
 type ReviewResponse = { data?: ReviewPage; msg?: string };
@@ -148,6 +150,7 @@ function ReviewCard({
         {!mine && accessToken && onReport && <button type="button" className={styles.reportButton} onClick={onReport}>신고</button>}
       </div>
     </div>
+    <ReviewComments reviewId={review.reviewId} locked={hidden} />
   </article>;
 }
 
@@ -302,6 +305,7 @@ export default function GameReviews({
       </div></div>
     </div>
 
+    <CommentReturn gameId={gameId} />
     {actionError && <p className={styles.actionError} role="alert">{actionError}</p>}
     {actionNotice && <p className={styles.actionNotice} role="status">{actionNotice}</p>}
 

@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 public class ReviewService {
 
     private final ReviewRepository reviewRepository;
+    private final ReviewCommentService reviewCommentService;
     private final ReviewLikeRepository reviewLikeRepository;
     private final UserGameRepository userGameRepository;
     private final UserGameService userGameService;
@@ -153,9 +154,11 @@ public class ReviewService {
 
     @Transactional
     public void deleteReview(Long userId, Long reviewId) {
-        Review review = getReviewEntity(reviewId);
+        Review review = reviewRepository.findActiveForUpdate(reviewId)
+                .orElseThrow(() -> new ServiceException("404-3", "리뷰를 찾을 수 없습니다."));
         validateOwner(userId, review.getUserGame());
 
+        reviewCommentService.purge(reviewId);
         review.deleteByUser();
         reviewRepository.flush();
         userGameService.synchronizeLibraryState(review.getUserGame());
