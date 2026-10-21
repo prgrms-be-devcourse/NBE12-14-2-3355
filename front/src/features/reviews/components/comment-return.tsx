@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/features/auth/auth-context";
+import { acceptRefreshedToken } from "@/features/auth/api";
 import ReviewComments from "./review-comments";
 import type { Review } from "../types";
 
@@ -17,6 +18,7 @@ export default function CommentReturn({ gameId }: { gameId?: string }) {
     const controller = new AbortController();
     fetch(`/api/review-api/reviews/${id}`, { headers: { Authorization: `Bearer ${accessToken}` }, signal: controller.signal, cache: "no-store" })
       .then(async response => {
+        acceptRefreshedToken(response);
         const body = await response.json();
         if (!response.ok) throw new Error(body.msg || "원래 리뷰를 불러오지 못했습니다.");
         if (gameId && String(body.data.gameId) !== gameId) throw new Error("이 게임의 리뷰가 아닙니다.");

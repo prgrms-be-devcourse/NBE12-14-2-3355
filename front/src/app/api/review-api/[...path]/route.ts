@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { relayAuthHeaders } from "@/lib/proxy";
 
 type RouteContext = { params: Promise<{ path: string[] }> };
 
@@ -18,20 +19,21 @@ async function proxy(request: NextRequest, context: RouteContext) {
   const headers = new Headers();
   if (authorization) headers.set("Authorization", authorization);
   if (request.headers.get("content-type")) headers.set("Content-Type", "application/json");
+  const cookie = request.headers.get("cookie");
+  if (cookie) headers.set("Cookie", cookie);
 
   try {
-    const response = await fetch(url, {
+    const upstream = await fetch(url, {
       method: request.method,
       headers,
       body: request.method === "GET" || request.method === "HEAD" ? undefined : await request.text(),
       cache: "no-store",
       signal: AbortSignal.timeout(8000),
     });
-    const body = await response.text();
-    return new Response(body, {
-      status: response.status,
-      headers: { "Content-Type": response.headers.get("content-type") || "application/json" },
-    });
+    const body = await upstream.text();
+    const responseHeaders = new Headers({ "Content-Type": upstream.headers.get("content-type") || "application/json" });
+    relayAuthHeaders(upstream, responseHeaders);
+    return new Response(body, { status: upstream.status, headers: responseHeaders });
   } catch {
     return Response.json(
       { data: null, msg: "리뷰 서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.", resultCode: "502-1" },
