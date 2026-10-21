@@ -95,6 +95,5 @@ export default function IgdbAdminPage() {
       <p>현재 작업 기준: {formatTime(state.cutoff)}</p>
       <p>기존 갱신은 응답을 반영한 게임 수이며, 실제 값이 달라진 게임 수와는 다를 수 있습니다.</p>
     </section>}
-    <Link href="/">게임 목록으로 돌아가기</Link>
   </main>;
 }

@@ -10,6 +10,7 @@ import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
 import com.gamelog.nbe121423355.domain.usergame.dto.UserGameReqBody;
 import com.gamelog.nbe121423355.domain.usergame.repository.UserGameRepository;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -30,15 +31,29 @@ class GameRecordReviewTransactionTest {
     @Autowired GameRepository games;
     @Autowired UserGameRepository userGames;
 
+    private User user;
+    private Game game;
+
+    @AfterEach
+    void cleanUpCommittedFixtures() {
+        // 실제 서비스 트랜잭션의 롤백을 검증하므로 테스트 트랜잭션 대신 직접 정리한다.
+        if (game != null) {
+            games.deleteById(game.getId());
+        }
+        if (user != null) {
+            users.deleteById(user.getId());
+        }
+    }
+
     @Test
     @DisplayName("리뷰 저장이 실패하면 앞서 생성한 게임 기록도 롤백한다")
     void rollbackGameRecordWhenReviewSaveFails() {
-        User user = users.save(new User(
+        user = users.save(new User(
                 "transaction-user",
                 "transaction-user@example.com",
                 "password"
         ));
-        Game game = games.save(Game.createFromIgdb(new IgdbGameResponse(
+        game = games.save(Game.createFromIgdb(new IgdbGameResponse(
                 998877L,
                 "transaction-game",
                 "test",

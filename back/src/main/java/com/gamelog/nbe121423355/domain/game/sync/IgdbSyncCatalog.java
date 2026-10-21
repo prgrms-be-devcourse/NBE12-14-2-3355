@@ -98,6 +98,7 @@ public class IgdbSyncCatalog {
         String userGames = "select id from user_games where game_id in (:ids)";
         String reviews = "select id from reviews where user_game_id in (" + userGames + ")";
         jdbc.update("delete from review_comment_likes where comment_id in (select id from review_comment where review_id in (" + reviews + "))", params);
+        jdbc.update("delete from review_comment where parent_id is not null and review_id in (" + reviews + ")", params);
         jdbc.update("delete from review_comment where review_id in (" + reviews + ")", params);
         jdbc.update("delete from review_likes where review_id in (" + reviews + ")", params);
         jdbc.update("delete from review_reports where review_id in (" + reviews + ")", params);

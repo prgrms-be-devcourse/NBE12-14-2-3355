@@ -295,7 +295,7 @@ k6로 부하를 주고, Actuator가 공개한 서버 지표와 k6 결과를 Prom
 
 `prod`는 Railway MySQL 환경변수(`MYSQLHOST`, `MYSQLPORT`, `MYSQLDATABASE`, `MYSQLUSER`, `MYSQLPASSWORD`)를 사용합니다. `JWT_SECRET`, `CORS_ALLOWED_ORIGINS`와 외부 API 환경변수도 설정해야 합니다.
 
-운영 DB는 `ddl-auto: validate`와 SQL 초기화 비활성화 설정을 사용하므로 실행 전에 스키마를 준비해야 합니다. 운영 Refresh Token 쿠키에는 `Secure`와 `SameSite=None`이 적용됩니다.
+운영 DB는 `ddl-auto: validate`와 SQL 초기화 비활성화 설정을 사용하므로 실행 전에 스키마를 준비해야 합니다. 운영 Refresh Token 쿠키에는 `Secure`와 `SameSite=Lax`가 적용됩니다.
 
 ---
 

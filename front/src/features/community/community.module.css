@@ -1,0 +1,70 @@
+.page { max-width: 860px; margin: 0 auto; padding: 48px 24px 80px; }
+.heading { margin-bottom: 32px; }
+.heading > span { color: #a3e635; font-size: 12px; font-weight: 700; letter-spacing: .15em; }
+.heading h1 { font-size: 36px; margin: 10px 0; }
+.heading p, .sectionHeading p { color: #969caa; line-height: 1.6; }
+.tabs { display: flex; gap: 28px; border-bottom: 1px solid #30343e; margin-bottom: 28px; }
+.tabs a { padding: 14px 4px; color: #969caa; text-decoration: none; border-bottom: 3px solid transparent; }
+.tabs a[aria-current] { color: #bef264; border-color: #bef264; font-weight: 700; }
+.sectionHeading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px; }
+.sectionHeading h2 { font-size: 20px; margin: 0; }
+.sectionHeading p { font-size: 13px; margin: 6px 0 0; }
+.page button { cursor: pointer; border: 1px solid #39404c; background: #20242d; color: #e5e7eb; border-radius: 8px; padding: 9px 13px; font: inherit; font-size: 13px; }
+.page button:disabled { opacity: .5; cursor: wait; }
+.page button:focus-visible, .page a:focus-visible { outline: 2px solid #bef264; outline-offset: 4px; }
+.sectionHeading > button { flex-shrink: 0; }
+.card { border: 1px solid var(--line); border-radius: 9px; padding: 24px 26px; background: var(--panel); margin-bottom: 16px; }
+.cardHeader { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 20px; }
+.cardHeader time { color: #95a092; font-size: 12px; flex-shrink: 0; }
+.identity { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.reviewerDetails { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.reviewerName { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
+.author { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; color: var(--text); font-size: 16px; font-weight: 700; }
+.author:hover { color: var(--lime); }
+.avatar { width: 48px; height: 48px; border: 1px solid #5d724d; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: linear-gradient(145deg, #405338, #202a22); color: var(--lime); font-size: 18px; font-weight: 800; flex-shrink: 0; text-decoration: none; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.game { display: flex; align-items: center; gap: 14px; margin: 20px 0; color: var(--text); text-decoration: none; }
+.game strong { min-width: 0; overflow-wrap: anywhere; font-size: 14px; }
+.game:hover strong, .game:hover .arrow { color: var(--lime); }
+.cover { width: 44px; height: 60px; flex-shrink: 0; overflow: hidden; border-radius: 5px; }
+.cover img { width: 100%; height: 100%; object-fit: cover; }
+.coverFallback { display: grid; place-items: center; width: 100%; height: 100%; background: #303c2b; color: #bef264; font-size: 12px; font-weight: 700; }
+.rating { display: flex; align-items: baseline; gap: 5px; color: var(--lime); }
+.rating > span, .rating strong { font-size: 20px; }
+.rating small { color: var(--muted); font-size: 12px; }
+.noRating { color: var(--muted); font-size: 13px; }
+.reviewerMeta { display: flex; flex-wrap: wrap; align-items: center; gap: 11px; }
+.playState { display: inline-flex; align-items: center; gap: 6px; color: #c2cec0; font-size: 12px; }
+.playState i { width: 7px; height: 7px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 8px #b8ed6b66; }
+.arrow { margin-left: auto; color: var(--muted); }
+.body { min-height: 80px; }
+.body p { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; line-height: 1.75; color: #d5dbd2; }
+.body button { margin-top: 8px; padding: 5px 0; border: 0; border-radius: 0; background: transparent; color: var(--muted); font-size: 12px; }
+.body button:hover { color: var(--lime); }
+.spoiler { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; min-height: 80px; padding: 12px; text-align: center; color: var(--text); font-size: 14px; }
+.spoiler button { padding: 9px 12px; border: 1px solid #60764d; border-radius: 4px; background: #293a25; color: var(--lime); font-size: 12px; }
+.spoiler button:hover { background: #344b2b; }
+.actions { margin-top: 14px; display: flex; align-items: center; justify-content: flex-start; gap: 12px; }
+.comments > div { border-top: 0; }
+.actions button { display: inline-flex; align-items: center; gap: 7px; padding: 6px 0; border: 0; border-radius: 0; background: transparent; color: var(--muted); font-size: 13px; }
+.actions button > span { color: var(--lime); font-size: 19px; line-height: 1; }
+.actions button:hover:not(:disabled), .actions button[aria-pressed=true] { color: var(--lime); }
+.state { text-align: center; padding: 40px 16px; color: #a6abba; }
+.state h3 { color: #e5e7eb; font-size: 18px; }
+.state a { display: inline-block; margin-top: 12px; color: #bef264; }
+.more { display: block; width: 100%; margin-top: 24px; }
+.error { color: #fca5a5; font-size: 13px; }
+@media (max-width: 600px) {
+  .page { padding: 28px 16px 60px; }
+  .heading h1 { font-size: 28px; }
+  .sectionHeading { align-items: flex-start; }
+}
+@media (max-width: 760px) {
+  .card { padding: 19px; }
+  .cardHeader { align-items: flex-start; flex-wrap: wrap; }
+  .avatar { width: 42px; height: 42px; font-size: 16px; }
+  .reviewerName { font-size: 12px; }
+  .author { max-width: 100%; font-size: 15px; }
+  .body p { font-size: 14px; }
+  .spoiler { flex-direction: column; gap: 8px; }
+}

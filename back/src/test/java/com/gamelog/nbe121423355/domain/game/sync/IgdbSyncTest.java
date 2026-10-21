@@ -100,6 +100,8 @@ class IgdbSyncTest {
         var record = new UserGame(user, game); em.persist(record);
         var review = new Review(record, null, "Delete me", false); em.persist(review);
         var comment = new ReviewComment(review, user, "Comment"); em.persist(comment);
+        var reply = new ReviewComment(review, user, "Reply", false, comment); em.persist(reply);
+        em.persist(new ReviewCommentLike(reply, user));
         em.persist(new ReviewCommentLike(comment, user));
         em.persist(new ReviewLike(review, user));
         em.persist(new ReviewReport(review, user, "Reason"));
@@ -113,6 +115,7 @@ class IgdbSyncTest {
         assertThat(em.find(UserGame.class, record.getId())).isNull();
         assertThat(em.find(Review.class, review.getId())).isNull();
         assertThat(em.find(ReviewComment.class, comment.getId())).isNull();
+        assertThat(em.find(ReviewComment.class, reply.getId())).isNull();
         assertThat(em.find(User.class, user.getId())).isNotNull();
         assertThat(store.status().getDeleted()).isEqualTo(1);
     }

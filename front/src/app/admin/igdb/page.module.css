@@ -1,4 +1,4 @@
-.main { max-width: 1000px; margin: 0 auto; padding: 48px 24px; }
+.main { width: min(1120px, calc(100% - 36px)); margin: 0 auto; padding: 48px 0 80px; }
 .main header { margin-bottom: 28px; }
 .main header span { color: var(--lime); font-size: 12px; letter-spacing: 2px; }
 .main h1 { font-size: 30px; margin: 12px 0; }
@@ -12,3 +12,4 @@
 .metrics dd { font-size: 22px; margin: 8px 0; }
 .main .error { color: #ffabab; }
 .main > a { color: var(--lime); }
+@media (max-width: 700px) { .main { width: calc(100% - 22px); padding-top: 28px; } }

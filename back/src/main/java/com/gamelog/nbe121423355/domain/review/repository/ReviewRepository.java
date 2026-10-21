@@ -17,6 +17,10 @@ import java.util.Optional;
 public interface ReviewRepository extends JpaRepository<Review, Long> {
     String ACTIVE_REVIEW = "(r.status IS NULL OR r.status = com.gamelog.nbe121423355.domain.review.entity.ReviewStatus.ACTIVE)";
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT r FROM Review r WHERE r.id = :id AND " + ACTIVE_REVIEW)
+    Optional<Review> findActiveForUpdate(@Param("id") Long id);
+
 
     @Query("""
             SELECT r
