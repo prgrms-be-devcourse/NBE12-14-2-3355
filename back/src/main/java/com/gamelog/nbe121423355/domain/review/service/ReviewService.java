@@ -1,6 +1,5 @@
 package com.gamelog.nbe121423355.domain.review.service;
 
-import com.gamelog.nbe121423355.domain.review.dto.request.DetailedReviewSaveRequest;
 import com.gamelog.nbe121423355.domain.review.dto.request.ReviewSaveRequest;
 import com.gamelog.nbe121423355.domain.review.dto.response.DetailedReviewResponse;
 import com.gamelog.nbe121423355.domain.review.dto.response.ReviewPageResponse;
@@ -11,16 +10,16 @@ import com.gamelog.nbe121423355.domain.review.repository.ReviewLikeRepository;
 import com.gamelog.nbe121423355.domain.review.repository.ReviewRepository;
 import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
 import com.gamelog.nbe121423355.domain.usergame.dto.UserGameDto;
-import com.gamelog.nbe121423355.domain.usergame.dto.UserGameSaveResult;
 import com.gamelog.nbe121423355.domain.usergame.repository.UserGameRepository;
-import com.gamelog.nbe121423355.domain.usergame.service.UserGameService;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -35,7 +34,6 @@ public class ReviewService {
     private final ReviewCommentService reviewCommentService;
     private final ReviewLikeRepository reviewLikeRepository;
     private final UserGameRepository userGameRepository;
-    private final UserGameService userGameService;
 
     public DetailedReviewResponse getMyDetailedReview(Long userId, Long gameId) {
         UserGame userGame = userGameRepository.findByUser_IdAndGame_Id(userId, gameId)
@@ -51,33 +49,6 @@ public class ReviewService {
 
         return new DetailedReviewResponse(
                 new UserGameDto(userGame),
-                review
-        );
-    }
-
-    @Transactional
-    public DetailedReviewResponse saveDetailedReview(
-            Long userId,
-            Long gameId,
-            DetailedReviewSaveRequest request
-    ) {
-        // 게임 기록은 항상 저장하고, 리뷰 요청이 있으면 같은 기록에 리뷰를 저장한다.
-        UserGameSaveResult userGameResult = userGameService.prepareGameRecordForReview(
-                userId,
-                gameId,
-                request.userGame()
-        );
-
-        ReviewResponse review;
-        if (request.review() == null || !request.review().hasReviewContent()) {
-            userGameService.synchronizeLibraryState(userGameResult.userGame());
-            review = findReviewResponse(userGameResult.userGame().getId());
-        } else {
-            review = saveReview(userId, userGameResult.userGame().getId(), request.review());
-        }
-
-        return new DetailedReviewResponse(
-                new UserGameDto(userGameResult.userGame()),
                 review
         );
     }
@@ -101,7 +72,6 @@ public class ReviewService {
                 review.edit(request.rating(), request.content(), request.spoiler());
             }
             reviewRepository.flush();
-            userGameService.synchronizeLibraryState(userGame);
             return toReviewResponse(review);
         }
 
@@ -113,7 +83,6 @@ public class ReviewService {
         );
 
         Review savedReview = reviewRepository.save(newReview);
-        userGameService.synchronizeLibraryState(userGame);
         return toReviewResponse(savedReview);
     }
 
@@ -147,13 +116,12 @@ public class ReviewService {
         // 변경된 리뷰를 자동으로 반영.
         review.edit(request.rating(), request.content(), request.spoiler());
         reviewRepository.flush();
-        userGameService.synchronizeLibraryState(review.getUserGame());
 
         return toReviewResponse(review);
     }
 
     @Transactional
-    public void deleteReview(Long userId, Long reviewId) {
+    public Long deleteReview(Long userId, Long reviewId) {
         Review review = reviewRepository.findActiveForUpdate(reviewId)
                 .orElseThrow(() -> new ServiceException("404-3", "리뷰를 찾을 수 없습니다."));
         validateOwner(userId, review.getUserGame());
@@ -161,7 +129,13 @@ public class ReviewService {
         reviewCommentService.purge(reviewId);
         review.deleteByUser();
         reviewRepository.flush();
-        userGameService.synchronizeLibraryState(review.getUserGame());
+        return review.getUserGame().getId();
+    }
+
+    // 회원탈퇴 트랜잭션 안에서만 호출 (라이브러리 통계 유지를 위해 라이브러리 상태는 재계산하지 않음)
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void hideAllByWithdrawnUser(Long userId) {
+        reviewRepository.hideAllByUserId(userId, LocalDateTime.now());
     }
 
     private UserGame getUserGame(Long userGameId) {
@@ -174,7 +148,7 @@ public class ReviewService {
                 .orElseThrow(() -> new ServiceException("404-3", "리뷰를 찾을 수 없습니다."));
     }
 
-    private ReviewResponse findReviewResponse(Long userGameId) {
+    public ReviewResponse getReviewByUserGameId(Long userGameId) {
         return reviewRepository.findByUserGame_Id(userGameId)
                 .map(this::toReviewResponse)
                 .orElse(null);

@@ -7,7 +7,7 @@ import com.gamelog.nbe121423355.domain.review.dto.request.DetailedReviewSaveRequ
 import com.gamelog.nbe121423355.domain.review.dto.request.ReviewSaveRequest;
 import com.gamelog.nbe121423355.domain.review.entity.Review;
 import com.gamelog.nbe121423355.domain.review.repository.ReviewRepository;
-import com.gamelog.nbe121423355.domain.review.service.ReviewService;
+import com.gamelog.nbe121423355.domain.review.service.GameRecordReviewService;
 import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.domain.user.repository.UserRepository;
 import com.gamelog.nbe121423355.domain.usergame.dto.*;
@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Transactional
 class UserGameReviewStatisticsTest {
     @Autowired UserGameService library;
-    @Autowired ReviewService reviewService;
+    @Autowired GameRecordReviewService gameRecordReviewService;
     @Autowired UserRepository users;
     @Autowired GameRepository games;
     @Autowired ReviewRepository reviews;
@@ -56,7 +56,7 @@ class UserGameReviewStatisticsTest {
                 hours == null ? null : new BigDecimal(hours), null, null, null, null, null);
         var review = rating == null && content == null ? null
                 : new ReviewSaveRequest(rating == null ? null : new BigDecimal(rating), content, false);
-        var response = reviewService.saveDetailedReview(userId, game.getId(), new DetailedReviewSaveRequest(record, review));
+        var response = gameRecordReviewService.saveDetailedReview(userId, game.getId(), new DetailedReviewSaveRequest(record, review));
         return records.findById(response.userGame().id()).orElseThrow();
     }
 
@@ -75,7 +75,7 @@ class UserGameReviewStatisticsTest {
         review(hidden).hideByAdmin();
         library.synchronizeLibraryState(hidden);
         UserGame deleted = save(null, "30.0", "5.0", null);
-        reviewService.deleteReview(userId, review(deleted).getId());
+        gameRecordReviewService.deleteReview(userId, review(deleted).getId());
         UserGame completed = save(PlayStatus.COMPLETED, null, null, null);
         UserGame wish = save(null, null, null, null);
         library.changeWishlist(userId, wish.getGame().getId(), true);
@@ -102,7 +102,7 @@ class UserGameReviewStatisticsTest {
     void ratingSortKeepsGamesWithInvisibleOrMissingReviews() {
         UserGame active = save(null, null, "2.0", null);
         UserGame deleted = save(null, "10", "5.0", null);
-        reviewService.deleteReview(userId, review(deleted).getId());
+        gameRecordReviewService.deleteReview(userId, review(deleted).getId());
         UserGame hidden = save(null, "5", "4.0", null);
         review(hidden).hideByAdmin();
         library.synchronizeLibraryState(hidden);
@@ -147,7 +147,7 @@ class UserGameReviewStatisticsTest {
     @DisplayName("활성 별점을 본문만 있는 리뷰로 바꾸면 라이브러리는 유지하고 플레이 통계에서는 제외한다")
     void contentOnlyAfterEditIsNotPlayed() {
         UserGame rated = save(null, null, "4.0", null);
-        reviewService.updateReview(userId, review(rated).getId(), new ReviewSaveRequest(null, "본문만 남김", false));
+        gameRecordReviewService.updateReview(userId, review(rated).getId(), new ReviewSaveRequest(null, "본문만 남김", false));
         em.flush();
         em.clear();
         var profile = library.profileTab(userId, userId);

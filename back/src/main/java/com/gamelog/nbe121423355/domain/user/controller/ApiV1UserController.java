@@ -2,11 +2,12 @@ package com.gamelog.nbe121423355.domain.user.controller;
 
 import com.gamelog.nbe121423355.domain.user.dto.*;
 import com.gamelog.nbe121423355.domain.user.service.UserPreferenceGameService;
+import com.gamelog.nbe121423355.domain.user.service.TokenReissueService;
 import com.gamelog.nbe121423355.domain.user.service.UserPreferenceGenreService;
 import com.gamelog.nbe121423355.domain.user.service.UserService;
 import com.gamelog.nbe121423355.global.dto.RsData;
 import com.gamelog.nbe121423355.global.security.SecurityUser;
-import com.gamelog.nbe121423355.global.security.jwt.CookieProperties;
+import com.gamelog.nbe121423355.global.security.jwt.RefreshTokenCookieFactory;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -19,7 +20,6 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Duration;
 import java.util.List;
 
 @RestController
@@ -31,7 +31,7 @@ public class ApiV1UserController {
     private final UserService userService;
     private final UserPreferenceGenreService userPreferenceGenreService;
     private final UserPreferenceGameService userPreferenceGameService;
-    private final CookieProperties cookieProperties;
+    private final RefreshTokenCookieFactory refreshTokenCookieFactory;
 
 
     @PostMapping ("/signup")
@@ -57,13 +57,7 @@ public class ApiV1UserController {
     ){
         UserService.LoginResult result = userService.login(loginRequestDto);
 
-        ResponseCookie responseCookie = ResponseCookie.from("refreshToken", result.refreshToken())
-                .httpOnly(true)
-                .path("/")
-                .maxAge(Duration.ofDays(14))
-                .sameSite(cookieProperties.sameSite())
-                .secure(cookieProperties.secure())
-                .build();
+        ResponseCookie responseCookie = refreshTokenCookieFactory.create(result.refreshToken(), result.refreshTokenExpiryDate());
         httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
 
         LoginResponseDto body = new LoginResponseDto(result.user(), result.accessToken());
@@ -84,25 +78,25 @@ public class ApiV1UserController {
             userService.logout(refreshToken);
         }
 
-        ResponseCookie responseCookie = ResponseCookie.from("refreshToken", "")
-                .httpOnly(true)
-                .path("/")
-                .maxAge(0)
-                .sameSite(cookieProperties.sameSite())
-                .secure(cookieProperties.secure())
-                .build();
+        ResponseCookie responseCookie = refreshTokenCookieFactory.delete();
         httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
 
         return new RsData<>("200-13", "로그아웃 성공");
     }
 
     @PostMapping("/refresh")
-    @Operation(summary = "accessToken 재발급", description = "HttpOnly refreshToken 쿠키를 사용해 새로운 accessToken을 발급합니다.")
+    @Operation(summary = "accessToken 재발급", description = "HttpOnly refreshToken 쿠키를 사용해 새로운 accessToken을 발급하고, refreshToken을 교체한 쿠키로 다시 설정합니다.")
     public RsData<TokenResponseDto> refresh(
             @CookieValue(value = "refreshToken", required = false)
-            String refreshToken
+            String refreshToken,
+            @Parameter(hidden = true) HttpServletResponse httpServletResponse
     ){
-        TokenResponseDto tokenResponseDto = userService.refresh(refreshToken);
+        TokenReissueService.ReissueResult result = userService.refresh(refreshToken);
+
+        ResponseCookie responseCookie = refreshTokenCookieFactory.create(result.refreshToken(), result.refreshTokenExpiryDate());
+        httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
+
+        TokenResponseDto tokenResponseDto = new TokenResponseDto(result.accessToken());
         return new RsData<>(
                 "200-2",
                 "토큰 재발급 성공",
@@ -236,15 +230,38 @@ public class ApiV1UserController {
     }
 
     @PatchMapping("/me/password")
-    @Operation(summary = "비밀번호 변경", description = "현재 비밀번호를 확인한 뒤 새 비밀번호로 변경합니다.", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "비밀번호 변경", description = "현재 비밀번호를 확인한 뒤 새 비밀번호로 변경합니다. 다른 기기는 로그아웃되고, 현재 기기는 새 refreshToken 쿠키로 로그인이 유지됩니다.", security = @SecurityRequirement(name = "bearerAuth"))
     public RsData<Void> changePassword(
             @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser securityUser,
-            @Valid @RequestBody ChangePasswordRequestDto changePasswordRequestDto
+            @Valid @RequestBody ChangePasswordRequestDto changePasswordRequestDto,
+            @Parameter(hidden = true) HttpServletResponse httpServletResponse
     ) {
-        userService.changePassword(securityUser.getId(), changePasswordRequestDto);
+        UserService.IssuedSession session = userService.changePassword(securityUser.getId(), changePasswordRequestDto);
+
+        ResponseCookie responseCookie = refreshTokenCookieFactory.create(session.refreshToken(), session.expiryDate());
+        httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
+
         return new RsData<>(
                 "200-14",
                 "비밀번호 변경 성공"
+        );
+    }
+
+    @DeleteMapping("/me")
+    @Operation(summary = "회원탈퇴", description = "비밀번호를 확인한 뒤 계정을 익명화하고 모든 기기에서 로그아웃합니다. 관리자 계정은 탈퇴할 수 없습니다.", security = @SecurityRequirement(name = "bearerAuth"))
+    public RsData<Void> withdraw(
+            @Parameter(hidden = true) @AuthenticationPrincipal SecurityUser securityUser,
+            @Valid @RequestBody WithdrawRequestDto withdrawRequestDto,
+            @Parameter(hidden = true) HttpServletResponse httpServletResponse
+    ) {
+        userService.withdraw(securityUser.getId(), withdrawRequestDto);
+
+        ResponseCookie responseCookie = refreshTokenCookieFactory.delete();
+        httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
+
+        return new RsData<>(
+                "200-19",
+                "회원탈퇴 성공"
         );
     }
 

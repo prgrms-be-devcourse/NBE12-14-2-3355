@@ -5,10 +5,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -133,4 +135,16 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             @Param("userId") Long userId,
             Pageable pageable
     );
+
+    // 회원탈퇴: 활성 리뷰만 숨김 (UPDATE에는 JOIN을 못 써서 user_game은 서브쿼리)
+    @Modifying(flushAutomatically = true)
+    @Query("""
+            UPDATE Review r
+            SET r.status = com.gamelog.nbe121423355.domain.review.entity.ReviewStatus.DELETED_BY_USER,
+                r.deletedAt = :now
+            WHERE r.userGame.id IN (SELECT ug.id FROM UserGame ug WHERE ug.user.id = :userId)
+              AND """ + ACTIVE_REVIEW + """
+
+            """)
+    int hideAllByUserId(@Param("userId") Long userId, @Param("now") LocalDateTime now);
 }

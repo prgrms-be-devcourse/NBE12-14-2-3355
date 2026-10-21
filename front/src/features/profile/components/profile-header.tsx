@@ -6,7 +6,6 @@ import { useAuth } from "@/features/auth/auth-context";
 import { searchUsers, setFollowing } from "@/features/follows/api";
 import FollowButton from "@/features/follows/components/follow-button";
 import ProfileEditor from "./profile-editor";
-import PasswordChangeDialog from "./password-change-dialog";
 import styles from "./profile.module.css";
 
 type Props = {
@@ -19,7 +18,6 @@ type Props = {
 export default function ProfileHeader({ user, accessToken, editable, onSaved }: Props) {
   const auth = useAuth();
   const [editing, setEditing] = useState(false);
-  const [changingPassword, setChangingPassword] = useState(false);
   const [following, setFollowingState] = useState<boolean | null>(null);
   const [followPending, setFollowPending] = useState(false);
 
@@ -65,7 +63,6 @@ export default function ProfileHeader({ user, accessToken, editable, onSaved }: 
       <p className={styles.profileBio}>{user.bio?.trim() || "아직 한줄 소개가 없습니다."}</p>
       {editable && <div className={styles.profileHeaderActions}>
         <button type="button" className={styles.profileEditButton} onClick={() => setEditing(true)}>프로필 수정</button>
-        <button type="button" className={styles.profileEditButton} onClick={() => setChangingPassword(true)}>비밀번호 변경</button>
         <button type="button" className={`${styles.profileEditButton} ${styles.profileLogoutButton}`} onClick={() => { void handleLogout(); }}>로그아웃</button>
       </div>}
       {!editable && accessToken && following !== null && <div className={styles.profileHeaderActions}>
@@ -81,6 +78,5 @@ export default function ProfileHeader({ user, accessToken, editable, onSaved }: 
             onSaved?.(updatedUser);
             setEditing(false);
           }} onClose={() => setEditing(false)} />}
-    {changingPassword && <PasswordChangeDialog accessToken={accessToken ?? ""} onClose={() => setChangingPassword(false)} />}
   </section>;
 }

@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -73,7 +74,8 @@ class JwtProviderTest {
     @DisplayName("isAccessToken / isRefreshToken - 생성 메서드에 따라 토큰 종류가 구분됨")
     void tokenType_distinguished() {
         String accessToken = jwtProvider.generateAccessToken(1L, "USER");
-        String refreshToken = jwtProvider.generateRefreshToken(1L);
+        String refreshToken = jwtProvider.generateRefreshToken(1L, UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(), jwtProvider.newRefreshTokenExpiration());
 
         assertThat(jwtProvider.isAccessToken(jwtProvider.parseClaims(accessToken))).isTrue();
         assertThat(jwtProvider.isRefreshToken(jwtProvider.parseClaims(accessToken))).isFalse();

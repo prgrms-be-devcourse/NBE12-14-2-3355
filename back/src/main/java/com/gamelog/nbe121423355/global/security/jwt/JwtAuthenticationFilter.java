@@ -11,6 +11,8 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -28,10 +30,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
     private final TokenReissueService tokenReissueService;
+    private final RefreshTokenCookieFactory refreshTokenCookieFactory;
 
-    public JwtAuthenticationFilter(JwtProvider jwtProvider, TokenReissueService tokenReissueService) {
+    public JwtAuthenticationFilter(JwtProvider jwtProvider, TokenReissueService tokenReissueService,
+                                   RefreshTokenCookieFactory refreshTokenCookieFactory) {
         this.jwtProvider = jwtProvider;
         this.tokenReissueService = tokenReissueService;
+        this.refreshTokenCookieFactory = refreshTokenCookieFactory;
     }
 
     // 필터는 spring mvc의 dispatcherservlet보다 앞단에서 실행
@@ -79,8 +84,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             ReissueResult result = tokenReissueService.reissue(refreshToken, expectedUserId);
             setSecurityContext(result.userId(), result.role());
             response.setHeader("New-Access-Token", result.accessToken());
+            // Rotation으로 교체된 refreshToken (프록시는 relayAuthHeaders로 Set-Cookie를 브라우저까지 전달)
+            ResponseCookie cookie = refreshTokenCookieFactory.create(result.refreshToken(), result.refreshTokenExpiryDate());
+            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         } catch (ServiceException e) {
             // 무효/로그아웃된 refreshToken → 재발급 없이 미인증으로 진행 (정상적인 실패라 로그 안 남김)
+            // 재사용 감지(401-3)는 TokenReissueService에서 warn 로그를 남김
         } catch (Exception e) {
             log.warn("자동 재발급 중 예외 발생", e);
         }

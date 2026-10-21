@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useAuth } from "@/features/auth/auth-context";
 import { AuthApiError } from "@/features/auth/api";
 import { loginDestination } from "@/features/auth/login-destination";
-import { clearLoginNotice, peekLoginNotice } from "@/features/auth/login-notice";
 import styles from "./login-client.module.css";
 
 export default function LoginClient() {
@@ -14,10 +13,7 @@ export default function LoginClient() {
   const searchParams = useSearchParams();
   const auth = useAuth();
   const next = searchParams.get("next");
-  // 비밀번호 변경 등 다른 페이지에서 넘겨준 안내.
-  // 로그아웃 직후 로그인 페이지로의 이동이 두 번 겹치면 컴포넌트가 다시 마운트되므로, 마운트 시점이 아니라 로그인 성공 시에 지운다.
-  const [notice] = useState(() => peekLoginNotice()?.message ?? "");
-  const [email, setEmail] = useState(() => searchParams.get("email") || peekLoginNotice()?.email || "");
+  const [email, setEmail] = useState(() => searchParams.get("email") || "");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -38,7 +34,6 @@ export default function LoginClient() {
     loginStarted.current = true;
     try {
       const user = await auth.login({ email, password });
-      clearLoginNotice();
       router.replace(loginDestination(user, next));
     } catch (reason) {
       loginStarted.current = false;
@@ -54,7 +49,6 @@ export default function LoginClient() {
     <div className={styles.panel}>
       <span className={styles.eyebrow}>WELCOME BACK</span>
       <h1 className={styles.title}>로그인</h1>
-      {notice && <p className={styles.notice} role="status">{notice}</p>}
       <form className={styles.form} onSubmit={submit} noValidate>
         <label>이메일
           <input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" />

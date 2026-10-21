@@ -1,7 +1,6 @@
 package com.gamelog.nbe121423355.domain.review.service;
 
 import com.gamelog.nbe121423355.domain.game.entity.Game;
-import com.gamelog.nbe121423355.domain.review.dto.request.DetailedReviewSaveRequest;
 import com.gamelog.nbe121423355.domain.review.dto.request.ReviewSaveRequest;
 import com.gamelog.nbe121423355.domain.review.dto.response.DetailedReviewResponse;
 import com.gamelog.nbe121423355.domain.review.entity.Review;
@@ -10,13 +9,9 @@ import com.gamelog.nbe121423355.domain.review.repository.ReviewLikeCountProjecti
 import com.gamelog.nbe121423355.domain.review.repository.ReviewLikeRepository;
 import com.gamelog.nbe121423355.domain.review.repository.ReviewRepository;
 import com.gamelog.nbe121423355.domain.user.entity.User;
-import com.gamelog.nbe121423355.domain.usergame.dto.UserGameReqBody;
-import com.gamelog.nbe121423355.domain.usergame.dto.UserGameSaveResult;
 import com.gamelog.nbe121423355.domain.usergame.entity.UserGame;
 import com.gamelog.nbe121423355.domain.usergame.repository.UserGameRepository;
-import com.gamelog.nbe121423355.domain.usergame.service.UserGameService;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -59,9 +54,6 @@ class ReviewServiceTest {
     private UserGameRepository userGameRepository;
 
     @Mock
-    private UserGameService userGameService;
-
-    @Mock
     private UserGame userGame;
 
     @Mock
@@ -72,119 +64,6 @@ class ReviewServiceTest {
 
     @InjectMocks
     private ReviewService reviewService;
-
-    private UserGameReqBody userGameRequest;
-
-    @BeforeEach
-    void setUp() {
-        userGameRequest = new UserGameReqBody(
-                null,
-                false,
-                true,
-                false,
-                false,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-        );
-
-    }
-
-    @DisplayName("리뷰가 null이면 게임 기록만 저장한다")
-    @Test
-    void saveDetailedReviewWithoutReview() {
-        prepareUserGameSave();
-        when(reviewRepository.findByUserGame_Id(USER_GAME_ID))
-                .thenReturn(Optional.empty());
-
-        DetailedReviewResponse response = reviewService.saveDetailedReview(
-                USER_ID,
-                GAME_ID,
-                new DetailedReviewSaveRequest(userGameRequest, null)
-        );
-
-        assertThat(response.userGame().backlog()).isTrue();
-        assertThat(response.review()).isNull();
-        verify(reviewRepository, never()).save(any(Review.class));
-    }
-
-    @DisplayName("빈 리뷰 객체면 게임 기록만 저장하고 리뷰를 생성하지 않는다")
-    @Test
-    void saveDetailedReviewWithEmptyReviewObject() {
-        prepareUserGameSave();
-        when(reviewRepository.findByUserGame_Id(USER_GAME_ID))
-                .thenReturn(Optional.empty());
-
-        DetailedReviewResponse response = reviewService.saveDetailedReview(
-                USER_ID,
-                GAME_ID,
-                new DetailedReviewSaveRequest(
-                        userGameRequest,
-                        new ReviewSaveRequest(null, "   ", false)
-                )
-        );
-
-        assertThat(response.review()).isNull();
-        verify(reviewRepository, never()).save(any(Review.class));
-    }
-
-    @DisplayName("빈 리뷰 요청으로 게임 기록만 수정하면 기존 리뷰를 유지한다")
-    @Test
-    void preserveExistingReviewWhenReviewIsEmpty() {
-        prepareUserGameSave();
-
-        Review existingReview = org.mockito.Mockito.mock(Review.class);
-        when(existingReview.getId()).thenReturn(10L);
-        when(existingReview.getUserGame()).thenReturn(userGame);
-        when(existingReview.getContent()).thenReturn("기존 리뷰");
-        when(reviewRepository.findByUserGame_Id(USER_GAME_ID))
-                .thenReturn(Optional.of(existingReview));
-
-        DetailedReviewResponse response = reviewService.saveDetailedReview(
-                USER_ID,
-                GAME_ID,
-                new DetailedReviewSaveRequest(
-                        userGameRequest,
-                        new ReviewSaveRequest(null, "", false)
-                )
-        );
-
-        assertThat(response.review()).isNotNull();
-        assertThat(response.review().reviewId()).isEqualTo(10L);
-        assertThat(response.review().content()).isEqualTo("기존 리뷰");
-        verify(existingReview, never()).edit(any(), any(), anyBoolean());
-        verify(reviewRepository, never()).save(any(Review.class));
-    }
-
-    @DisplayName("별점 없이 내용만 있는 리뷰를 저장한다")
-    @Test
-    void saveContentOnlyReview() {
-        prepareUserGameSave();
-        when(userGameRepository.findById(USER_GAME_ID))
-                .thenReturn(Optional.of(userGame));
-        when(reviewRepository.findIncludingDeletedByUserGameId(USER_GAME_ID))
-                .thenReturn(Optional.empty());
-        when(reviewRepository.save(any(Review.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-
-        DetailedReviewResponse response = reviewService.saveDetailedReview(
-                USER_ID,
-                GAME_ID,
-                new DetailedReviewSaveRequest(
-                        userGameRequest,
-                        new ReviewSaveRequest(null, "별점 없는 리뷰", false)
-                )
-        );
-
-        assertThat(response.review()).isNotNull();
-        assertThat(response.review().rating()).isNull();
-        assertThat(response.review().content()).isEqualTo("별점 없는 리뷰");
-        verify(reviewRepository).save(any(Review.class));
-    }
 
     @DisplayName("직접 리뷰 저장 요청이 비어 있으면 거절한다")
     @Test
@@ -536,21 +415,6 @@ class ReviewServiceTest {
         assertThat(response.userGame().id()).isEqualTo(USER_GAME_ID);
         assertThat(response.review().reviewId()).isEqualTo(10L);
         assertThat(response.review().content()).isEqualTo("내 상세 리뷰");
-    }
-
-    private void prepareUserGameSave() {
-        when(userGame.getId()).thenReturn(USER_GAME_ID);
-        when(userGame.getUser()).thenReturn(user);
-        when(user.getId()).thenReturn(USER_ID);
-        when(userGame.getGame()).thenReturn(game);
-        when(game.getId()).thenReturn(GAME_ID);
-        when(userGame.isBacklog()).thenReturn(true);
-        when(userGame.isInLibrary()).thenReturn(true);
-        when(userGameService.prepareGameRecordForReview(
-                USER_ID,
-                GAME_ID,
-                userGameRequest
-        )).thenReturn(new UserGameSaveResult(userGame, true));
     }
 
     private void prepareOwnedUserGame() {
