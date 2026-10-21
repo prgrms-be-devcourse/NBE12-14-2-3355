@@ -2,6 +2,7 @@ package com.gamelog.nbe121423355.domain.game.service;
 
 import com.gamelog.nbe121423355.domain.game.repository.GameRepository;
 import com.gamelog.nbe121423355.domain.game.service.model.RelatedGamePrecomputeMode;
+import com.gamelog.nbe121423355.domain.game.service.model.RelatedGamePrecomputeSnapshot;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +29,8 @@ class RelatedGamePrecomputeBatchServiceTest {
     private RelatedGamePrecomputeService precomputeService;
     @Mock
     private RelatedGamePrecomputeLock lock;
+    @Mock
+    private RelatedGamePrecomputeSnapshot snapshot;
 
     private RelatedGamePrecomputeBatchService batch;
 
@@ -81,6 +84,7 @@ class RelatedGamePrecomputeBatchServiceTest {
     void allUsesKeysetPagesAndFixedUpperBoundary() {
         allowLock();
         when(gameRepository.findMaxGameIdForPrecompute()).thenReturn(105L);
+        when(precomputeService.prepare(RelatedGamePrecomputeMode.INITIAL_LOAD, 105L)).thenReturn(snapshot);
         when(gameRepository.findGameIdsForPrecompute(0, 105, PageRequest.of(0, 100)))
                 .thenReturn(List.of(1L, 100L));
         when(gameRepository.findGameIdsForPrecompute(100, 105, PageRequest.of(0, 100)))
@@ -92,7 +96,7 @@ class RelatedGamePrecomputeBatchServiceTest {
 
         assertThat(result.processed()).isEqualTo(3);
         assertThat(result.exitCode()).isZero();
-        verify(precomputeService).precompute(105L, RelatedGamePrecomputeMode.INITIAL_LOAD);
+        verify(precomputeService).precompute(105L, RelatedGamePrecomputeMode.INITIAL_LOAD, snapshot);
         verify(gameRepository, times(1)).findMaxGameIdForPrecompute();
         verifyNoMoreInteractions(gameRepository);
     }

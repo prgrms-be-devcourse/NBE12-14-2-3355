@@ -13,9 +13,11 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 
 @SpringBootTest
 @Import(MySqlTestConfiguration.class)
@@ -64,6 +66,8 @@ class RelatedGamePrecomputeLockTest {
             owner.abort(Runnable::run);
         }
 
-        assertThat(lock.tryRun(check -> "recovered")).contains("recovered");
+        // 소켓 종료가 서버에서 처리되어 잠금이 해제될 때까지 제한 시간 안에서 확인한다.
+        await().atMost(Duration.ofSeconds(3)).pollInterval(Duration.ofMillis(10))
+                .untilAsserted(() -> assertThat(lock.tryRun(check -> "recovered")).contains("recovered"));
     }
 }

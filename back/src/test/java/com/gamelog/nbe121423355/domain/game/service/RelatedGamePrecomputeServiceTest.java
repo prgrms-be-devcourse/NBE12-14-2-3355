@@ -8,6 +8,7 @@ import com.gamelog.nbe121423355.domain.game.repository.RelatedGameCandidateRepos
 import com.gamelog.nbe121423355.domain.game.repository.RelatedGameQueryRepository;
 import com.gamelog.nbe121423355.domain.game.repository.projection.RelatedGameCandidateProjection;
 import com.gamelog.nbe121423355.domain.game.service.model.RelatedGamePrecomputeMode;
+import com.gamelog.nbe121423355.domain.game.service.model.RelatedGamePrecomputeSnapshot;
 import com.gamelog.nbe121423355.global.exception.ServiceException;
 import com.gamelog.nbe121423355.support.MySqlTestConfiguration;
 import jakarta.persistence.EntityManager;
@@ -27,6 +28,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
@@ -35,6 +38,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 @SpringBootTest
 @Import(MySqlTestConfiguration.class)
@@ -118,6 +123,34 @@ class RelatedGamePrecomputeServiceTest {
                 .containsExactly(fixture.candidateIds().getFirst());
 
         assertThat(service.precompute(fixture.sourceId(), RelatedGamePrecomputeMode.INITIAL_LOAD)).isEqualTo(3);
+        assertThat(storedCandidates(fixture.sourceId())).hasSize(3);
+    }
+
+    @Test
+    void sharedBaselineIsSavedWithoutExecutingPerSourceRecommendationQuery() {
+        Fixture fixture = createFixture(3, 0);
+        RelatedGamePrecomputeSnapshot snapshot = service.prepare(RelatedGamePrecomputeMode.INITIAL_LOAD,
+                fixture.candidateIds().getLast());
+
+        assertThat(service.precompute(fixture.sourceId(), RelatedGamePrecomputeMode.INITIAL_LOAD, snapshot))
+                .isEqualTo(3);
+
+        verify(queryRepository, never()).findCandidatesForPrecompute(fixture.sourceId(), 20, false);
+        assertThat(storedCandidates(fixture.sourceId())).extracting(RelatedGameCandidateProjection::gameId)
+                .containsExactly(fixture.candidateIds().get(2), fixture.candidateIds().get(1),
+                        fixture.candidateIds().getFirst());
+    }
+
+    @Test
+    void interactionSourceStillUsesExistingQueryAndAtomicStore() {
+        Fixture fixture = createFixture(3, 0);
+        var snapshot = new RelatedGamePrecomputeSnapshot(RelatedGamePrecomputeMode.INITIAL_LOAD, 20,
+                Map.of(fixture.sourceId(), List.of(1L)), Map.of(), Set.of(fixture.sourceId()));
+
+        assertThat(service.precompute(fixture.sourceId(), RelatedGamePrecomputeMode.INITIAL_LOAD, snapshot))
+                .isEqualTo(3);
+
+        verify(queryRepository).findCandidatesForPrecompute(fixture.sourceId(), 20, false);
         assertThat(storedCandidates(fixture.sourceId())).hasSize(3);
     }
 

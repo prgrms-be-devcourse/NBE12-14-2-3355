@@ -2,6 +2,7 @@ package com.gamelog.nbe121423355.domain.game.service;
 
 import com.gamelog.nbe121423355.domain.game.repository.GameRepository;
 import com.gamelog.nbe121423355.domain.game.service.model.RelatedGamePrecomputeMode;
+import com.gamelog.nbe121423355.domain.game.service.model.RelatedGamePrecomputeSnapshot;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -44,6 +45,11 @@ public class RelatedGamePrecomputeBatchService {
             if (all) {
                 // 실행 도중 추가되는 게임 때문에 전체 작업이 계속 늘어나지 않게 경계를 고정한다.
                 long upperId = gameRepository.findMaxGameIdForPrecompute();
+                long preparationStartedAt = System.nanoTime();
+                RelatedGamePrecomputeSnapshot snapshot = precomputeService.prepare(mode, upperId);
+                log.info("추천 공통 데이터 준비: 기준 게임={}, 적격 후보={}, 행동 기준 게임={}, 소요시간={}ms",
+                        snapshot.sourceCount(), snapshot.candidateCount(), snapshot.interactionSourceCount(),
+                        Duration.ofNanos(System.nanoTime() - preparationStartedAt).toMillis());
                 long afterId = 0;
                 while (true) {
                     checkOwnership.run();
@@ -52,11 +58,12 @@ public class RelatedGamePrecomputeBatchService {
                     if (page.isEmpty()) {
                         break;
                     }
-                    process(page, mode, checkOwnership, progress);
+                    process(page, mode, snapshot, checkOwnership, progress);
                     afterId = page.getLast();
                 }
+                log.info("장르 조합별 기본 추천 계산: {}회", snapshot.calculatedGroupCount());
             } else {
-                process(targets, mode, checkOwnership, progress);
+                process(targets, mode, null, checkOwnership, progress);
             }
             Result result = new Result(true, progress.processed, progress.succeeded,
                     List.copyOf(progress.failedIds), Duration.ofNanos(System.nanoTime() - startedAt));
@@ -70,12 +77,16 @@ public class RelatedGamePrecomputeBatchService {
         });
     }
 
-    private void process(List<Long> ids, RelatedGamePrecomputeMode mode,
+    private void process(List<Long> ids, RelatedGamePrecomputeMode mode, RelatedGamePrecomputeSnapshot snapshot,
                          Runnable checkOwnership, Progress progress) {
         for (Long gameId : ids) {
             checkOwnership.run();
             try {
-                precomputeService.precompute(gameId, mode);
+                if (snapshot == null) {
+                    precomputeService.precompute(gameId, mode);
+                } else {
+                    precomputeService.precompute(gameId, mode, snapshot);
+                }
                 progress.succeeded++;
             } catch (RuntimeException failure) {
                 progress.failedIds.add(gameId);
