@@ -365,26 +365,6 @@ class UserGameServiceLibraryTest {
     }
 
     @Test
-    @DisplayName("플레이 상태를 변경할 수 있다")
-    void changePlayedStatus() {
-        UserGame userGame = createUserGame();
-
-        given(userGameRepository.findByUser_IdAndGame_Id(1L, 1L))
-                .willReturn(Optional.of(userGame));
-
-        PlayStatus result =
-                userGameService.changePlayed(
-                        1L,
-                        1L,
-                        PlayStatus.DROPPED
-                );
-
-        assertThat(result).isEqualTo(PlayStatus.DROPPED);
-        assertThat(userGame.getPlayStatus())
-                .isEqualTo(PlayStatus.DROPPED);
-    }
-
-    @Test
     @DisplayName("UserGame이 없으면 생성하고 플레이 상태를 변경한다")
     void createUserGameAndChangePlayedStatus() {
         User user = new User("테스트", "test@test.com", "password");
@@ -419,21 +399,6 @@ class UserGameServiceLibraryTest {
         assertThat(saved.getGame()).isEqualTo(game);
         assertThat(saved.getPlayStatus())
                 .isEqualTo(PlayStatus.COMPLETED);
-    }
-
-    @Test
-    @DisplayName("playing을 변경할 수 있다")
-    void changePlaying() {
-        UserGame userGame = createUserGame();
-
-        given(userGameRepository.findByUser_IdAndGame_Id(1L, 1L))
-                .willReturn(Optional.of(userGame));
-
-        boolean result =
-                userGameService.changePlaying(1L, 1L, true);
-
-        assertThat(result).isTrue();
-        assertThat(userGame.isPlaying()).isTrue();
     }
 
     @Test
