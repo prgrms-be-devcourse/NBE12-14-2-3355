@@ -32,9 +32,11 @@ export default function GameSearch({ value, demo, onChange, onSearch, onSelect, 
       }));
     }
     if (demo) {
+      const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" }).format(new Date());
       const term = keyword.toLowerCase();
       const rank = (title: string) => title.toLowerCase() === term ? 0 : title.toLowerCase().startsWith(term) ? 1 : 2;
-      return demoGames.filter(game => game.title.toLowerCase().includes(term))
+      return demoGames.filter(game => game.releaseDate && game.releaseDate >= "1970-01-01"
+        && game.releaseDate <= today && game.title.toLowerCase().includes(term))
         .sort((a, b) => rank(a.title) - rank(b.title) || a.title.toLowerCase().localeCompare(b.title.toLowerCase()) || a.id - b.id).slice(0, 6);
     }
     const query = new URLSearchParams({ keyword });

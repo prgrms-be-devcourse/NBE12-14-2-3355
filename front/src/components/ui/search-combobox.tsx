@@ -65,7 +65,10 @@ export default function SearchCombobox<T>({
       aria-controls={visible ? listId : undefined} aria-activedescendant={visible && items[active] ? `${listId}-${getKey(items[active])}` : undefined}
       autoComplete="off" placeholder={placeholder} maxLength={maxLength} value={value}
       onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }}
-      onFocus={() => setOpen(true)} onChange={event => { onChange(event.target.value); setOpen(true); setActive(-1); setResult(null); }}
+      onFocus={() => setOpen(true)} onChange={event => {
+        if (event.target.value.trim() !== keyword) setResult(null);
+        onChange(event.target.value); setOpen(true); setActive(-1);
+      }}
       onKeyDown={event => {
         if (event.nativeEvent.isComposing || composing.current || event.keyCode === 229) {
           if (event.key === "Enter") event.preventDefault();

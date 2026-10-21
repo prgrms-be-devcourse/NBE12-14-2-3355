@@ -31,8 +31,8 @@ public class ReviewCommentLike {
         this.reviewComment = Objects.requireNonNull(reviewComment);
         this.user = Objects.requireNonNull(user);
         this.id = new ReviewCommentLikeId(
-                Objects.requireNonNull(reviewComment.getId()),
-                Objects.requireNonNull(user.getId())
+                Objects.requireNonNull(user.getId()),
+                Objects.requireNonNull(reviewComment.getId())
         );
 
     }
