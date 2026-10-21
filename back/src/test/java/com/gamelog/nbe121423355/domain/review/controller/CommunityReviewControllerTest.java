@@ -157,6 +157,40 @@ class CommunityReviewControllerTest {
                 .andExpect(jsonPath("$.data.hasNext").value(false));
     }
 
+    @Test
+    void bothFeedsExposeCurrentAuthorPlayState() throws Exception {
+        User viewer = user(), author = user();
+        Review review = review(author, "상태가 있는 리뷰");
+        em.persist(new UserFollow(viewer, author));
+        em.persist(new ReviewLike(review, viewer));
+        review.getUserGame().changePlayStatus(com.gamelog.nbe121423355.domain.usergame.entity.PlayStatus.COMPLETED);
+        review.getUserGame().changePlaying(true);
+        review.getUserGame().changeBacklog(true);
+        review.getUserGame().changeWishlist(true);
+        em.flush();
+        for (String tab : List.of("following", "popular")) {
+            mvc.perform(get("/api/v1/community/reviews/" + tab).header("Authorization", token(viewer)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.reviews[0].playStatus").value("COMPLETED"))
+                    .andExpect(jsonPath("$.data.reviews[0].playing").value(true))
+                    .andExpect(jsonPath("$.data.reviews[0].backlog").value(true))
+                    .andExpect(jsonPath("$.data.reviews[0].wishlist").value(true));
+        }
+        review.getUserGame().clearPlayStatus();
+        review.getUserGame().changePlaying(false);
+        review.getUserGame().changeBacklog(false);
+        review.getUserGame().changeWishlist(false);
+        em.flush();
+        for (String tab : List.of("following", "popular")) {
+            mvc.perform(get("/api/v1/community/reviews/" + tab).header("Authorization", token(viewer)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.reviews[0].playStatus").isEmpty())
+                    .andExpect(jsonPath("$.data.reviews[0].playing").value(false))
+                    .andExpect(jsonPath("$.data.reviews[0].backlog").value(false))
+                    .andExpect(jsonPath("$.data.reviews[0].wishlist").value(false));
+        }
+    }
+
     private User user() {
         var user = new User("사용자" + sequence, "community" + sequence++ + "@test.com", "password");
         em.persist(user);

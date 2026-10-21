@@ -12,6 +12,7 @@ import styles from "./community.module.css";
 import ReviewComments from "@/features/reviews/components/review-comments";
 import CommentReturn from "@/features/reviews/components/comment-return";
 import { communityReturnPath } from "@/features/auth/login-destination";
+import { getPlayLabel } from "@/features/reviews/play-label";
 
 export default function Community() {
   const auth = useAuth();
@@ -32,10 +33,10 @@ export default function Community() {
   return <main className={styles.page}>
     <header className={styles.heading}>
       <span>PLAY. SHARE. CONNECT.</span>
-      <h1>커뮤니티</h1>
+      <h1>피드</h1>
       <p>함께하는 게이머들의 이야기에서 다음 게임을 발견하세요.</p>
     </header>
-    <nav className={styles.tabs} aria-label="커뮤니티 리뷰">
+    <nav className={styles.tabs} aria-label="피드 리뷰">
       <Link href="/community" aria-current={tab === "following" ? "page" : undefined}>팔로잉</Link>
       <Link href="/community?tab=popular" aria-current={tab === "popular" ? "page" : undefined}>인기</Link>
     </nav>
@@ -167,6 +168,7 @@ function ReviewCard({ review, onLike }: { review: CommunityReview; onLike: () =>
   const locked = useRef(false);
   const hidden = review.spoiler && !revealed;
   const nickname = review.nickname?.trim() || `플레이어 ${review.userId}`;
+  const playLabel = getPlayLabel(review);
 
   async function like() {
     if (locked.current) return;
@@ -180,19 +182,29 @@ function ReviewCard({ review, onLike }: { review: CommunityReview; onLike: () =>
 
   return <article className={styles.card}>
     <header className={styles.cardHeader}>
-      <Link className={styles.author} href={`/profile/${review.userId}`}>
-        <span className={styles.avatar}><ImageWithFallback src={review.profileImageUrl ?? ""} alt=""
-          fallback={<span>{nickname.slice(0, 1)}</span>} /></span>
-        <strong>{nickname}</strong>
-      </Link>
-      <time dateTime={review.createdDate}>{review.createdDate.slice(0, 10)}</time>
+      <div className={styles.identity}>
+        <Link className={styles.avatar} href={`/profile/${review.userId}`} aria-label={`${nickname}님의 프로필`}>
+          <ImageWithFallback src={review.profileImageUrl ?? ""} alt=""
+            fallback={<span>{nickname.slice(0, 1).toUpperCase()}</span>} />
+        </Link>
+        <div className={styles.reviewerDetails}>
+          <div className={styles.reviewerName}>
+            <Link className={styles.author} href={`/profile/${review.userId}`}>{nickname}</Link>
+            <span>님이 리뷰를 남겼습니다</span>
+          </div>
+          <div className={styles.reviewerMeta}>
+          {review.rating == null ? <span className={styles.noRating}>별점 없음</span>
+            : <span className={styles.rating}><span aria-hidden="true">★</span><strong>{review.rating.toFixed(1)}</strong><small>/ 5.0</small></span>}
+          {playLabel && <span className={styles.playState}><i aria-hidden="true" />{playLabel}</span>}
+          </div>
+        </div>
+      </div>
+      <time dateTime={review.createdDate}>{review.createdDate.slice(0, 10).replaceAll("-", ".")}</time>
     </header>
     <Link className={styles.game} href={`/games/${review.gameId}`}>
       <span className={styles.cover}><ImageWithFallback src={coverUrl(review.gameCoverImageUrl)} alt=""
         fallback={<span className={styles.coverFallback} aria-hidden="true">GL</span>} /></span>
-      <span><strong>{review.gameTitle}</strong><span className={styles.rating}>
-        {review.rating == null ? "별점 없음" : `★ ${review.rating.toFixed(1)} / 5.0`}
-      </span></span>
+      <strong>{review.gameTitle}</strong>
       <span className={styles.arrow} aria-hidden="true">↗</span>
     </Link>
     {hidden ? <div className={styles.spoiler}><p>스포일러가 포함된 리뷰입니다.</p>
@@ -201,13 +213,14 @@ function ReviewCard({ review, onLike }: { review: CommunityReview; onLike: () =>
       <p>{!expanded && review.content.length > 300 ? `${review.content.slice(0, 300)}…` : review.content}</p>
       {review.content.length > 300 && <button aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>{expanded ? "접기" : "본문 펼치기"}</button>}
     </div>}
-    <footer className={styles.actions}>
-      <button aria-pressed={review.liked} disabled={pending} onClick={() => void like()}>
-        {review.liked ? "♥" : "♡"} 좋아요 {review.likeCount.toLocaleString("ko-KR")}
+    <div className={styles.actions}>
+      <button aria-label={`좋아요 ${review.likeCount}개${review.liked ? ", 내가 좋아요를 누름" : ""}`}
+        title={review.liked ? "좋아요 취소" : "리뷰 좋아요"}
+        aria-pressed={review.liked} disabled={pending} onClick={() => void like()}>
+        <span aria-hidden="true">{review.liked ? "♥" : "♡"}</span>{review.likeCount.toLocaleString("ko-KR")}
       </button>
-      <Link href={`/games/${review.gameId}`}>게임 상세에서 보기 →</Link>
-    </footer>
+    </div>
     {error && <p className={styles.error} role="alert">{error}</p>}
-    <ReviewComments reviewId={review.reviewId} locked={hidden} />
+    <div className={styles.comments}><ReviewComments reviewId={review.reviewId} locked={hidden} /></div>
   </article>;
 }

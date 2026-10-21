@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createReviewReport, deleteReview, getLikeStatus, getMyDetailedReview, setReviewLike } from "@/features/reviews/api";
 import type { DetailedReview } from "@/features/reviews/types";
 import type { Review, ReviewPage } from "@/features/reviews/list-types";
+import { getPlayLabel } from "../play-label";
 import styles from "./game-reviews.module.css";
 import ReviewComments from "./review-comments";
 import CommentReturn from "./comment-return";
@@ -13,18 +14,6 @@ type ReviewSort = "newest" | "rating";
 type ReviewResponse = { data?: ReviewPage; msg?: string };
 const pageSize = 5;
 const numberFormat = new Intl.NumberFormat("ko-KR");
-function getPlayLabel(review: Review) {
-  if (review.playing) return "플레이 중";
-  if (review.playStatus === "COMPLETED" || review.playStatus === "PLAYED") return "플레이 완료";
-  if (review.playStatus === "RETIRED" || review.playStatus === "DROPPED") return "플레이 중단";
-  if (review.playStatus === "SHELVED") return "보류";
-  if (review.backlog) return "플레이 예정";
-  if (review.wishlist) return "위시리스트";
-  return null;
-}
-
-
-
 function ReviewLikeCount({ reviewId, accessToken }: { reviewId: number; accessToken?: string }) {
   const [likeCount, setLikeCount] = useState<number | null>(null);
   const [liked, setLiked] = useState(false);
