@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import ImageWithFallback from "@/components/ui/image-with-fallback";
+import { coverUrl } from "@/features/games/model";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/features/auth/auth-context";
 import {
   getReviewReports,
@@ -53,13 +55,60 @@ export default function AdminReviewReportsPage() {
   const [result, setResult] =
     useState<ReviewReportPage>(emptyPage);
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [viewReady, setViewReady] = useState(false);
+  const restoreScroll = useRef<number | null>(null);
+  const storageKey = `admin-reports:${auth.user?.id}`;
 
   const [processingId, setProcessingId] =
     useState<number | null>(null);
 
   const [error, setError] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    let active = true;
+    void Promise.resolve().then(() => {
+      if (!active) return;
+      try {
+        const saved = sessionStorage.getItem(storageKey);
+        if (saved) {
+          const view = JSON.parse(saved);
+          if (["", "PENDING", "APPROVED", "REJECTED"].includes(view.status)
+              && Number.isInteger(view.page) && view.page >= 0
+              && Number.isFinite(view.scrollY) && view.scrollY >= 0) {
+            setStatus(view.status);
+            setPage(view.page);
+            restoreScroll.current = view.scrollY;
+            setLoading(true);
+          }
+          sessionStorage.removeItem(storageKey);
+        }
+      } catch {
+        // 저장 공간을 사용할 수 없으면 기본 목록으로 진입한다.
+      }
+      setViewReady(true);
+    });
+    return () => { active = false; };
+  }, [isAdmin, storageKey]);
+
+  useEffect(() => {
+    if (!viewReady || loading || error || restoreScroll.current == null) return;
+    const frame = requestAnimationFrame(() => {
+      window.scrollTo({ top: restoreScroll.current ?? 0, behavior: "instant" });
+      restoreScroll.current = null;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [viewReady, loading, error, result]);
+
+  function rememberList() {
+    try {
+      sessionStorage.setItem(storageKey, JSON.stringify({ status, page, scrollY: window.scrollY }));
+    } catch {
+      // 저장 실패 시에도 게임 상세 이동은 허용한다.
+    }
+  }
 
   useEffect(() => {
     if (auth.status === "unauthenticated") {
@@ -76,7 +125,7 @@ export default function AdminReviewReportsPage() {
   }, [auth.status, auth.user?.role, router]);
 
   useEffect(() => {
-    if (!isAdmin || !accessToken) {
+    if (!viewReady || !isAdmin || !accessToken) {
       return;
     }
 
@@ -120,6 +169,7 @@ export default function AdminReviewReportsPage() {
     };
   }, [
     accessToken,
+    viewReady,
     isAdmin,
     page,
     refreshKey,
@@ -186,7 +236,6 @@ export default function AdminReviewReportsPage() {
           </p>
         </div>
 
-        <Link href="/">게임 목록으로 돌아가기</Link>
       </header>
 
       {isAdmin && (
@@ -285,9 +334,8 @@ export default function AdminReviewReportsPage() {
 
               <dl className={styles.meta}>
                 <div>
-                  <dt>리뷰</dt>
+                  <dt>작성자</dt>
                   <dd>
-                    #{report.reviewId} · 작성자{" "}
                     {report.reviewWriterNickname} (#
                     {report.reviewWriterId})
                   </dd>
@@ -310,25 +358,15 @@ export default function AdminReviewReportsPage() {
                 </div>
               </dl>
 
-              <div className={styles.reasons}>
-                <span>신고자 및 신고 사유</span>
-
-                <ul>
-                  {report.reports.map((item) => (
-                    <li key={item.reportId}>
-                      <div>
-                        <strong>
-                          {item.reporterNickname} (#{item.reporterId})
-                        </strong>
-                        <time dateTime={item.createdDate}>
-                          {new Date(item.createdDate).toLocaleString("ko-KR")}
-                        </time>
-                      </div>
-                      <p>{item.reason}</p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <Link className={styles.gameLink} href={`/games/${report.gameId}`} onNavigate={rememberList}>
+                <span className={styles.gameCover}>
+                  <ImageWithFallback src={coverUrl(report.gameCoverImageUrl)} alt="" fallback={<span>GL</span>} />
+                </span>
+                <span className={styles.gameInfo}>
+                  <strong>{report.gameTitle}</strong>
+                  <span>게임 상세 보기 →</span>
+                </span>
+              </Link>
 
               <div className={styles.snapshot}>
                 <div>
@@ -351,6 +389,26 @@ export default function AdminReviewReportsPage() {
                   {report.reviewContent?.trim() ||
                     "별점만 남긴 리뷰입니다."}
                 </p>
+              </div>
+
+              <div className={styles.reasons}>
+                <span>신고자 및 신고 사유</span>
+
+                <ul>
+                  {report.reports.map((item) => (
+                    <li key={item.reportId}>
+                      <div>
+                        <strong>
+                          {item.reporterNickname} (#{item.reporterId})
+                        </strong>
+                        <time dateTime={item.createdDate}>
+                          {new Date(item.createdDate).toLocaleString("ko-KR")}
+                        </time>
+                      </div>
+                      <p>{item.reason}</p>
+                    </li>
+                  ))}
+                </ul>
               </div>
 
               {report.status === "PENDING" && (

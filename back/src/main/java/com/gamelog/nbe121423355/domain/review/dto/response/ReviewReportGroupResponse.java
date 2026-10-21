@@ -11,6 +11,9 @@ import java.util.List;
 
 public record ReviewReportGroupResponse(
         Long reviewId,
+        Long gameId,
+        String gameTitle,
+        String gameCoverImageUrl,
         Long reviewWriterId,
         String reviewWriterNickname,
         BigDecimal reviewRating,
@@ -51,6 +54,9 @@ public record ReviewReportGroupResponse(
 
         return new ReviewReportGroupResponse(
                 representative.getReview().getId(),
+                representative.getReview().getUserGame().getGame().getId(),
+                representative.getReview().getUserGame().getGame().getTitle(),
+                representative.getReview().getUserGame().getGame().getCoverImageUrl(),
                 representative.getReview().getUserGame().getUser().getId(),
                 representative.getReview().getUserGame().getUser().getNickname(),
                 representative.getReviewRatingSnapshot() != null

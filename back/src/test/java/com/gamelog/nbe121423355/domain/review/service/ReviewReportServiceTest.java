@@ -1,5 +1,6 @@
 package com.gamelog.nbe121423355.domain.review.service;
 
+import com.gamelog.nbe121423355.domain.game.entity.Game;
 import com.gamelog.nbe121423355.domain.review.dto.request.ReviewReportCreateRequest;
 import com.gamelog.nbe121423355.domain.review.dto.request.ReviewReportStatusUpdateRequest;
 import com.gamelog.nbe121423355.domain.review.entity.ReportStatus;
@@ -80,9 +81,14 @@ class ReviewReportServiceTest {
         assertThat(response.reporterNickname()).isEqualTo("신고자");
     }
 
-    @DisplayName("같은 리뷰의 여러 신고를 하나의 묶음으로 조회한다")
+    @DisplayName("같은 리뷰의 신고를 묶어 게임 ID·제목·이미지와 함께 조회한다")
     @Test
     void getReportsGroupedByReview() {
+        Game game = mock(Game.class);
+        when(review.getUserGame().getGame()).thenReturn(game);
+        when(game.getId()).thenReturn(100L);
+        when(game.getTitle()).thenReturn("테스트 게임");
+        when(game.getCoverImageUrl()).thenReturn("https://example.com/cover.jpg");
         User anotherReporter = mock(User.class);
         when(anotherReporter.getId()).thenReturn(3L);
         when(anotherReporter.getNickname()).thenReturn("다른신고자");
@@ -99,6 +105,9 @@ class ReviewReportServiceTest {
 
         var response = reviewReportService.getReports(ReportStatus.PENDING, pageable);
 
+        assertThat(response.reports().getFirst().gameId()).isEqualTo(100L);
+        assertThat(response.reports().getFirst().gameTitle()).isEqualTo("테스트 게임");
+        assertThat(response.reports().getFirst().gameCoverImageUrl()).isEqualTo("https://example.com/cover.jpg");
         assertThat(response.totalElements()).isEqualTo(1);
         assertThat(response.reports()).hasSize(1);
         assertThat(response.reports().get(0).reviewId()).isEqualTo(10L);

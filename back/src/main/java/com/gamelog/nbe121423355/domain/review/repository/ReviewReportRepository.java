@@ -42,7 +42,7 @@ public interface ReviewReportRepository extends JpaRepository<ReviewReport, Long
             Pageable pageable
     );
 
-    @EntityGraph(attributePaths = {"reporter", "review.userGame.user"})
+    @EntityGraph(attributePaths = {"reporter", "review.userGame.user", "review.userGame.game"})
     @Query("""
             SELECT report
             FROM ReviewReport report
