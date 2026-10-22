@@ -3,6 +3,7 @@ package com.gamelog.nbe121423355.domain.game.sync;
 import com.gamelog.nbe121423355.domain.game.dto.IgdbGameResponse;
 import com.gamelog.nbe121423355.domain.game.dto.IgdbGameResponse.NamedResource;
 import com.gamelog.nbe121423355.domain.game.entity.*;
+import com.gamelog.nbe121423355.domain.game.service.NewGameRecommendationRegistration;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 public class IgdbSyncCatalog {
     private final EntityManager em;
     private final NamedParameterJdbcTemplate jdbc;
+    private final NewGameRecommendationRegistration recommendationRegistration;
 
     public record Counts(long inserted, long updated, long deleted, long skipped) {}
 
@@ -49,11 +51,13 @@ public class IgdbSyncCatalog {
         var series = resources(accepted, IgdbGameResponse::collections, GameSeries.class, "igdbId",
                 GameSeries::getIgdbId, GameSeries::createFromIgdb, GameSeries::updateName);
         var games = new ArrayList<Game>();
+        var newGames = new ArrayList<Game>();
         for (var response : accepted) {
             var game = existing.get(response.id());
             if (game == null) {
                 game = Game.createFromIgdb(response);
                 em.persist(game);
+                newGames.add(game);
             } else game.updateFromIgdb(response);
             games.add(game);
         }
@@ -69,6 +73,7 @@ public class IgdbSyncCatalog {
             for (var resource : unique(response.platforms())) em.persist(new GamePlatform(game, platforms.get(resource.id())));
             for (var resource : unique(response.collections())) em.persist(new GameSeriesGame(series.get(resource.id()), game));
         }
+        recommendationRegistration.register(newGames);
         return new Counts(inserted, accepted.size() - inserted, removed.size(), page.size() - accepted.size() - removed.size());
     }
 

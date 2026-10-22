@@ -6,6 +6,7 @@ import com.gamelog.nbe121423355.domain.game.dto.RelatedGameResponse;
 import com.gamelog.nbe121423355.domain.game.entity.Game;
 import com.gamelog.nbe121423355.domain.game.entity.GameGenre;
 import com.gamelog.nbe121423355.domain.game.entity.Genre;
+import com.gamelog.nbe121423355.domain.game.entity.RelatedGameCalculation;
 import com.gamelog.nbe121423355.domain.review.entity.Review;
 import com.gamelog.nbe121423355.domain.user.entity.User;
 import com.gamelog.nbe121423355.domain.usergame.entity.PlayStatus;
@@ -21,6 +22,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,6 +48,20 @@ class RelatedGameRecommendationTest {
         rpg = Genre.createFromIgdb(1000L, "RPG");
         entityManager.persist(rpg);
         entityManager.persist(new GameGenre(baseGame, rpg));
+    }
+
+    @Test
+    @DisplayName("기본 설정은 저장된 빈 결과가 있어도 기존 계산을 사용한다")
+    void defaultConfigurationKeepsRealtimeQuery() {
+        var calculation = new RelatedGameCalculation(baseGame);
+        calculation.start(LocalDateTime.now());
+        calculation.succeed(LocalDateTime.now());
+        entityManager.persist(calculation);
+        Game candidate = saveCandidate(1090L, "실시간 후보", "80.0");
+        entityManager.flush();
+
+        assertThat(gameDetailService.getRelatedGames(baseGame.getId()))
+                .extracting(RelatedGameResponse::id).containsExactly(candidate.getId());
     }
 
     @Test

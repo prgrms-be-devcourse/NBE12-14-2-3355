@@ -104,6 +104,9 @@ public interface GameStatisticsRepository extends Repository<UserGame, Long> {
             FROM UserGame userGame
             JOIN userGame.game game
             WHERE userGame.liked = true
+              AND (:#{@gamePublicationPolicy.readyOnly} = false OR EXISTS (
+                  SELECT 1 FROM RelatedGameCalculation calculation
+                  WHERE calculation.gameId = game.id AND calculation.lastSuccessAt IS NOT NULL))
             GROUP BY game.id, game.title, game.coverImageUrl
             ORDER BY COUNT(userGame.id) DESC, game.id DESC
             """)

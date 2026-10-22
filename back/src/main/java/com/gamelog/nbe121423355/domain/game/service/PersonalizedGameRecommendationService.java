@@ -5,7 +5,6 @@ import com.gamelog.nbe121423355.domain.game.dto.PersonalizedGameRecommendationRe
 import com.gamelog.nbe121423355.domain.game.repository.PersonalizedGameRecordQueryRepository;
 import com.gamelog.nbe121423355.domain.game.repository.PersonalizedOnboardingPreferenceQueryRepository;
 import com.gamelog.nbe121423355.domain.game.repository.PersonalizedRecommendationCandidateQueryRepository;
-import com.gamelog.nbe121423355.domain.game.repository.PersonalizedRelatedGameQueryRepository;
 import com.gamelog.nbe121423355.domain.game.repository.projection.PersonalizedGameRecordProjection;
 import com.gamelog.nbe121423355.domain.game.repository.projection.PersonalizedRecommendationCandidateProjection;
 import com.gamelog.nbe121423355.domain.game.repository.projection.PersonalizedRelatedGameProjection;
@@ -31,7 +30,7 @@ public class PersonalizedGameRecommendationService {
 
     private final PersonalizedGameRecordQueryRepository gameRecordQueryRepository;
     private final PersonalizedOnboardingPreferenceQueryRepository onboardingPreferenceQueryRepository;
-    private final PersonalizedRelatedGameQueryRepository relatedGameQueryRepository;
+    private final PersonalizedRelatedGameProvider relatedGameProvider;
     private final PersonalizedRecommendationCandidateQueryRepository candidateQueryRepository;
     private final PersonalizedGenrePreferenceCalculator genrePreferenceCalculator;
     private final PersonalizedRecordSourceSelector recordSourceSelector;
@@ -88,7 +87,7 @@ public class PersonalizedGameRecommendationService {
             List<Long> recordedGameIds
     ) {
         List<PersonalizedRelatedGameProjection> relatedGames =
-                relatedGameQueryRepository.findTopFiveBySourceGameIds(
+                relatedGameProvider.findTopFiveBySourceGameIds(
                         sourceGameIds,
                         recordedGameIds
                 );
@@ -131,7 +130,7 @@ public class PersonalizedGameRecommendationService {
             excludedGameIds.addAll(preferredGameIds);
 
             List<PersonalizedRelatedGameProjection> relatedGames =
-                    relatedGameQueryRepository.findTopFiveBySourceGameIds(
+                    relatedGameProvider.findTopFiveBySourceGameIds(
                             preferredGameIds,
                             excludedGameIds.stream().distinct().toList()
                     );

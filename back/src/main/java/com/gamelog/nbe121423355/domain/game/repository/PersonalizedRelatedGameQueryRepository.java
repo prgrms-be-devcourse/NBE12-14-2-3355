@@ -2,6 +2,7 @@ package com.gamelog.nbe121423355.domain.game.repository;
 
 import com.gamelog.nbe121423355.domain.game.repository.projection.PersonalizedRelatedGameProjection;
 import jakarta.persistence.EntityManager;
+import com.gamelog.nbe121423355.domain.game.service.GamePublicationPolicy;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.query.NativeQuery;
 import org.springframework.stereotype.Repository;
@@ -14,6 +15,32 @@ import java.util.List;
 public class PersonalizedRelatedGameQueryRepository {
 
     private final EntityManager entityManager;
+    private final GamePublicationPolicy publicationPolicy;
+
+    // 사용자별 제외를 먼저 적용하고 저장 순위 순서로 1~5위를 다시 매긴다.
+    private static final String STORED_RELATED_GAMES_SQL = """
+            WITH ranked_candidates AS (
+                SELECT c.source_game_id, g.id AS game_id, g.title, g.cover_image_url,
+                       g.igdb_rating, c.related_score,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY c.source_game_id ORDER BY c.related_rank
+                       ) AS related_rank
+                FROM related_game_candidates c
+                JOIN related_game_calculations calculation ON calculation.game_id = c.source_game_id
+                JOIN games g ON g.id = c.candidate_game_id
+                WHERE c.source_game_id IN (:sourceGameIds)
+                  AND calculation.last_success_at IS NOT NULL
+                  AND (:readyOnly = false OR EXISTS (
+                      SELECT 1 FROM related_game_calculations ready
+                      WHERE ready.game_id = g.id AND ready.last_success_at IS NOT NULL))
+                  AND c.candidate_game_id NOT IN (:excludedGameIds)
+            )
+            SELECT source_game_id, game_id, title, cover_image_url,
+                   igdb_rating, related_score, related_rank
+            FROM ranked_candidates
+            WHERE related_rank <= 5
+            ORDER BY source_game_id, related_rank
+            """;
 
     // 기존 게임 상세 연관 추천의 점수 기준으로, 기준 게임별 상위 5개 순위를 일괄 조회
     // TODO: 평점 데이터가 충분해지면 최소 평점 개수(5)와 평균 평점 기준(3.5)을 재조정
@@ -36,6 +63,9 @@ public class PersonalizedRelatedGameQueryRepository {
                 WHERE gg.game_id <> sg.source_game_id
                   AND gg.game_id NOT IN (:excludedGameIds)
                   AND g.igdb_rating >= 70.0
+                  AND (:readyOnly = false OR EXISTS (
+                      SELECT 1 FROM related_game_calculations ready
+                      WHERE ready.game_id = g.id AND ready.last_success_at IS NOT NULL))
                 GROUP BY sg.source_game_id, gg.game_id
             ),
             candidate_game_ids AS (
@@ -150,15 +180,28 @@ public class PersonalizedRelatedGameQueryRepository {
             List<Long> sourceGameIds,
             List<Long> excludedGameIds
     ) {
+        return query(RELATED_GAMES_BY_SOURCE_SQL, sourceGameIds, excludedGameIds);
+    }
+
+    public List<PersonalizedRelatedGameProjection> findStoredTopFiveBySourceGameIds(
+            List<Long> sourceGameIds, List<Long> excludedGameIds
+    ) {
+        return query(STORED_RELATED_GAMES_SQL, sourceGameIds, excludedGameIds);
+    }
+
+    private List<PersonalizedRelatedGameProjection> query(
+            String sql, List<Long> sourceGameIds, List<Long> excludedGameIds
+    ) {
         if (sourceGameIds.isEmpty()) {
             return List.of();
         }
 
         @SuppressWarnings("unchecked")
         List<Object[]> rows = entityManager
-                .createNativeQuery(RELATED_GAMES_BY_SOURCE_SQL)
+                .createNativeQuery(sql)
                 .unwrap(NativeQuery.class)
                 .setParameterList("sourceGameIds", sourceGameIds)
+                .setParameter("readyOnly", publicationPolicy.isReadyOnly())
                 // 빈 IN 목록을 피하기 위한 존재하지 않는 게임 ID
                 .setParameterList(
                         "excludedGameIds",
@@ -181,7 +224,7 @@ public class PersonalizedRelatedGameQueryRepository {
 
     // SQL 조회 결과의 수치 데이터 객체를 BigDecimal로 변환
     private BigDecimal toBigDecimal(Object value) {
-        return new BigDecimal(((Number) value).toString());
+        return value == null ? null : new BigDecimal(((Number) value).toString());
     }
 
 }

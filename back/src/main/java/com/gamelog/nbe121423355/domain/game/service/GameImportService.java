@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
@@ -20,9 +21,11 @@ public class GameImportService {
     private final GamePlatformRepository gamePlatformRepository;
     private final GameSeriesRepository gameSeriesRepository;
     private final GameSeriesGameRepository gameSeriesGameRepository;
+    private final NewGameRecommendationRegistration recommendationRegistration;
 
     @Transactional
     public int saveGames(List<IgdbGameResponse> responses) {
+        List<Game> newGames = new ArrayList<>();
         for (IgdbGameResponse response : responses) {
             Game game = gameRepository.findByIgdbId(response.id())
                     .orElse(null);
@@ -30,6 +33,7 @@ public class GameImportService {
             if (game == null) {
                 // 저장 후 ID가 부여된 객체를 사용합니다.
                 game = gameRepository.save(Game.createFromIgdb(response));
+                newGames.add(game);
             } else {
                 game.updateFromIgdb(response);
             }
@@ -39,6 +43,7 @@ public class GameImportService {
             saveSeries(game, response.collections());
         }
 
+        recommendationRegistration.register(newGames);
         return responses.size();
     }
 
