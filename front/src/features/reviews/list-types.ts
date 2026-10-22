@@ -1,6 +1,7 @@
 // 게임별 리뷰 목록 API 응답 모델
 export type Review = {
   reviewId: number;
+  version: number;
   userGameId: number;
   userId: number;
   nickname: string | null;

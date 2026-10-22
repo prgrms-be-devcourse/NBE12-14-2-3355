@@ -89,8 +89,9 @@ export function saveDetailedReview(
   });
 }
 
-export function deleteReview(reviewId: number, accessToken: string) {
-  return request<null>(`reviews/${reviewId}`, {
+export function deleteReview(reviewId: number, version: number, accessToken: string) {
+  const query = new URLSearchParams({ version: String(version) });
+  return request<null>(`reviews/${reviewId}?${query}`, {
     method: "DELETE",
     accessToken,
   });

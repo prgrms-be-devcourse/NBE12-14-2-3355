@@ -4,10 +4,15 @@ import com.gamelog.nbe121423355.domain.review.validation.ValidRating;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.PositiveOrZero;
 
 import java.math.BigDecimal;
 
 public record ReviewSaveRequest(
+        @Schema(description = "조회 시 받은 리뷰 버전. 새 리뷰 또는 삭제 후 재작성 시에는 생략합니다.", example = "0", nullable = true)
+        @PositiveOrZero(message = "리뷰 버전은 0 이상이어야 합니다.")
+        Long version,
+
         @Schema(description = "별점. 입력하지 않을 수 있으며 0.5점 단위입니다.", example = "4.5", nullable = true)
         @DecimalMin(value = "0.5", message = "별점은 0.5 이상이어야 합니다.")
         @DecimalMax(value = "5.0", message = "별점은 5.0 이하여야 합니다.")
@@ -20,6 +25,10 @@ public record ReviewSaveRequest(
         @Schema(description = "스포일러 포함 여부", example = "false")
         boolean spoiler
 ) {
+    public ReviewSaveRequest(BigDecimal rating, String content, boolean spoiler) {
+        this(null, rating, content, spoiler);
+    }
+
     public boolean hasReviewContent() {
         return rating != null || (content != null && !content.isBlank());
     }

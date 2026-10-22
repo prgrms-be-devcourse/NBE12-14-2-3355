@@ -8,6 +8,7 @@ import {
   getMyDetailedReview,
   saveDetailedReview,
   setReviewLike,
+  ReviewApiError,
 } from "@/features/reviews/api";
 import type {
   DetailedReview,
@@ -59,7 +60,10 @@ function reviewBody(detail: DetailedReview | null, review: ReviewDraft): Detaile
       completedAt: record?.completedAt ?? null,
       lastPlayedAt: record?.lastPlayedAt ?? null,
     },
-    review,
+    review: {
+      ...review,
+      version: detail?.review?.version ?? null,
+    },
   };
 }
 
@@ -287,6 +291,10 @@ export default function GameReviewSection({
       setPage(0);
       refresh();
     } catch (reason) {
+      if (reason instanceof ReviewApiError && reason.resultCode === "409-6") {
+        setEditing(false);
+        refresh();
+      }
       setError(reason instanceof Error ? reason.message : "리뷰를 저장하지 못했습니다.");
     } finally {
       setSaving(false);
@@ -298,10 +306,14 @@ export default function GameReviewSection({
     if (!window.confirm("작성한 리뷰를 삭제할까요? 게임 기록은 유지됩니다.")) return;
     setError("");
     try {
-      await deleteReview(myDetail.review.reviewId, accessToken);
+      await deleteReview(myDetail.review.reviewId, myDetail.review.version, accessToken);
       setEditing(false);
       refresh();
     } catch (reason) {
+      if (reason instanceof ReviewApiError && reason.resultCode === "409-6") {
+        setEditing(false);
+        refresh();
+      }
       setError(reason instanceof Error ? reason.message : "리뷰를 삭제하지 못했습니다.");
     }
   }

@@ -67,8 +67,8 @@ public class GameRecordReviewService {
     }
 
     @Transactional
-    public void deleteReview(Long userId, Long reviewId) {
-        Long userGameId = reviewService.deleteReview(userId, reviewId);
+    public void deleteReview(Long userId, Long reviewId, Long version) {
+        Long userGameId = reviewService.deleteReview(userId, reviewId, version);
         userGameService.synchronizeLibraryState(userGameId);
     }
 }

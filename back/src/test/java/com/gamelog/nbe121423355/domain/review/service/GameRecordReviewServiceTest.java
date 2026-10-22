@@ -178,9 +178,10 @@ class GameRecordReviewServiceTest {
     @DisplayName("리뷰 삭제 후 라이브러리 상태를 동기화한다")
     void deleteReviewAndSynchronizeLibrary() {
         long reviewId = 10L;
-        when(reviewService.deleteReview(USER_ID, reviewId)).thenReturn(USER_GAME_ID);
+        long version = 3L;
+        when(reviewService.deleteReview(USER_ID, reviewId, version)).thenReturn(USER_GAME_ID);
 
-        service.deleteReview(USER_ID, reviewId);
+        service.deleteReview(USER_ID, reviewId, version);
 
         verify(userGameService).synchronizeLibraryState(USER_GAME_ID);
     }
